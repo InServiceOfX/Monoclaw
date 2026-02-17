@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LaTeX Live Viewer</title>
+
+  <!-- KaTeX -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+  <!-- marked.js -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
+
+  <style>
+    /* ── Reset & base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --border:    #30363d;
+      --accent:    #58a6ff;
+      --accent2:   #79c0ff;
+      --green:     #3fb950;
+      --red:       #f85149;
+      --text:      #c9d1d9;
+      --text-dim:  #8b949e;
+      --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+      --font-sans: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      --radius:    6px;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* ── Layout ── */
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 18px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    header h1 {
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--accent2);
+    }
+    header h1 span { color: var(--text-dim); font-weight: 400; }
+
+    .header-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    button {
+      padding: 5px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 0.82rem;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
+      letter-spacing: 0.02em;
+    }
+    button:hover { border-color: var(--accent); color: var(--accent); }
+    button.danger:hover { border-color: var(--red); color: var(--red); }
+    button.success-flash {
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .panels {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── Left panel ── */
+    .left-panel {
+      display: flex;
+      flex-direction: column;
+      width: 50%;
+      border-right: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .panel-label {
+      padding: 6px 14px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    #editor {
+      flex: 1;
+      resize: none;
+      border: none;
+      outline: none;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      line-height: 1.7;
+      padding: 16px 18px;
+      tab-size: 2;
+      caret-color: var(--accent);
+      overflow-y: auto;
+    }
+
+    #editor::placeholder {
+      color: var(--text-dim);
+      font-style: italic;
+    }
+
+    /* ── Right panel ── */
+    .right-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #preview {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 28px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      font-size: 0.95rem;
+      line-height: 1.75;
+    }
+
+    /* ── Preview typography ── */
+    #preview h1, #preview h2, #preview h3,
+    #preview h4, #preview h5, #preview h6 {
+      color: var(--accent2);
+      margin: 1.2em 0 0.5em;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+    #preview h1 { font-size: 1.6em; border-bottom: 1px solid var(--border); padding-bottom: 0.3em; }
+    #preview h2 { font-size: 1.3em; border-bottom: 1px solid var(--border); padding-bottom: 0.2em; }
+    #preview h3 { font-size: 1.1em; }
+
+    #preview p { margin: 0.7em 0; }
+
+    #preview a { color: var(--accent); text-decoration: none; }
+    #preview a:hover { text-decoration: underline; }
+
+    #preview strong { color: #e6edf3; font-weight: 600; }
+    #preview em { color: #cdd5e0; font-style: italic; }
+
+    #preview code {
+      background: #1c2026;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 0.1em 0.4em;
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+      color: #f97583;
+    }
+
+    #preview pre {
+      background: #161b22;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      overflow-x: auto;
+      margin: 1em 0;
+    }
+    #preview pre code {
+      background: none;
+      border: none;
+      padding: 0;
+      color: var(--text);
+      font-size: 0.85em;
+    }
+
+    #preview blockquote {
+      border-left: 3px solid var(--accent);
+      margin: 1em 0;
+      padding: 0.4em 1em;
+      color: var(--text-dim);
+      background: #161b22;
+      border-radius: 0 var(--radius) var(--radius) 0;
+    }
+
+    #preview ul, #preview ol {
+      padding-left: 1.6em;
+      margin: 0.6em 0;
+    }
+    #preview li { margin: 0.25em 0; }
+
+    #preview hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 1.5em 0;
+    }
+
+    #preview table {
+      border-collapse: collapse;
+      margin: 1em 0;
+      width: 100%;
+    }
+    #preview th, #preview td {
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      text-align: left;
+    }
+    #preview th { background: var(--surface); color: var(--accent2); font-weight: 600; }
+    #preview tr:nth-child(even) td { background: #0f141a; }
+
+    /* ── KaTeX overrides for dark theme ── */
+    .katex { color: #e6edf3; }
+    .katex-display {
+      margin: 1.2em 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 0.5em 0;
+    }
+    .katex-display > .katex {
+      display: block;
+      text-align: center;
+    }
+
+    /* ── Status bar ── */
+    #statusbar {
+      padding: 4px 18px;
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      flex-shrink: 0;
+      letter-spacing: 0.03em;
+    }
+
+    /* ── Scrollbar style ── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #484f58; }
+
+    /* ── Error state ── */
+    .render-error {
+      color: var(--red);
+      font-family: var(--font-mono);
+      font-size: 0.82em;
+      background: #1a0e0e;
+      border: 1px solid var(--red);
+      border-radius: var(--radius);
+      padding: 8px 12px;
+      margin: 8px 0;
+    }
+
+    /* ── Responsive: stack vertically on narrow screens ── */
+    @media (max-width: 720px) {
+      .panels { flex-direction: column; }
+      .left-panel { width: 100%; height: 45%; border-right: none; border-bottom: 1px solid var(--border); }
+      .right-panel { height: 55%; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>⚛ LaTeX Live Viewer <span>— KaTeX + marked.js</span></h1>
+    <div class="header-buttons">
+      <button id="btn-copy" title="Copy contents of editor to clipboard">Copy LaTeX</button>
+      <button id="btn-clear" class="danger" title="Clear the editor">Clear</button>
+    </div>
+  </header>
+
+  <div class="panels">
+    <div class="left-panel">
+      <div class="panel-label">✏ Input — LaTeX / Markdown</div>
+      <textarea id="editor" spellcheck="false" placeholder="Type or paste LaTeX and Markdown here…
+
+Examples:
+  Inline math: $E = mc^2$
+  Display math:
+  $$\hat{H}\psi = i\hbar\frac{\partial\psi}{\partial t}$$
+
+  Bra-ket: $\langle\psi|\hat{A}|\phi\rangle$
+  Gradient: $\nabla^2\phi = \rho/\varepsilon_0$
+  Operators: $\hat{p} = -i\hbar\nabla$
+"></textarea>
+    </div>
+
+    <div class="right-panel">
+      <div class="panel-label">👁 Rendered Output</div>
+      <div id="preview"></div>
+    </div>
+  </div>
+
+  <div id="statusbar">
+    <span id="stat-chars">0 chars · 0 lines</span>
+    <span id="stat-render">Ready</span>
+  </div>
+</div>
+
+<script>
+// ── Wait for KaTeX to load (deferred scripts) ──────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+
+  const editor   = document.getElementById('editor');
+  const preview  = document.getElementById('preview');
+  const btnCopy  = document.getElementById('btn-copy');
+  const btnClear = document.getElementById('btn-clear');
+  const statChars  = document.getElementById('stat-chars');
+  const statRender = document.getElementById('stat-render');
+
+  // Configure marked
+  marked.setOptions({
+    breaks: true,         // GFM line breaks
+    gfm: true,
+    pedantic: false,
+  });
+
+  // ── Math delimiter config for KaTeX auto-render ────────────────────────
+  const katexOptions = {
+    delimiters: [
+      { left: '$$', right: '$$', display: true  },
+      { left: '$',  right: '$',  display: false },
+      { left: '\\[', right: '\\]', display: true  },
+      { left: '\\(', right: '\\)', display: false },
+    ],
+    throwOnError: false,
+    errorColor: '#f85149',
+    macros: {
+      // Common physics shorthands
+      '\\ket':    '\\left|#1\\right\\rangle',
+      '\\bra':    '\\left\\langle#1\\right|',
+      '\\braket': '\\left\\langle#1\\middle|#2\\right\\rangle',
+      '\\ev':     '\\left\\langle#1\\right\\rangle',
+      '\\expval': '\\left\\langle#1\\right\\rangle',
+      '\\mel':    '\\left\\langle#1\\middle|#2\\middle|#3\\right\\rangle',
+      '\\Tr':     '\\operatorname{Tr}',
+      '\\tr':     '\\operatorname{tr}',
+      '\\ii':     'i',   // imaginary unit
+      '\\ee':     'e',   // Euler's number
+      '\\dd':     '\\mathrm{d}',
+      '\\dv':     '\\frac{\\mathrm{d}#1}{\\mathrm{d}#2}',
+      '\\pdv':    '\\frac{\\partial #1}{\\partial #2}',
+      '\\abs':    '\\left|#1\\right|',
+      '\\norm':   '\\left\\|#1\\right\\|',
+      '\\comm':   '\\left[#1,\\,#2\\right]',
+      '\\acomm':  '\\left\\{#1,\\,#2\\right\\}',
+      '\\order':  '\\mathcal{O}\\!\\left(#1\\right)',
+      '\\hbar':   '\\hbar',
+    },
+  };
+
+  // ── Render function ─────────────────────────────────────────────────────
+  function render() {
+    const src = editor.value;
+
+    // Update status bar
+    const lines = src === '' ? 0 : src.split('\n').length;
+    statChars.textContent = `${src.length} chars · ${lines} lines`;
+
+    if (!src.trim()) {
+      preview.innerHTML = '<span style="color:var(--text-dim);font-style:italic">Output will appear here…</span>';
+      statRender.textContent = 'Ready';
+      return;
+    }
+
+    try {
+      // Step 1: protect math blocks from marked's escaping
+      // We extract $...$ and $$...$$ before markdown processing, then restore them.
+      const mathPlaceholders = [];
+      let counter = 0;
+
+      function protect(str) {
+        // Display math first (greedy would break inline)
+        str = str.replace(/\$\$([\s\S]+?)\$\$/g, (_, math) => {
+          const key = `\x00MATH${counter++}\x00`;
+          mathPlaceholders.push({ key, html: `$$${math}$$` });
+          return key;
+        });
+        // Inline math
+        str = str.replace(/\$([^\n$]+?)\$/g, (_, math) => {
+          const key = `\x00MATH${counter++}\x00`;
+          mathPlaceholders.push({ key, html: `$${math}$` });
+          return key;
+        });
+        // \[ ... \] display
+        str = str.replace(/\\\[([\s\S]+?)\\\]/g, (_, math) => {
+          const key = `\x00MATH${counter++}\x00`;
+          mathPlaceholders.push({ key, html: `\\[${math}\\]` });
+          return key;
+        });
+        // \( ... \) inline
+        str = str.replace(/\\\((.+?)\\\)/g, (_, math) => {
+          const key = `\x00MATH${counter++}\x00`;
+          mathPlaceholders.push({ key, html: `\\(${math}\\)` });
+          return key;
+        });
+        return str;
+      }
+
+      // Protect math, render markdown, restore math
+      const protected_ = protect(src);
+      let html = marked.parse(protected_);
+
+      // Restore math placeholders (escape key for use in regex)
+      for (const { key, html: mathHtml } of mathPlaceholders) {
+        const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        html = html.replace(new RegExp(escaped, 'g'), mathHtml);
+      }
+
+      preview.innerHTML = html;
+
+      // Step 2: Run KaTeX auto-render over the live DOM
+      renderMathInElement(preview, katexOptions);
+
+      statRender.textContent = `Rendered ✓  ${new Date().toLocaleTimeString()}`;
+    } catch (err) {
+      preview.innerHTML = `<div class="render-error">Render error: ${escapeHtml(err.message)}</div>`;
+      statRender.textContent = 'Error';
+    }
+  }
+
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // ── Debounce ───────────────────────────────────────────────────────────
+  let debounceTimer;
+  editor.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(render, 300);
+  });
+
+  // ── Buttons ────────────────────────────────────────────────────────────
+  btnCopy.addEventListener('click', async () => {
+    const text = editor.value;
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      btnCopy.classList.add('success-flash');
+      btnCopy.textContent = 'Copied!';
+      setTimeout(() => {
+        btnCopy.classList.remove('success-flash');
+        btnCopy.textContent = 'Copy LaTeX';
+      }, 1500);
+    } catch {
+      // Fallback
+      editor.select();
+      document.execCommand('copy');
+      window.getSelection()?.removeAllRanges();
+    }
+  });
+
+  btnClear.addEventListener('click', () => {
+    if (editor.value && !confirm('Clear the editor?')) return;
+    editor.value = '';
+    render();
+    editor.focus();
+  });
+
+  // ── Tab key inserts spaces (not focus-switch) ─────────────────────────
+  editor.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const start = editor.selectionStart;
+      const end   = editor.selectionEnd;
+      editor.value = editor.value.slice(0, start) + '  ' + editor.value.slice(end);
+      editor.selectionStart = editor.selectionEnd = start + 2;
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(render, 300);
+    }
+  });
+
+  // ── Seed with a demo ──────────────────────────────────────────────────
+  editor.value = `# Quantum Mechanics — Live LaTeX Demo
+
+Welcome to the **LaTeX Live Viewer**. Type or paste content on the left; the right panel renders instantly.
+
+---
+
+## Schrödinger Equation
+
+The time-dependent Schrödinger equation:
+
+$$i\\hbar \\frac{\\partial}{\\partial t}\\Psi(\\mathbf{r},t) = \\hat{H}\\,\\Psi(\\mathbf{r},t)$$
+
+where the Hamiltonian for a particle in potential $V$ is:
+
+$$\\hat{H} = -\\frac{\\hbar^2}{2m}\\nabla^2 + V(\\mathbf{r},t)$$
+
+---
+
+## Dirac Notation (Bra-Ket)
+
+- State vector: $|\\psi\\rangle$
+- Dual vector: $\\langle\\psi|$
+- Inner product: $\\langle\\phi|\\psi\\rangle$
+- Expectation value of $\\hat{A}$: $\\langle\\psi|\\hat{A}|\\psi\\rangle$
+
+Matrix element:
+
+$$\\langle m | \\hat{A} | n \\rangle = \\int_{-\\infty}^{\\infty} \\psi_m^*(x)\\,\\hat{A}\\,\\psi_n(x)\\,dx$$
+
+---
+
+## Maxwell's Equations (Differential Form)
+
+$$\\nabla \\cdot \\mathbf{E} = \\frac{\\rho}{\\varepsilon_0}$$
+
+$$\\nabla \\cdot \\mathbf{B} = 0$$
+
+$$\\nabla \\times \\mathbf{E} = -\\frac{\\partial \\mathbf{B}}{\\partial t}$$
+
+$$\\nabla \\times \\mathbf{B} = \\mu_0\\mathbf{J} + \\mu_0\\varepsilon_0\\frac{\\partial \\mathbf{E}}{\\partial t}$$
+
+---
+
+## Path Integral (Feynman)
+
+$$\\langle x_f, t_f | x_i, t_i \\rangle = \\int \\mathcal{D}[x(t)]\\; \\exp\\!\\left(\\frac{i}{\\hbar}S[x]\\right)$$
+
+where $S[x] = \\int_{t_i}^{t_f} \\mathcal{L}(x, \\dot{x}, t)\\,dt$ is the classical action.
+
+---
+
+## Commutation Relations
+
+Canonical quantisation:
+
+$$[\\hat{x}_i,\\, \\hat{p}_j] = i\\hbar\\,\\delta_{ij}$$
+
+Ladder operators for the harmonic oscillator:
+
+$$[\\hat{a},\\, \\hat{a}^\\dagger] = 1, \\qquad \\hat{H} = \\hbar\\omega\\!\\left(\\hat{a}^\\dagger\\hat{a} + \\frac{1}{2}\\right)$$
+
+---
+
+*Edit anything above to try your own equations!*
+`;
+
+  // Initial render (after KaTeX loads)
+  // KaTeX is deferred, so renderMathInElement may not be available yet.
+  // Poll briefly:
+  function waitAndRender(attempts = 0) {
+    if (typeof renderMathInElement === 'function' && typeof marked !== 'undefined') {
+      render();
+    } else if (attempts < 50) {
+      setTimeout(() => waitAndRender(attempts + 1), 100);
+    }
+  }
+  waitAndRender();
+});
+</script>
+</body>
+</html>
