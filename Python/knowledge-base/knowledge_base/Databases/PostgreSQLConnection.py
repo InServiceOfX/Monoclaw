@@ -1,0 +1,392 @@
+from contextlib import asynccontextmanager
+from typing import Any, AsyncGenerator, Optional, List, Dict
+import asyncpg
+import json
+
+class PostgreSQLConnection:
+    # For PostgreSQL, the system database is called "postgres"
+    DEFAULT_SYSTEM_DB = "postgres"
+
+    def __init__(self, server_data_source_name: str, database_name: str = None):
+        """
+        Args:
+            server_data_source_name: The DSN without database name (e.g.,
+                "postgresql://user:pass@host:port")
+            database_name: The database to connect to
+        """
+        # Ensure the DSN doesn't include a database name
+        self._server_data_source_name = server_data_source_name
+        self._database_name = database_name
+        self._connection: asyncpg.Connection | None = None
+        self._pool: asyncpg.Pool | None = None
+
+    @staticmethod
+    def convert_list_to_string(input_list) -> str:
+        return json.dumps(input_list)
+
+    @property
+    def system_dsn(self) -> str:
+        """Get the DSN for connecting to the system database."""
+        return f"{self._server_data_source_name}/{self.DEFAULT_SYSTEM_DB}"
+
+    async def list_all_databases(self) -> list[str]:
+        """List all non-template databases by connecting to the system database."""
+        try:
+            conn = await asyncpg.connect(self.system_dsn)
+            try:
+                rows = await conn.fetch(
+                    "SELECT datname FROM pg_database WHERE datistemplate = false ORDER BY datname;"
+                )
+                return [row["datname"] for row in rows]
+            finally:
+                await conn.close()
+        except Exception as e:
+            print(f"Error listing databases: {e}")
+            raise
+
+    async def database_exists(self, database_name: str) -> bool:
+        try:
+            conn = await asyncpg.connect(self.system_dsn)
+            exists = await conn.fetchval(
+                'SELECT 1 FROM pg_database WHERE datname = $1',
+                database_name
+            )
+            return exists is not None
+        except Exception as e:
+            print(f"Error checking if database exists: {e}")
+            raise
+
+    async def create_new_pool(
+            self,
+            database_name: Optional[str] = None,
+            min_size: int = 10,
+            max_size: int = 20) -> asyncpg.Pool:
+        """Create a new connection pool for the specified database."""
+        if database_name is None and self._database_name is None:
+            raise ValueError(
+                "No database name provided and no default database name set")
+        elif database_name is None:
+            database_name = self._database_name
+        else:
+            self._database_name = database_name
+
+        await self.close_pool()
+
+        self._pool = await asyncpg.create_pool(
+            f"{self._server_data_source_name}/{database_name}",
+            min_size=min_size,
+            max_size=max_size
+        )
+        return self._pool
+
+    async def close_pool(self):
+        """Close the connection pool if it exists."""
+        if self._pool is not None:
+            await self._pool.close()
+            self._pool = None
+
+    @asynccontextmanager
+    async def connect(self, database_name: Optional[str] = None) -> \
+        AsyncGenerator[Any, None]:
+        """Connect using pool if available, otherwise create individual connection."""
+        if database_name is None and self._database_name is None:
+            raise ValueError(
+                "No database name provided and no default database name set")
+        elif database_name is None:
+            database_name = self._database_name
+        else:
+            self._database_name = database_name
+
+        database_exists = await self.database_exists(database_name)
+
+        if not database_exists:
+            raise ValueError(f"Database {database_name} does not exist")
+
+        # Use pool if available, otherwise create individual connection
+        if self._pool is not None and self._database_name == database_name:
+            async with self._pool.acquire() as conn:
+                yield conn
+        else:
+            if self._connection is not None and not self._connection.is_closed():
+                await self._connection.close()
+                self._connection = None
+
+            self._connection = await asyncpg.connect(
+                f"{self._server_data_source_name}/{database_name}")
+            try:
+                yield self._connection
+            finally:
+                if self._connection is not None:
+                    await self._connection.close()
+                    self._connection = None
+
+    async def create_database(self, database_name: str):
+        database_exists = await self.database_exists(database_name)
+        if database_exists:
+            print(f"Database {database_name} already exists")
+            return
+
+        self._database_name = database_name
+
+        connection = await asyncpg.connect(self.system_dsn)
+
+        try:
+            print(f"Creating database {database_name}...")
+            is_superuser = await connection.fetchval("""
+                SELECT usesuper FROM pg_user WHERE usename = current_user
+            """)
+            print(f"Current user is superuser: {is_superuser}")
+
+            if not is_superuser:
+                can_create = await connection.fetchval("""
+                    SELECT has_database_privilege(current_user, 'CREATE')
+                """)
+                print(f"Current user can create databases: {can_create}")
+                if not can_create:
+                    raise PermissionError(
+                        "Current user does not have permission to create databases")
+
+            await connection.execute(
+                f'CREATE DATABASE {database_name}'
+            )
+            print("Database creation command executed successfully")
+
+        except Exception as e:
+            print(f"Error in database operations: {str(e)}")
+            raise
+        finally:
+            print("Closing connection to server")
+            await connection.close()
+
+    async def close(self):
+        """Close both individual connection and pool."""
+        await self.close_pool()
+        if self._connection is not None:
+            if not self._connection.is_closed():
+                await self._connection.close()
+            self._connection = None
+
+    async def execute(self, query: str, *args):
+        return await self._connection.execute(query, *args)
+
+    async def execute_with_pool(self, query: str, *args):
+        async with self._pool.acquire() as conn:
+            await conn.execute(query, *args)
+
+    async def fetch_value(
+            self,
+            query: str,
+            database_name: Optional[str] = None,
+            *args) -> Any:
+        """Execute a query and return a single value."""
+        async with self.connect(database_name) as conn:
+            if conn is None:
+                raise ValueError(
+                    f"Database {database_name or self._database_name} does not exist")
+            return await conn.fetchval(query, *args)
+
+    async def fetch_row(
+            self,
+            query: str,
+            database_name: Optional[str] = None,
+            *args) -> Optional[dict]:
+        """Execute a query and return a single row."""
+        async with self.connect(database_name) as conn:
+            if conn is None:
+                raise ValueError(
+                    f"Database {database_name or self._database_name} does not exist")
+            return await conn.fetchrow(query, *args)
+
+    async def fetch_all(
+            self,
+            query: str,
+            database_name: Optional[str] = None,
+            *args) -> list[dict]:
+        """Execute a query and return all rows."""
+        async with self.connect(database_name) as conn:
+            if conn is None:
+                raise ValueError(
+                    f"Database {database_name or self._database_name} does not exist")
+            return await conn.fetch(query, *args)
+
+    async def list_tables(self, database_name: Optional[str] = None) \
+        -> List[Dict[str, str]]:
+        """List all tables in the database."""
+        conn = await self._get_connection_for_operation(database_name)
+
+        query = """
+            SELECT
+                schemaname,
+                tablename,
+                tableowner,
+                tablespace,
+                hasindexes,
+                hasrules,
+                hastriggers,
+                rowsecurity
+            FROM pg_tables
+            WHERE schemaname NOT IN ('information_schema', 'pg_catalog')
+            ORDER BY schemaname, tablename;
+        """
+
+        rows = await conn.fetch(query)
+
+        tables = []
+        for row in rows:
+            tables.append({
+                'schema': row['schemaname'],
+                'name': row['tablename'],
+                'owner': row['tableowner'],
+                'tablespace': row['tablespace'],
+                'has_indexes': row['hasindexes'],
+                'has_rules': row['hasrules'],
+                'has_triggers': row['hastriggers'],
+                'row_security': row['rowsecurity']
+            })
+
+        return tables
+
+    async def _get_connection_for_operation(
+            self,
+            database_name: Optional[str] = None) -> asyncpg.Connection:
+        """Get the appropriate connection for database operations."""
+        target_db = database_name or self._database_name
+
+        if target_db is None:
+            raise ValueError(
+                "No database name specified and no default database set")
+
+        if not await self.database_exists(target_db):
+            raise ValueError(f"Database '{target_db}' does not exist")
+
+        if self._connection is not None and not self._connection.is_closed():
+            return self._connection
+
+        if self._pool is not None and self._database_name == target_db:
+            return await self._pool.acquire()
+
+        return await asyncpg.connect(
+            f"{self._server_data_source_name}/{target_db}")
+
+    async def list_table_names(self, database_name: Optional[str] = None) \
+        -> List[str]:
+        """List just the table names in the database."""
+        conn = await self._get_connection_for_operation(database_name)
+
+        query = """
+            SELECT tablename
+            FROM pg_tables
+            WHERE schemaname NOT IN ('information_schema', 'pg_catalog')
+            ORDER BY tablename;
+        """
+
+        rows = await conn.fetch(query)
+        return [row['tablename'] for row in rows]
+
+    async def is_table_exists(
+            self,
+            table_name: str,
+            database_name: Optional[str] = None,
+            schema_name: str = 'public',
+            ) -> bool:
+        """Check if a table exists in the current database."""
+        conn = await self._get_connection_for_operation(database_name)
+
+        exists = await conn.fetchval("""
+            SELECT 1 FROM information_schema.tables
+            WHERE table_schema = $1 AND table_name = $2
+        """, schema_name, table_name)
+
+        return exists is not None
+
+    async def create_extension(
+            self,
+            extension_name: str,
+            database_name: Optional[str] = None) -> bool:
+        """Create a PostgreSQL extension in the specified database."""
+        try:
+            async with self.connect(database_name) as conn:
+                await conn.execute(
+                    f"CREATE EXTENSION IF NOT EXISTS {extension_name}")
+                return True
+        except Exception as e:
+            print(f"Error creating extension {extension_name}: {e}")
+            return False
+
+    async def extension_exists(
+            self,
+            extension_name: str,
+            database_name: Optional[str] = None) -> bool:
+        """Check if a PostgreSQL extension exists in the specified database."""
+        try:
+            async with self.connect(database_name) as conn:
+                exists = await conn.fetchval("""
+                    SELECT 1 FROM pg_extension WHERE extname = $1
+                """, extension_name)
+                return exists is not None
+        except Exception as e:
+            print(f"Error checking extension {extension_name}: {e}")
+            return False
+
+    async def list_extensions(
+            self,
+            database_name: Optional[str] = None) -> List[Dict[str, Any]]:
+        """List all extensions in the specified database."""
+        try:
+            async with self.connect(database_name) as conn:
+                rows = await conn.fetch("""
+                    SELECT
+                        extname,
+                        extversion,
+                        extrelocatable,
+                        extnamespace,
+                        extowner
+                    FROM pg_extension
+                    ORDER BY extname
+                """)
+
+                extensions = []
+                for row in rows:
+                    extensions.append({
+                        'name': row['extname'],
+                        'version': row['extversion'],
+                        'relocatable': row['extrelocatable'],
+                        'namespace': row['extnamespace'],
+                        'owner': row['extowner']
+                    })
+
+                return extensions
+        except Exception as e:
+            print(f"Error listing extensions: {e}")
+            return []
+
+    async def drop_extension(
+            self,
+            extension_name: str,
+            database_name: Optional[str] = None,
+            cascade: bool = False) -> bool:
+        """Drop a PostgreSQL extension from the specified database."""
+        try:
+            async with self.connect(database_name) as conn:
+                cascade_clause = " CASCADE" if cascade else ""
+                await conn.execute(
+                    f"DROP EXTENSION IF EXISTS {extension_name}{cascade_clause}")
+                return True
+        except Exception as e:
+            print(f"Error dropping extension {extension_name}: {e}")
+            return False
+
+    async def drop_database(self, database_name: str):
+        """Drop a PostgreSQL database."""
+        connection = await asyncpg.connect(self.system_dsn)
+        try:
+            await connection.execute(f"""
+                SELECT pg_terminate_backend(pid)
+                FROM pg_stat_activity
+                WHERE datname = $1
+            """, database_name)
+
+            await connection.execute(f'DROP DATABASE {database_name}')
+
+        finally:
+            await connection.close()
