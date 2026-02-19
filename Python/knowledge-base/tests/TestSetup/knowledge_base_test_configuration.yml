@@ -1,0 +1,6 @@
+database_port: 5432
+ip_address: "localhost"
+postgres_user: "inserviceofx"
+postgres_password: "inserviceofx"
+database_names:
+    KnowledgeBase: "test_knowledge_base"
