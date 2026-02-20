@@ -7,8 +7,7 @@
 //! # Example
 //! ```rust,no_run
 //! use pg_toolkit::{PgConfig, create_pool};
-//! use pg_toolkit::admin::PgAdmin;
-//! use pg_toolkit::introspection::PgIntrospection;
+//! use pg_toolkit::introspection::table_exists;
 //!
 //! #[tokio::main]
 //! async fn main() -> anyhow::Result<()> {
@@ -16,7 +15,7 @@
 //!     let pool = create_pool(&config).await?;
 //!
 //!     // Check if a table exists
-//!     let exists = pool.table_exists("my_table").await?;
+//!     let exists = table_exists(&pool, "my_table").await?;
 //!     println!("Table exists: {}", exists);
 //!
 //!     Ok(())

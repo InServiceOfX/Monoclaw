@@ -34,8 +34,6 @@ pub async fn create_system_pool(config: &PgConfig) -> Result<PgPool, sqlx::Error
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
     fn test_create_pool_requires_running_db() {
         // This test documents that create_pool requires a running database.
