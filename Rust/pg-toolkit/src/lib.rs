@@ -29,3 +29,4 @@ pub mod introspection;
 
 pub use config::PgConfig;
 pub use connection::create_pool;
+pub use introspection::TableInfo;

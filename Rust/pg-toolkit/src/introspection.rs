@@ -4,7 +4,26 @@
 //! checking existence, column info, etc. None of these mutate the schema.
 
 use anyhow::{Context, Result};
+use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
+
+/// Metadata for a single user table, mirroring the columns exposed by
+/// `pg_tables` (minus system schemas).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct TableInfo {
+    /// Schema the table belongs to (e.g. `"public"`).
+    pub schema: String,
+    /// Table name.
+    pub name: String,
+    /// Role that owns the table.
+    pub owner: String,
+    /// Tablespace name, if explicitly set; `None` means the default tablespace.
+    pub tablespace: Option<String>,
+    pub has_indexes: bool,
+    pub has_rules: bool,
+    pub has_triggers: bool,
+    pub row_security: bool,
+}
 
 /// Return true if a table with the given name exists in the public schema.
 pub async fn table_exists(pool: &PgPool, table_name: &str) -> Result<bool> {
@@ -20,16 +39,42 @@ pub async fn table_exists(pool: &PgPool, table_name: &str) -> Result<bool> {
     Ok(exists.is_some())
 }
 
-/// List all user table names in the public schema.
-pub async fn list_tables(pool: &PgPool) -> Result<Vec<String>> {
-    let names: Vec<String> = sqlx::query_scalar(
-        "SELECT tablename FROM pg_tables \
+/// List all user tables across all non-system schemas, with full metadata.
+///
+/// Excludes `information_schema` and `pg_catalog`. Results are ordered by
+/// schema then table name.
+pub async fn list_tables(pool: &PgPool) -> Result<Vec<TableInfo>> {
+    let rows = sqlx::query_as::<_, (String, String, String, Option<String>, bool, bool, bool, bool)>(
+        "SELECT schemaname, tablename, tableowner, tablespace, \
+                hasindexes, hasrules, hastriggers, rowsecurity \
+         FROM pg_tables \
          WHERE schemaname NOT IN ('information_schema', 'pg_catalog') \
-         ORDER BY tablename"
+         ORDER BY schemaname, tablename",
     )
     .fetch_all(pool)
     .await
     .context("Failed to list tables")?;
+
+    Ok(rows
+        .into_iter()
+        .map(|(schema, name, owner, tablespace, has_indexes, has_rules, has_triggers, row_security)| {
+            TableInfo { schema, name, owner, tablespace, has_indexes, has_rules, has_triggers, row_security }
+        })
+        .collect())
+}
+
+/// List just the table names in non-system schemas.
+///
+/// Cheaper than `list_tables` when you only need names.
+pub async fn list_table_names(pool: &PgPool) -> Result<Vec<String>> {
+    let names: Vec<String> = sqlx::query_scalar(
+        "SELECT tablename FROM pg_tables \
+         WHERE schemaname NOT IN ('information_schema', 'pg_catalog') \
+         ORDER BY tablename",
+    )
+    .fetch_all(pool)
+    .await
+    .context("Failed to list table names")?;
 
     Ok(names)
 }
