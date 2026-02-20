@@ -1,12 +1,16 @@
-use crate::configuration::KnowledgeBaseConfig;
+//! Knowledge base database connection.
+
+use pg_toolkit::{PgConfig, create_pool};
 use sqlx::PgPool;
 
-/// Create a sqlx PgPool from the given config.
-pub async fn create_pool(config: &KnowledgeBaseConfig) -> Result<PgPool, sqlx::Error> {
-    PgPool::connect(&config.connection_string()).await
+pub use pg_toolkit::create_pool as create_pg_pool;
+
+/// Create a sqlx PgPool for the knowledge base database.
+pub async fn create_knowledge_base_pool(config: &PgConfig) -> Result<PgPool, sqlx::Error> {
+    create_pool(config).await
 }
 
-/// Wrapper around a PgPool that provides the knowledge base DB interface.
+/// Wrapper around a PgPool providing the knowledge base DB interface.
 pub struct KnowledgeBaseDb {
     pub(crate) pool: PgPool,
 }
@@ -16,7 +20,6 @@ impl KnowledgeBaseDb {
         Self { pool }
     }
 
-    /// Expose the underlying pool for advanced use.
     pub fn pool(&self) -> &PgPool {
         &self.pool
     }
