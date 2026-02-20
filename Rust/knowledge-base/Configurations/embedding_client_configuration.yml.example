@@ -1,0 +1,12 @@
+# Rust embedding client configuration.
+# Copy to embedding_client_configuration.yml and adjust as needed.
+
+# Base URL of the running Python embedding server (no trailing slash).
+server_url: "http://127.0.0.1:8765"
+
+# Timeout in seconds for /embed and /embed_query calls.
+# Increase if embedding large documents with many chunks.
+embed_timeout_secs: 60
+
+# Timeout in seconds for /health calls.
+health_timeout_secs: 5
