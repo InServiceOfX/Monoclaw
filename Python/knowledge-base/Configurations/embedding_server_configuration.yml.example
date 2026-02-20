@@ -1,0 +1,16 @@
+# Embedding server configuration for pplx-embed-context-v1-0.6b.
+# Copy to embedding_server_configuration.yml and adjust paths.
+
+# Absolute path to the local model directory.
+model_path: "/media/propdev/9dc1a908-7eff-4e1c-8231-ext4/home/propdev/Data/Models/Embeddings/perplexity-ai/pplx-embed-context-v1-0.6b"
+
+# Torch device: "cuda:1" for RTX 3060, "cuda:0" for GTX 980 Ti (not recommended), "cpu"
+device: "cuda:1"
+
+# Server bind address and port.
+host: "127.0.0.1"
+port: 8765
+
+# Number of uvicorn workers.  Keep at 1 for GPU — each worker would load
+# a full copy of the model into VRAM.
+workers: 1

@@ -1,0 +1,2 @@
+from knowledge_base.EmbeddingServer.configuration import EmbeddingServerConfiguration
+from knowledge_base.EmbeddingServer.server import app
