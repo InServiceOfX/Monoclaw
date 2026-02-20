@@ -16,8 +16,6 @@
 # Run "CREATE EXTENSION IF NOT EXISTS vector;" once inside the DB,
 # or let the application code handle it on startup.
 
-version: '3.8'
-
 services:
   postgres:
     image: pgvector/pgvector:pg16
