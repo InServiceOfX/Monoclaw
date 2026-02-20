@@ -9,12 +9,9 @@ use crate::sql_statements::KnowledgeBaseSql;
 
 impl KnowledgeBaseDb {
     /// Create the pgvector extension if it does not already exist.
+    /// Delegates to pg_toolkit::admin for the generic extension creation logic.
     pub async fn create_extension(&self) -> Result<()> {
-        sqlx::query(KnowledgeBaseSql::CREATE_VECTOR_EXTENSION)
-            .execute(&self.pool)
-            .await
-            .context("Failed to create pgvector extension")?;
-        Ok(())
+        pg_toolkit::admin::create_extension(&self.pool, "vector").await
     }
 
     /// Create the knowledge base tables and indexes (idempotent).
