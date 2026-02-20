@@ -1,6 +1,7 @@
 //! Integration tests for pg-toolkit introspection module.
 //!
-//! Tests: table_exists, list_tables, list_columns, current_database
+//! Tests: table_exists, list_tables, list_table_names, list_columns,
+//!        current_database
 //!
 //! Run with:
 //!   cargo test --test test_introspection
@@ -9,14 +10,14 @@
 
 use pg_toolkit::{
     connection::create_pool,
-    introspection::{table_exists, list_tables, list_columns, current_database},
+    introspection::{table_exists, list_tables, list_table_names, list_columns, current_database},
 };
 
 mod common;
 use common::TestDb;
 
 #[tokio::test]
-async fn test_table_exists_and_list_tables() {
+async fn test_table_exists_and_list_table_names() {
     let test_db = match TestDb::new().await {
         Some(db) => db,
         None => {
@@ -28,9 +29,9 @@ async fn test_table_exists_and_list_tables() {
     let config = test_db.config_with_db();
     let pool = create_pool(&config).await.expect("Failed to connect");
 
-    // Initially no user tables (or only default ones)
-    let tables = list_tables(&pool).await.expect("Failed to list tables");
-    let initial_count = tables.len();
+    // Initially no user tables
+    let names = list_table_names(&pool).await.expect("Failed to list table names");
+    let initial_count = names.len();
 
     // Create a test table
     sqlx::query("CREATE TABLE test_table (id SERIAL PRIMARY KEY, name TEXT)")
@@ -50,10 +51,10 @@ async fn test_table_exists_and_list_tables() {
         "non_existent_table should not exist"
     );
 
-    // List tables should include it
-    let tables_after = list_tables(&pool).await.unwrap();
-    assert_eq!(tables_after.len(), initial_count + 1);
-    assert!(tables_after.contains(&"test_table".to_string()));
+    // list_table_names should include it
+    let names_after = list_table_names(&pool).await.unwrap();
+    assert_eq!(names_after.len(), initial_count + 1);
+    assert!(names_after.contains(&"test_table".to_string()));
 
     // Drop the table
     sqlx::query("DROP TABLE test_table")
@@ -66,6 +67,46 @@ async fn test_table_exists_and_list_tables() {
         !table_exists(&pool, "test_table").await.unwrap(),
         "test_table should not exist after drop"
     );
+
+    test_db.drop().await;
+}
+
+#[tokio::test]
+async fn test_list_tables_full_info() {
+    let test_db = match TestDb::new().await {
+        Some(db) => db,
+        None => {
+            eprintln!("Skipping test: PostgreSQL not available");
+            return;
+        }
+    };
+
+    let config = test_db.config_with_db();
+    let pool = create_pool(&config).await.expect("Failed to connect");
+
+    sqlx::query("CREATE TABLE info_test_table (id SERIAL PRIMARY KEY, val TEXT)")
+        .execute(&pool)
+        .await
+        .expect("Failed to create test table");
+
+    let tables = list_tables(&pool).await.expect("Failed to list tables");
+
+    let entry = tables
+        .iter()
+        .find(|t| t.name == "info_test_table")
+        .expect("info_test_table should appear in list_tables");
+
+    assert_eq!(entry.schema, "public");
+    // owner is whatever role created the table; just assert it's non-empty
+    assert!(!entry.owner.is_empty());
+    // A freshly-created table with a PRIMARY KEY will have an index
+    assert!(entry.has_indexes, "table with PK should have indexes");
+
+    // Cleanup
+    sqlx::query("DROP TABLE info_test_table")
+        .execute(&pool)
+        .await
+        .ok();
 
     test_db.drop().await;
 }
@@ -100,18 +141,14 @@ async fn test_list_columns() {
         .await
         .expect("Failed to list columns");
 
-    // Should have the columns we created
     assert!(columns.contains(&"id".to_string()));
     assert!(columns.contains(&"name".to_string()));
     assert!(columns.contains(&"count".to_string()));
 
     // Non-existent table should return empty list
-    let empty_columns = list_columns(&pool, "non_existent_table")
-        .await
-        .unwrap();
+    let empty_columns = list_columns(&pool, "non_existent_table").await.unwrap();
     assert!(empty_columns.is_empty());
 
-    // Cleanup
     sqlx::query("DROP TABLE test_columns_table")
         .execute(&pool)
         .await
@@ -133,21 +170,14 @@ async fn test_current_database() {
     let config = test_db.config_with_db();
     let pool = create_pool(&config).await.expect("Failed to connect");
 
-    // Get current database name
     let db_name = current_database(&pool).await.expect("Failed to get current database");
-
-    // Should match the database we connected to
-    assert_eq!(
-        db_name,
-        test_db.db_name(),
-        "Current database should match the test database"
-    );
+    assert_eq!(db_name, test_db.db_name());
 
     test_db.drop().await;
 }
 
 #[tokio::test]
-async fn test_list_tables_includes_only_user_tables() {
+async fn test_list_tables_excludes_system_tables() {
     let test_db = match TestDb::new().await {
         Some(db) => db,
         None => {
@@ -159,15 +189,18 @@ async fn test_list_tables_includes_only_user_tables() {
     let config = test_db.config_with_db();
     let pool = create_pool(&config).await.expect("Failed to connect");
 
-    // list_tables should exclude system tables
+    // Neither list_tables nor list_table_names should surface pg_catalog entries
     let tables = list_tables(&pool).await.unwrap();
-
-    // Should not contain pg_catalog or information_schema tables
-    for table in &tables {
-        assert!(!table.starts_with("pg_"), "Should not include pg_catalog tables");
+    for t in &tables {
+        assert!(!t.name.starts_with("pg_"), "Should not include pg_catalog tables");
     }
 
-    // Create a user table and verify it's listed
+    let names = list_table_names(&pool).await.unwrap();
+    for name in &names {
+        assert!(!name.starts_with("pg_"), "Should not include pg_catalog tables");
+    }
+
+    // Create a user table and verify both functions see it
     sqlx::query("CREATE TABLE user_test_table (id INTEGER)")
         .execute(&pool)
         .await
@@ -175,11 +208,16 @@ async fn test_list_tables_includes_only_user_tables() {
 
     let tables_after = list_tables(&pool).await.unwrap();
     assert!(
-        tables_after.contains(&"user_test_table".to_string()),
-        "User table should be listed"
+        tables_after.iter().any(|t| t.name == "user_test_table"),
+        "list_tables should include user_test_table"
     );
 
-    // Cleanup
+    let names_after = list_table_names(&pool).await.unwrap();
+    assert!(
+        names_after.contains(&"user_test_table".to_string()),
+        "list_table_names should include user_test_table"
+    );
+
     sqlx::query("DROP TABLE user_test_table")
         .execute(&pool)
         .await

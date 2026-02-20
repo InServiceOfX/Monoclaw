@@ -130,6 +130,24 @@ pub async fn list_databases(config: &PgConfig) -> Result<Vec<String>> {
     Ok(names)
 }
 
+/// Drop a PostgreSQL extension from the current database.
+///
+/// Uses `DROP EXTENSION IF EXISTS` so this is safe to call when the extension
+/// is already absent.  Pass `cascade = true` to also drop dependent objects
+/// (e.g. types and functions created by the extension).
+pub async fn drop_extension(pool: &PgPool, extension_name: &str, cascade: bool) -> Result<()> {
+    let suffix = if cascade { " CASCADE" } else { "" };
+    sqlx::query(&format!(
+        "DROP EXTENSION IF EXISTS \"{}\"{}", extension_name, suffix
+    ))
+    .execute(pool)
+    .await
+    .with_context(|| format!("Failed to drop extension '{}'", extension_name))?;
+
+    tracing::info!("Dropped extension '{}' (cascade={})", extension_name, cascade);
+    Ok(())
+}
+
 /// List all extensions installed in the current database.
 pub async fn list_extensions(pool: &PgPool) -> Result<Vec<String>> {
     let names: Vec<String> = sqlx::query_scalar(
