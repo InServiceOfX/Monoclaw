@@ -1,79 +1,69 @@
-# PostgreSQL with pgvector extension for the Knowledge Base System.
+# Knowledge Base System: PostgreSQL + Embedding Server
 #
-# The pgvector/pgvector:pg16 image is PostgreSQL 16 with the pgvector extension
-# pre-installed. The extension must still be enabled per-database via:
-#   CREATE EXTENSION IF NOT EXISTS vector;
+# SERVICES:
+#   - postgres: PostgreSQL 16 with pgvector extension
+#   - embedding-server: Python FastAPI server running pplx-embed-context-v1 model
 #
 # USAGE:
+#   cp .env.example .env
+#   docker compose up -d
 #
-# 1. Copy .env.example to .env and edit as needed:
-#    cp .env.example .env
-#
-# 2. Start the container:
-#    docker compose up -d
-#
-# 3. Stop the container:
-#    docker compose down
-#
-# 4. Connect interactively:
-#    docker exec -it knowledge-base-postgres psql -U ${POSTGRES_USER} -d ${POSTGRES_DB}
-#
-# ENVIRONMENT VARIABLES & SHELL DEFAULTS:
-#
-# The syntax ${VAR:-default} is a POSIX shell parameter expansion:
-#   - If VAR is set (in .env or exported), use its value.
-#   - If VAR is unset or empty, use the default value after :-.
-#
-# For example, ${POSTGRES_DB:-knowledge_base} means:
-#   - If POSTGRES_DB is set in .env, use that value.
-#   - Otherwise, default to "knowledge_base".
-#
-# This allows you to override any setting via .env without editing this file.
-#
-# HOW THE DATABASE GETS CREATED:
-#
-# The official PostgreSQL Docker image runs initialization scripts on first
-# startup (when ./Databases/data/ is empty). These scripts:
-#   1. Create the user specified by POSTGRES_USER.
-#   2. Set the password specified by POSTGRES_PASSWORD.
-#   3. Create the database specified by POSTGRES_DB.
-#   4. Grant the user full access to that database.
-#
-# On subsequent starts (data directory already initialized), these env vars
-# are ignored — the database persists with whatever was created initially.
-#
-# CONTAINER NAMING:
-#
-# container_name: knowledge-base-postgres is just a friendly name for the
-# running container. The underlying image is pgvector/pgvector:pg16.
-# You can rename this to anything; just update references accordingly.
+#   # Run Rust CLI for ingestion/search:
+#   cargo run --bin kb -- ingest /path/to/file.pdf
+#   cargo run --bin kb -- search "quantum field theory"
 
 services:
   postgres:
     image: pgvector/pgvector:pg16
     container_name: knowledge-base-postgres
     environment:
-      # User credentials (shell defaults apply if not in .env)
       POSTGRES_USER: ${POSTGRES_USER:-knowledgebase}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-knowledgebase}
-      # Database name to create on first run (default: knowledge_base)
       POSTGRES_DB: ${POSTGRES_DB:-knowledge_base}
     ports:
-      # Expose PostgreSQL port (default: 5432 on host -> 5432 in container)
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      # Persist database data to host directory (avoids data loss on container restart)
       - ./Databases/data:/var/lib/postgresql/data
     healthcheck:
-      # Check if PostgreSQL is ready to accept connections
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER:-knowledgebase} -d ${POSTGRES_DB:-knowledge_base}"
-        ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-knowledgebase} -d ${POSTGRES_DB:-knowledge_base}"]
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - knowledge_base_network
+
+  embedding-server:
+    build:
+      context: ../../../Python/knowledge-base
+      dockerfile: ../../Scripts/DockerBuilds/knowledge-base/Dockerfile.embedding-server
+    container_name: knowledge-base-embedding
+    environment:
+      KB_EMBEDDING_HOST: 0.0.0.0
+      KB_EMBEDDING_PORT: 8765
+      KB_MODEL_PATH: /models/pplx-embed-context-v1-0.6b
+      KB_DEVICE: cuda:0
+      PYTORCH_CUDA_ALLOC_CONF: expandable_segments:True
+    ports:
+      - "8765:8765"
+    volumes:
+      # Mount the model from host (read-only)
+      - /media/propdev/9dc1a908-7eff-4e1c-8231-ext4/home/propdev/Data/Models/Embeddings/perplexity-ai/pplx-embed-context-v1-0.6b:/models/pplx-embed-context-v1-0.6b:ro
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["1"]
+              capabilities: [gpu]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8765/health')"]
+      interval: 30s
+      timeout: 10s
+      start_period: 120s
+      retries: 3
     networks:
       - knowledge_base_network
 

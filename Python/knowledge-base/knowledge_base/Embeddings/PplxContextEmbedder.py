@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import List, Optional
 import numpy as np
 
+
 DEFAULT_MODEL_PATH = (
     "/media/propdev/9dc1a908-7eff-4e1c-8231-ext4"
     "/home/propdev/Data/Models/Embeddings/perplexity-ai"
@@ -24,14 +25,18 @@ class PplxContextEmbedder:
     def __init__(
             self,
             model_path: str = DEFAULT_MODEL_PATH,
-            device: str = DEFAULT_DEVICE):
+            device: str = DEFAULT_DEVICE,
+            chunk_batch_size: int = 32):
         """
         Args:
             model_path: Path to the local pplx-embed-context-v1 model directory
             device: Torch device string (e.g. "cuda:1", "cpu")
+            chunk_batch_size: Max number of chunks per model.encode() call to
+                avoid CUDA OOM on large documents
         """
         self._model_path = model_path
         self._device = device
+        self._chunk_batch_size = chunk_batch_size
         self._model = None
 
     def load(self) -> bool:
@@ -40,8 +45,8 @@ class PplxContextEmbedder:
             from transformers import AutoModel
             print(f"Loading pplx-embed-context model from {self._model_path} ...")
             self._model = AutoModel.from_pretrained(
-                self._model_path,
-                trust_remote_code=True
+                Path(self._model_path),
+                trust_remote_code=True,
             )
             self._model = self._model.to(self._device)
             self._model.eval()
@@ -73,8 +78,15 @@ class PplxContextEmbedder:
             raise RuntimeError(
                 "Model not loaded. Call load() before encode().")
         try:
-            embeddings = self._model.encode(doc_chunks)
-            return embeddings
+            results = []
+            for chunks in doc_chunks:
+                sub_arrays = []
+                for i in range(0, len(chunks), self._chunk_batch_size):
+                    sub_batch = chunks[i:i + self._chunk_batch_size]
+                    batch_result = self._model.encode([sub_batch])
+                    sub_arrays.append(batch_result[0])
+                results.append(np.concatenate(sub_arrays, axis=0))
+            return results
         except Exception as e:
             print(f"Error encoding documents: {e}")
             return []
