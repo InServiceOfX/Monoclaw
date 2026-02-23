@@ -38,6 +38,7 @@ impl FileIngester {
 
         match extension.as_str() {
             "txt" | "md" => Self::ingest_text_file(path),
+            "pdf" => Self::ingest_pdf_file(path),
             other => bail!("Unsupported file type: .{}", other),
         }
     }
@@ -85,6 +86,50 @@ impl FileIngester {
             title,
             source_path,
             source_type,
+            raw_content,
+            metadata: Some(metadata),
+        })
+    }
+
+    fn ingest_pdf_file(path: &Path) -> Result<IngestedDocument> {
+        let raw_content = pdf_extract::extract_text(path)
+            .with_context(|| format!("Failed to extract text from PDF: {}", path.display()))?;
+
+        if raw_content.trim().is_empty() {
+            bail!(
+                "PDF contains no extractable text (scanned/image-only?): {}",
+                path.display()
+            );
+        }
+
+        let title = path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("untitled")
+            .to_string();
+
+        let source_path = path
+            .canonicalize()
+            .unwrap_or_else(|_| path.to_path_buf())
+            .to_string_lossy()
+            .to_string();
+
+        let size_bytes = path.metadata().map(|m| m.len()).unwrap_or(0);
+        let filename = path
+            .file_name()
+            .and_then(|f| f.to_str())
+            .unwrap_or("")
+            .to_string();
+
+        let metadata = serde_json::json!({
+            "filename": filename,
+            "size_bytes": size_bytes,
+        });
+
+        Ok(IngestedDocument {
+            title,
+            source_path,
+            source_type: "pdf".to_string(),
             raw_content,
             metadata: Some(metadata),
         })

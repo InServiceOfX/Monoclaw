@@ -11,15 +11,15 @@
 #[cfg(feature = "integration")]
 mod tests {
     use knowledge_base::{
-        configuration::KnowledgeBaseConfig,
-        database::connection::{create_pool, KnowledgeBaseDb},
+        configuration::PgConfig,
+        database::connection::{create_knowledge_base_pool, KnowledgeBaseDb},
         ingestion::{FileIngester, TextChunker},
         models::{InsertChunk, InsertDocument},
     };
 
     async fn setup_db() -> Option<KnowledgeBaseDb> {
-        let config = KnowledgeBaseConfig::from_env();
-        match create_pool(&config).await {
+        let config = PgConfig::from_env();
+        match create_knowledge_base_pool(&config).await {
             Ok(pool) => {
                 let db = KnowledgeBaseDb::new(pool);
                 Some(db)

@@ -11,6 +11,7 @@ pub async fn create_knowledge_base_pool(config: &PgConfig) -> Result<PgPool, sql
 }
 
 /// Wrapper around a PgPool providing the knowledge base DB interface.
+#[derive(Debug, Clone)]
 pub struct KnowledgeBaseDb {
     pub(crate) pool: PgPool,
 }

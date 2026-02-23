@@ -1,0 +1,50 @@
+# Embedding Server for Knowledge Base
+# Runs the pplx-embed-context-v1 model for local embedding generation
+#
+# Build:
+#   docker build -f Dockerfile.embedding-server -t kb-embedding-server:latest \
+#     --build-arg MODEL_PATH=/models/pplx-embed-context-v1-0.6b .
+#
+# Run:
+#   docker run --gpus all -p 8765:8765 -v /path/to/model:/models:ro \
+#     kb-embedding-server:latest
+
+FROM python:3.11-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Poetry
+RUN pip install poetry
+
+# Set working directory
+WORKDIR /app
+
+# Copy dependency files
+COPY pyproject.toml poetry.lock ./
+
+# Install dependencies (no virtualenv for container)
+RUN poetry config virtualenvs.create false && \
+    poetry install --without dev -E gpu -E server --no-root
+
+# Copy source code
+COPY knowledge_base ./knowledge_base
+
+# Environment
+ENV PYTHONUNBUFFERED=1
+ENV KB_EMBEDDING_HOST=0.0.0.0
+ENV KB_EMBEDDING_PORT=8765
+
+# Default model path (override at runtime)
+ENV KB_MODEL_PATH=/models/pplx-embed-context-v1-0.6b
+ENV KB_DEVICE=cuda:0
+
+EXPOSE 8765
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD python -c "import requests; requests.get('http://localhost:8765/health')" || exit 1
+
+CMD ["python", "-m", "knowledge_base.EmbeddingServer.server"]

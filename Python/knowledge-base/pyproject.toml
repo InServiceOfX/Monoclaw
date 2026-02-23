@@ -10,6 +10,7 @@ python = "^3.10"
 asyncpg = "^0.29.0"
 pyyaml = "^6.0"
 transformers = "^4.40.0"
+sentence-transformers = "^5.0.0"
 numpy = "^1.26.0"
 torch = {version = "^2.0.0", optional = true}
 fastapi = {version = "^0.111.0", optional = true}
