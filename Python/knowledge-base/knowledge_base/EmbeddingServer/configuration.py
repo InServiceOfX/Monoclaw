@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
+import os
 import yaml
 
 DEFAULT_MODEL_PATH = (
@@ -45,4 +46,9 @@ class EmbeddingServerConfiguration:
 
     @classmethod
     def from_defaults(cls) -> "EmbeddingServerConfiguration":
-        return cls()
+        return cls(
+            model_path=os.environ.get("KB_MODEL_PATH", DEFAULT_MODEL_PATH),
+            device=os.environ.get("KB_DEVICE", DEFAULT_DEVICE),
+            host=os.environ.get("KB_EMBEDDING_HOST", DEFAULT_HOST),
+            port=int(os.environ.get("KB_EMBEDDING_PORT", DEFAULT_PORT)),
+        )
