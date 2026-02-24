@@ -1,0 +1,77 @@
+# Cadabra2 Docker Compose — three deployment modes
+#
+# Usage:
+#   docker compose run --rm gui          # cadabra2-gtk with X11
+#   docker compose up jupyter            # Jupyter server on localhost:8888
+#   docker compose run --rm cli          # bash shell with cadabra2 available
+#   docker compose run --rm cli cadabra2-cli  # cadabra2 REPL
+#   docker compose run --rm cli python3 /work/my_script.py
+#
+# Prerequisites for GUI mode:
+#   xhost +local:docker   (run once per session)
+
+x-base: &base
+  image: cadabra2-ubuntu:24.04
+  volumes:
+    - ${NOTEBOOKS:-./notebooks}:/work
+  working_dir: /work
+
+x-x11: &x11
+  environment:
+    - DISPLAY=${DISPLAY:-:0}
+    # webkit2gtk sandbox workarounds for Docker
+    - WEBKIT_DISABLE_COMPOSITING_MODE=1
+    - GDK_RENDERING=image
+    - LIBGL_ALWAYS_SOFTWARE=1
+  volumes:
+    - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    - ${NOTEBOOKS:-./notebooks}:/work
+  security_opt:
+    - seccomp:unconfined
+
+services:
+  # ─────────────────────────────────────────────
+  # GUI: cadabra2-gtk notebook interface
+  # Requires: xhost +local:docker on the host first
+  # ─────────────────────────────────────────────
+  gui:
+    <<: [*base, *x11]
+    image: cadabra2-ubuntu:24.04
+    command: cadabra2-gtk
+    stdin_open: true
+    tty: true
+
+  # ─────────────────────────────────────────────
+  # Jupyter: browser-based notebook
+  # Open: http://localhost:8888
+  # Cadabra2 kernel available as "Cadabra2" kernel in Jupyter
+  # ─────────────────────────────────────────────
+  jupyter:
+    <<: *base
+    image: cadabra2-ubuntu:24.04
+    command: >
+      jupyter lab
+      --ip=0.0.0.0
+      --port=8888
+      --no-browser
+      --allow-root
+      --NotebookApp.token=''
+      --NotebookApp.password=''
+    ports:
+      - "8888:8888"
+    environment:
+      - JUPYTER_ALLOW_INSECURE_WRITES=1
+
+  # ─────────────────────────────────────────────
+  # CLI: shell or direct cadabra2/python scripts
+  # Examples:
+  #   docker compose run --rm cli
+  #   docker compose run --rm cli cadabra2-cli
+  #   docker compose run --rm cli python3 /work/spinors/01_weyl_spinors.py
+  # ─────────────────────────────────────────────
+  cli:
+    <<: *base
+    image: cadabra2-ubuntu:24.04
+    command: /bin/bash
+    stdin_open: true
+    tty: true
