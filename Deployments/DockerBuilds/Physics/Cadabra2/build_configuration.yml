@@ -1,0 +1,5 @@
+docker_image_name: cadabra2-ubuntu:24.04
+base_image: ubuntu:24.04
+dockerfile_components:
+  - label: "Dockerfile"
+    path: "Dockerfile"
