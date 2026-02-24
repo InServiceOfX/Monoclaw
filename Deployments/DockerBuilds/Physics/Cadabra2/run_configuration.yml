@@ -1,0 +1,6 @@
+docker_image_name: cadabra2-ubuntu:24.04
+volumes:
+  - host_path: /tmp/.X11-unix
+    container_path: /tmp/.X11-unix
+env:
+  DISPLAY: ":0"
