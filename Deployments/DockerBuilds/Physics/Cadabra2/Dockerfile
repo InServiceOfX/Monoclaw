@@ -68,8 +68,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     xdg-utils \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Jupyter + scientific Python stack before building cadabra2
-# (cadabra2's ENABLE_JUPYTER cmake build needs jupyter_client available)
+# Install Jupyter + scientific Python stack
 RUN pip3 install --break-system-packages \
     jupyter \
     jupyterlab \
@@ -84,17 +83,24 @@ RUN pip3 install --break-system-packages \
 WORKDIR /opt
 RUN git clone --depth 1 https://github.com/kpeeters/cadabra2.git cadabra2
 
-# Build cadabra2 from source — with Jupyter kernel support enabled
+# Build cadabra2 from source — Jupyter disabled (we'll use pip for Jupyter kernel)
 WORKDIR /opt/cadabra2
 RUN mkdir build && cd build && \
     cmake \
         -DCMAKE_BUILD_TYPE=Release \
         -DENABLE_MATHEMATICA=OFF \
-        -DENABLE_JUPYTER=ON \
+        -DENABLE_JUPYTER=OFF \
         -DENABLE_FRONTEND=ON \
         .. && \
     make -j$(nproc) && \
     make install
+
+# Install cadabra2 Jupyter kernel via pip (simpler than ENABLE_JUPYTER build)
+RUN pip3 install --break-system-packages cadabra2-jupyter || echo "cadabra2-jupyter pip package not available, using manual kernel install"
+
+# Manually install the kernel spec if pip package didn't work
+RUN mkdir -p /usr/local/share/jupyter/kernels/cadabra && \
+    echo '{"argv": ["/usr/local/bin/cadabra2", "--jupyter-kernel", "{connection_file}"], "display_name": "Cadabra2", "language": "python"}' > /usr/local/share/jupyter/kernels/cadabra/kernel.json || true
 
 # Refresh font cache
 RUN fc-cache -f -v
@@ -102,7 +108,8 @@ RUN fc-cache -f -v
 # Verify installation
 RUN cadabra2 --version
 RUN cadabra2-cli --version 2>/dev/null || true
-RUN jupyter kernelspec list
+RUN which cadabra2-gtk
+RUN jupyter kernelspec list 2>/dev/null || true
 
 # Create default work directory
 WORKDIR /work
