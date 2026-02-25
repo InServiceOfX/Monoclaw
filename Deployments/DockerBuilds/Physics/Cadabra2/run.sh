@@ -79,11 +79,20 @@ case "$MODE" in
         /bin/bash
     else
       echo "==> Running: $*"
-      docker run --rm -it \
-        -v "${NOTEBOOKS_DIR}:/work" \
-        -w /work \
-        "${IMAGE}" \
-        "$@"
+      # Check if stdin is a TTY to decide on -it flags
+      if [ -t 0 ]; then
+        docker run --rm -it \
+          -v "${NOTEBOOKS_DIR}:/work" \
+          -w /work \
+          "${IMAGE}" \
+          "$@"
+      else
+        docker run --rm \
+          -v "${NOTEBOOKS_DIR}:/work" \
+          -w /work \
+          "${IMAGE}" \
+          "$@"
+      fi
     fi
     ;;
 
