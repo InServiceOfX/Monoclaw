@@ -7,14 +7,20 @@
 #   ./run.sh cli              — bash shell inside container
 #   ./run.sh cli <cmd...>     — run a command inside container
 #                               e.g.: ./run.sh cli cadabra2-cli
-#                               e.g.: ./run.sh cli python3 spinors/01_weyl_spinors.py
+#                               e.g.: ./run.sh cli python3 /Monoclaw/Python/Cadabra2/spinors/01_weyl_spinors.py
 #
-# Notebooks/files are mounted from ./notebooks (created if missing)
+# The entire Monoclaw repo is mounted at /Monoclaw in the container.
+# Your working directory for notebooks is /work (./notebooks on host).
 
 set -e
 
 IMAGE="cadabra2-ubuntu:24.04"
-NOTEBOOKS_DIR="${NOTEBOOKS:-$(dirname "$0")/notebooks}"
+
+# Find Monoclaw repo root (3 levels up from this script)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+MONOCLAW_DIR="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
+NOTEBOOKS_DIR="${NOTEBOOKS:-${SCRIPT_DIR}/notebooks}"
+
 MODE="${1:-help}"
 
 mkdir -p "${NOTEBOOKS_DIR}"
@@ -27,7 +33,8 @@ case "$MODE" in
     xhost +local:docker 2>/dev/null || true
 
     echo "==> Launching cadabra2-gtk..."
-    echo "    (Notebooks directory: ${NOTEBOOKS_DIR})"
+    echo "    Monoclaw repo mounted at: /Monoclaw"
+    echo "    Notebooks directory: ${NOTEBOOKS_DIR} -> /work"
 
     docker run --rm -it \
       --security-opt seccomp=unconfined \
@@ -36,7 +43,9 @@ case "$MODE" in
       -e GDK_RENDERING=image \
       -e LIBGL_ALWAYS_SOFTWARE=1 \
       -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
+      -v "${MONOCLAW_DIR}:/Monoclaw" \
       -v "${NOTEBOOKS_DIR}:/work" \
+      -w /work \
       "${IMAGE}" \
       cadabra2-gtk
 
@@ -47,12 +56,14 @@ case "$MODE" in
   jupyter)
     echo "==> Starting JupyterLab..."
     echo "    Open: http://localhost:8888"
-    echo "    Notebooks directory: ${NOTEBOOKS_DIR}"
+    echo "    Monoclaw repo mounted at: /Monoclaw"
+    echo "    Notebooks directory: ${NOTEBOOKS_DIR} -> /work"
     echo "    Use Ctrl+C to stop."
 
     docker run --rm -it \
       -p 8888:8888 \
       -e JUPYTER_ALLOW_INSECURE_WRITES=1 \
+      -v "${MONOCLAW_DIR}:/Monoclaw" \
       -v "${NOTEBOOKS_DIR}:/work" \
       -w /work \
       "${IMAGE}" \
@@ -70,9 +81,11 @@ case "$MODE" in
     shift  # remove 'cli' from args
     if [ $# -eq 0 ]; then
       echo "==> Opening bash shell in cadabra2 container..."
-      echo "    Available commands: cadabra2, cadabra2-cli, python3"
-      echo "    Notebooks directory mounted at /work"
+      echo "    Monoclaw repo at: /Monoclaw"
+      echo "    Notebooks/work at: /work"
+      echo "    Available: cadabra2, cadabra2-cli, python3"
       docker run --rm -it \
+        -v "${MONOCLAW_DIR}:/Monoclaw" \
         -v "${NOTEBOOKS_DIR}:/work" \
         -w /work \
         "${IMAGE}" \
@@ -82,12 +95,14 @@ case "$MODE" in
       # Check if stdin is a TTY to decide on -it flags
       if [ -t 0 ]; then
         docker run --rm -it \
+          -v "${MONOCLAW_DIR}:/Monoclaw" \
           -v "${NOTEBOOKS_DIR}:/work" \
           -w /work \
           "${IMAGE}" \
           "$@"
       else
         docker run --rm \
+          -v "${MONOCLAW_DIR}:/Monoclaw" \
           -v "${NOTEBOOKS_DIR}:/work" \
           -w /work \
           "${IMAGE}" \
@@ -114,10 +129,15 @@ Examples:
   ./run.sh jupyter
   ./run.sh cli
   ./run.sh cli cadabra2-cli
-  ./run.sh cli python3 spinors/01_weyl_spinors.py
+  ./run.sh cli python3 /Monoclaw/Python/Cadabra2/spinors/01_weyl_spinors.py
+  ./run.sh cli python3 /work/my_notebook.py
+
+Mounted paths in container:
+  /Monoclaw    → ${MONOCLAW_DIR}
+  /work        → ${NOTEBOOKS_DIR}
 
 Environment:
-  NOTEBOOKS=<path>      host directory mounted as /work (default: ./notebooks)
+  NOTEBOOKS=<path>      host directory for notebooks (default: ./notebooks)
   DISPLAY               X11 display (default: :0)
 
 Image: ${IMAGE}
