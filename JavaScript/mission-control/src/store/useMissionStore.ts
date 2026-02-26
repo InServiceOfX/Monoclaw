@@ -18,6 +18,14 @@ export interface TokenUsage {
 
 export type SwitchState = 'idle' | 'testing' | 'confirmed' | 'error'
 
+export interface ApiMetrics {
+  totalCalls: number
+  successCalls: number
+  failedCalls: number
+  handshakeCalls: number
+  healthChecks: number
+}
+
 export interface MissionState {
   // Active model
   activeModel: ModelConfig
@@ -29,6 +37,9 @@ export interface MissionState {
   // Token usage
   sessionUsage: Record<string, TokenUsage>
 
+  // API usage
+  apiMetrics: ApiMetrics
+
   // Health
   healthMap: Record<string, EndpointHealth>
   autoRefresh: boolean
@@ -38,6 +49,7 @@ export interface MissionState {
   setSwitchState: (state: SwitchState, error?: string, latencyMs?: number) => void
   revertModel: () => void
   addTokenUsage: (modelId: string, input: number, output: number) => void
+  trackApiCall: (kind: 'handshake' | 'health', success: boolean) => void
   resetSession: () => void
   setHealth: (modelId: string, status: HealthStatus, latencyMs: number | null) => void
   setAutoRefresh: (val: boolean) => void
@@ -62,6 +74,13 @@ export const useMissionStore = create<MissionState>((set) => ({
   lastLatencyMs: null,
 
   sessionUsage: initialUsage(),
+  apiMetrics: {
+    totalCalls: 0,
+    successCalls: 0,
+    failedCalls: 0,
+    handshakeCalls: 0,
+    healthChecks: 0,
+  },
   healthMap: initialHealth(),
   autoRefresh: true,
 
@@ -101,7 +120,28 @@ export const useMissionStore = create<MissionState>((set) => ({
       }
     }),
 
-  resetSession: () => set({ sessionUsage: initialUsage() }),
+  trackApiCall: (kind, success) =>
+    set((s) => ({
+      apiMetrics: {
+        totalCalls: s.apiMetrics.totalCalls + 1,
+        successCalls: s.apiMetrics.successCalls + (success ? 1 : 0),
+        failedCalls: s.apiMetrics.failedCalls + (success ? 0 : 1),
+        handshakeCalls: s.apiMetrics.handshakeCalls + (kind === 'handshake' ? 1 : 0),
+        healthChecks: s.apiMetrics.healthChecks + (kind === 'health' ? 1 : 0),
+      },
+    })),
+
+  resetSession: () =>
+    set({
+      sessionUsage: initialUsage(),
+      apiMetrics: {
+        totalCalls: 0,
+        successCalls: 0,
+        failedCalls: 0,
+        handshakeCalls: 0,
+        healthChecks: 0,
+      },
+    }),
 
   setHealth: (modelId, status, latencyMs) =>
     set((s) => ({

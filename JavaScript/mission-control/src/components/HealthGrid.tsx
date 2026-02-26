@@ -18,7 +18,7 @@ function fmtTime(d: Date | null): string {
 }
 
 export function HealthGrid() {
-  const { healthMap, setHealth, autoRefresh, setAutoRefresh } = useMissionStore()
+  const { healthMap, setHealth, autoRefresh, setAutoRefresh, trackApiCall } = useMissionStore()
 
   const runChecks = useCallback(async () => {
     for (const model of MODELS) {
@@ -29,6 +29,7 @@ export function HealthGrid() {
           ? 'degraded'
           : 'healthy'
         : 'unreachable'
+      trackApiCall('health', result.reachable)
       setHealth(model.id, status, result.latencyMs)
     }
   }, [setHealth])

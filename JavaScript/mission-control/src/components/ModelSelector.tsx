@@ -12,6 +12,7 @@ export function ModelSelector() {
     setActiveModel,
     setSwitchState,
     revertModel,
+    trackApiCall,
   } = useMissionStore()
 
   const [pendingId, setPendingId] = useState<string>(activeModel.id)
@@ -26,8 +27,10 @@ export function ModelSelector() {
     const result = await handshake(target)
 
     if (result.success) {
+      trackApiCall('handshake', true)
       setSwitchState('confirmed', undefined, result.latencyMs)
     } else {
+      trackApiCall('handshake', false)
       revertModel()
       setSwitchState('error', result.error)
       setPendingId(activeModel.id)
