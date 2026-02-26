@@ -10,12 +10,16 @@ export interface ModelConfig {
   costPer1kOutput: number
 }
 
+// In dev, route through Vite proxy to avoid CORS.
+// In production, use direct URLs (requires a backend proxy or server-side calls).
+const isDev = import.meta.env.DEV
+
 export const MODELS: ModelConfig[] = [
   {
     id: "claude-sonnet-4-6",
     name: "Claude Sonnet 4.6",
     provider: "Anthropic",
-    baseUrl: "https://api.anthropic.com/v1",
+    baseUrl: isDev ? "/proxy/anthropic/v1" : "https://api.anthropic.com/v1",
     apiKeyEnv: "VITE_ANTHROPIC_API_KEY",
     contextWindow: 200000,
     maxTokens: 8192,
@@ -37,7 +41,7 @@ export const MODELS: ModelConfig[] = [
     id: "moonshotai/kimi-k2.5",
     name: "Kimi K2.5 (NIM)",
     provider: "NVIDIA NIM",
-    baseUrl: "https://integrate.api.nvidia.com/v1",
+    baseUrl: isDev ? "/proxy/nvidia-nim/v1" : "https://integrate.api.nvidia.com/v1",
     apiKeyEnv: "VITE_NVIDIA_NIM_API_KEY",
     contextWindow: 262144,
     maxTokens: 16384,
@@ -48,7 +52,7 @@ export const MODELS: ModelConfig[] = [
     id: "grok-4-1-fast",
     name: "Grok 4.1 Fast",
     provider: "xAI",
-    baseUrl: "https://api.x.ai/v1",
+    baseUrl: isDev ? "/proxy/xai/v1" : "https://api.x.ai/v1",
     apiKeyEnv: "VITE_XAI_API_KEY",
     contextWindow: 2000000,
     maxTokens: 65536,
@@ -59,7 +63,7 @@ export const MODELS: ModelConfig[] = [
     id: "openai/gpt-oss-20b",
     name: "GPT-OSS 20B",
     provider: "Groq",
-    baseUrl: "https://api.groq.com/openai/v1",
+    baseUrl: isDev ? "/proxy/groq/openai/v1" : "https://api.groq.com/openai/v1",
     apiKeyEnv: "VITE_GROQ_API_KEY",
     contextWindow: 200000,
     maxTokens: 8192,
