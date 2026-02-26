@@ -21,6 +21,13 @@
   }
 }
 
+mark {
+  background: rgba(188, 140, 255, 0.28);
+  color: #e6edf3;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
 @keyframes flash {
   0%   { color: #3fb950; }
   100% { color: inherit; }
