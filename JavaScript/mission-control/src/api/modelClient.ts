@@ -1,7 +1,7 @@
 import type { ModelConfig } from '../config/models'
 
-const HANDSHAKE_PROMPT = 'Reply with exactly: HANDSHAKE_OK'
-const HANDSHAKE_EXPECTED = 'HANDSHAKE_OK'
+const HANDSHAKE_PROMPT = 'Return exactly this token: VC_OK'
+const HANDSHAKE_EXPECTED = 'VC_OK'
 
 export interface HandshakeResult {
   success: boolean
@@ -20,12 +20,23 @@ function getApiKey(model: ModelConfig): string {
   return (import.meta.env[model.apiKeyEnv] as string) ?? ''
 }
 
+function getBaseUrl(model: ModelConfig): string {
+  // In dev, route remote providers through Vite proxy to avoid browser CORS issues.
+  if (import.meta.env.DEV) {
+    if (model.provider === 'Anthropic') return '/api/anthropic'
+    if (model.provider === 'NVIDIA NIM') return '/api/nvidia'
+    if (model.provider === 'xAI') return '/api/xai'
+    if (model.provider === 'Groq') return '/api/groq'
+  }
+  return model.baseUrl
+}
+
 async function handshakeOpenAI(model: ModelConfig): Promise<HandshakeResult> {
   const apiKey = getApiKey(model)
   const t0 = performance.now()
 
   try {
-    const res = await fetch(`${model.baseUrl}/chat/completions`, {
+    const res = await fetch(`${getBaseUrl(model)}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -34,7 +45,7 @@ async function handshakeOpenAI(model: ModelConfig): Promise<HandshakeResult> {
       body: JSON.stringify({
         model: model.id,
         messages: [{ role: 'user', content: HANDSHAKE_PROMPT }],
-        max_tokens: 20,
+        max_tokens: 80,
       }),
       signal: AbortSignal.timeout(15000),
     })
@@ -69,7 +80,7 @@ async function handshakeAnthropic(model: ModelConfig): Promise<HandshakeResult> 
   const t0 = performance.now()
 
   try {
-    const res = await fetch(`${model.baseUrl}/messages`, {
+    const res = await fetch(`${getBaseUrl(model)}/messages`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -79,7 +90,7 @@ async function handshakeAnthropic(model: ModelConfig): Promise<HandshakeResult> 
       },
       body: JSON.stringify({
         model: model.id,
-        max_tokens: 20,
+        max_tokens: 80,
         messages: [{ role: 'user', content: HANDSHAKE_PROMPT }],
       }),
       signal: AbortSignal.timeout(15000),
@@ -123,10 +134,7 @@ export async function healthCheck(model: ModelConfig): Promise<HealthCheckResult
   try {
     // For OpenAI-compatible: hit /models endpoint as a lightweight probe
     const apiKey = getApiKey(model)
-    const endpoint =
-      model.provider === 'Anthropic'
-        ? `${model.baseUrl}/models`
-        : `${model.baseUrl}/models`
+    const endpoint = `${getBaseUrl(model)}/models`
 
     const res = await fetch(endpoint, {
       method: 'GET',
