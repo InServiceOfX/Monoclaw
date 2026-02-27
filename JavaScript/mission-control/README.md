@@ -4,7 +4,8 @@ A TypeScript/React dashboard for monitoring and switching LLMs with **verified, 
 
 ## Features
 
-- **Verified model switching** — sends a HANDSHAKE_OK round-trip before marking a model as active
+- **Verified model switching** — sends a provider round-trip token check before marking a model as active
+- **Dual control modes** — `Direct` (provider health/switch checks) and `OpenClaw session` (reflect/switch active OpenClaw chat model via gateway bridge)
 - **Model info panel** — context window, max tokens, endpoint, latency
 - **Session token metrics** — input/output token counts, estimated cost, reset button
 - **Context window utilization bar** — color-coded (green → yellow → red as it fills)

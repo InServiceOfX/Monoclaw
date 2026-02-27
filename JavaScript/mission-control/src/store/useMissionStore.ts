@@ -17,9 +17,11 @@ export interface TokenUsage {
 }
 
 export type SwitchState = 'idle' | 'testing' | 'confirmed' | 'error'
+export type ControlMode = 'direct' | 'openclaw'
 
 export interface MissionState {
   // Active model
+  controlMode: ControlMode
   activeModel: ModelConfig
   previousModel: ModelConfig | null
   switchState: SwitchState
@@ -34,6 +36,7 @@ export interface MissionState {
   autoRefresh: boolean
 
   // Actions
+  setControlMode: (mode: ControlMode) => void
   setActiveModel: (model: ModelConfig) => void
   setSwitchState: (state: SwitchState, error?: string, latencyMs?: number) => void
   revertModel: () => void
@@ -55,6 +58,7 @@ const initialUsage = (): Record<string, TokenUsage> =>
   Object.fromEntries(MODELS.map((m) => [m.id, { inputTokens: 0, outputTokens: 0 }]))
 
 export const useMissionStore = create<MissionState>((set) => ({
+  controlMode: 'direct',
   activeModel: MODELS[0],
   previousModel: null,
   switchState: 'idle',
@@ -64,6 +68,8 @@ export const useMissionStore = create<MissionState>((set) => ({
   sessionUsage: initialUsage(),
   healthMap: initialHealth(),
   autoRefresh: true,
+
+  setControlMode: (mode) => set({ controlMode: mode }),
 
   setActiveModel: (model) =>
     set((s) => ({

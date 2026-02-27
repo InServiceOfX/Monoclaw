@@ -1,10 +1,33 @@
+import { useEffect } from 'react'
 import { ModelSelector } from './components/ModelSelector'
 import { ModelStatus } from './components/ModelStatus'
 import { TokenMetrics } from './components/TokenMetrics'
 import { ContextBar } from './components/ContextBar'
 import { HealthGrid } from './components/HealthGrid'
+import { useMissionStore } from './store/useMissionStore'
+import { getOpenClawSessionModel, resolveModelFromRef } from './api/openclawClient'
 
 export default function App() {
+  const { controlMode, setActiveModel, setSwitchState } = useMissionStore()
+
+  useEffect(() => {
+    if (controlMode !== 'openclaw') return
+
+    void (async () => {
+      try {
+        const data = await getOpenClawSessionModel()
+        const model = resolveModelFromRef(data.modelRef)
+        if (model) {
+          setActiveModel(model)
+          setSwitchState('confirmed')
+        } else {
+          setSwitchState('error', `OpenClaw model not mapped in dashboard: ${data.modelRef}`)
+        }
+      } catch (err) {
+        setSwitchState('error', err instanceof Error ? err.message : String(err))
+      }
+    })()
+  }, [controlMode, setActiveModel, setSwitchState])
   return (
     <div className="min-h-screen bg-surface text-gray-200 font-mono">
       {/* Header */}
