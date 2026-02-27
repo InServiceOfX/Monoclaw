@@ -2,13 +2,16 @@ import { useState } from 'react'
 import { MODELS, PROVIDER_COLORS } from '../config/models'
 import { useMissionStore } from '../store/useMissionStore'
 import { handshake } from '../api/modelClient'
+import { setOpenClawSessionModel } from '../api/openclawClient'
 
 export function ModelSelector() {
   const {
+    controlMode,
     activeModel,
     switchState,
     switchError,
     lastLatencyMs,
+    setControlMode,
     setActiveModel,
     setSwitchState,
     revertModel,
@@ -22,6 +25,19 @@ export function ModelSelector() {
 
     setSwitchState('testing')
     setActiveModel(target)
+
+    if (controlMode === 'openclaw') {
+      try {
+        const t0 = performance.now()
+        await setOpenClawSessionModel(target)
+        setSwitchState('confirmed', undefined, Math.round(performance.now() - t0))
+      } catch (err) {
+        revertModel()
+        setSwitchState('error', err instanceof Error ? err.message : String(err))
+        setPendingId(activeModel.id)
+      }
+      return
+    }
 
     const result = await handshake(target)
 
@@ -59,6 +75,17 @@ export function ModelSelector() {
 
       <div className="flex gap-2">
         <select
+          className="bg-surface-2 border border-border rounded px-2 py-2 text-xs text-gray-300 focus:outline-none focus:border-accent-blue cursor-pointer"
+          value={controlMode}
+          onChange={(e) => setControlMode(e.target.value as 'direct' | 'openclaw')}
+          disabled={switchState === 'testing'}
+          title="Control mode"
+        >
+          <option value="direct">Direct</option>
+          <option value="openclaw">OpenClaw session</option>
+        </select>
+
+        <select
           className="flex-1 bg-surface-2 border border-border rounded px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-accent-blue cursor-pointer"
           value={pendingId}
           onChange={(e) => setPendingId(e.target.value)}
@@ -85,6 +112,10 @@ export function ModelSelector() {
           {switchError}
         </p>
       )}
+
+      <p className="text-[11px] text-gray-500">
+        Mode: {controlMode === 'direct' ? 'tests provider endpoints directly' : 'switches active OpenClaw chat session model'}
+      </p>
 
       <div className="flex items-center gap-2 pt-1">
         <span
