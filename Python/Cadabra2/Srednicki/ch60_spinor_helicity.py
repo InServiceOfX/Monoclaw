@@ -482,33 +482,39 @@ print("  ✓ ⟨kp⟩[pk] = Tr[½(1-γ^5) k/ p/]  verified")
 
 sec("§60.D  Polarization vectors in spinor-helicity formalism")
 
-def pol_vector_plus(k_ket_sq, k_bra_sq, q_ket_an, q_bra_an, q_ket_sq,
-                    lam_q, lamtil_q, lam_k2, lamtil_k2):
+def pol_vector_plus(lam_q, lamtil_q, lam_k, lamtil_k):
     """
-    Compute ε_+^μ(k; q) = ⟨q|γ^μ|k] / (√2 ⟨qk⟩)  for each μ.
-    Returns 4-vector with components indexed by μ.
+    Compute ε_+^μ(k; q) = ⟨q|σ^μ|k] / (√2 ⟨qk⟩) using 2-component spinors.
+    
+    Per Srednicki eq. 60.13: ε_+^μ = ⟨q|σ^μ|k] / (√2 ⟨qk⟩)
+    where ⟨q|σ^μ|k] = λ̃_q^* · σ^μ · λ_k (with σ^μ = (I, σ_x, σ_y, σ_z))
     """
-    ang_qk = angle_bracket(lam_q, lam_k2)
+    ang_qk = angle_bracket(lam_q, lam_k)
     denom = np.sqrt(2) * ang_qk
-
     eps_plus = np.zeros(4, dtype=complex)
+    # σ^μ = (I, σ_x, σ_y, σ_z)
+    sigma_list = [I2, sigma[1], sigma[2], sigma[3]]
     for mu in range(4):
-        # ⟨q|γ^μ|k] = q_bra_an · gam[mu] · k_ket_sq
-        eps_plus[mu] = (q_bra_an @ gam[mu] @ k_ket_sq) / denom
+        # ⟨q|σ^μ|k] = lamtil_q.conj() · σ^μ · lam_k
+        val = lamtil_q.conj() @ sigma_list[mu] @ lam_k
+        eps_plus[mu] = val / denom
     return eps_plus
 
-def pol_vector_minus(k_ket_an, k_bra_an, q_bra_sq, q_ket_sq,
-                     lam_q, lamtil_q, lam_k2, lamtil_k2):
+def pol_vector_minus(lam_q, lamtil_q, lam_k, lamtil_k):
     """
-    Compute ε_-^μ(k; q) = [q|γ^μ|k⟩ / (√2 [qk])  for each μ.
+    Compute ε_-^μ(k; q) = [q|σ̄^μ|k⟩ / (√2 [qk]) using 2-component spinors.
+    
+    Per Srednicki eq. 60.14: ε_-^μ = [q|σ̄^μ|k⟩ / (√2 [qk])
+    where σ̄^μ = (I, -σ_x, -σ_y, -σ_z)
     """
-    sq_qk = square_bracket(lamtil_q, lamtil_k2)
+    sq_qk = square_bracket(lamtil_q, lamtil_k)
     denom = np.sqrt(2) * sq_qk
-
     eps_minus = np.zeros(4, dtype=complex)
+    sigmabar_list = [I2, -sigma[1], -sigma[2], -sigma[3]]
     for mu in range(4):
-        # [q|γ^μ|k⟩ = q_bra_sq · gam[mu] · k_ket_an
-        eps_minus[mu] = (q_bra_sq @ gam[mu] @ k_ket_an) / denom
+        # [q|σ̄^μ|k⟩ = lam_q.conj() · σ̄^μ · lamtil_k
+        val = lam_q.conj() @ sigmabar_list[mu] @ lamtil_k
+        eps_minus[mu] = val / denom
     return eps_minus
 
 # Physical setup: k along +z, q along +x
