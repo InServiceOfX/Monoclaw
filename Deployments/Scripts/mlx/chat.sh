@@ -19,7 +19,7 @@
 # For full sampler control (repetition_penalty etc.), use serve.sh + curl.
 # =============================================================================
 
-set -euo pipefail
+set -eo pipefail
 
 # ── Paths ──────────────────────────────────────────────────────────────────
 VENV_BIN="/Users/ernestyeung/Prop/openclaw/.venv/bin"
@@ -38,7 +38,7 @@ SYSTEM_PROMPT="You are a helpful, thoughtful assistant. Think step by step befor
 MODE="thinking"
 
 # ── Arg parse ──────────────────────────────────────────────────────────────
-EXTRA_ARGS=()
+EXTRA_ARGS=()  # optional extra flags (e.g. --seed N)
 
 show_help() {
   sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
@@ -119,4 +119,4 @@ exec "$MLX_CHAT" \
   --max-tokens "$MAX_TOKENS" \
   --max-kv-size "$MAX_KV_SIZE" \
   --system-prompt "$SYSTEM_PROMPT" \
-  "${EXTRA_ARGS[@]}"
+  ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"}
