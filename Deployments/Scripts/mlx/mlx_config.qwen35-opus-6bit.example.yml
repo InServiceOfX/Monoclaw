@@ -1,0 +1,84 @@
+# Example config focused on:
+#   mlx-community/Qwen3.5-27B-Claude-4.6-Opus-Distilled-MLX-6bit
+# Source notes used for defaults:
+# - https://huggingface.co/mlx-community/Qwen3.5-27B-Claude-4.6-Opus-Distilled-MLX-6bit
+#   * Important: max_tokens must stay >= 4096
+#   * For quantized reasoning, repetition_penalty=1.15 recommended
+#   * temp=0.7 + min_p=0.05 suggested to reduce greedy looping
+# - https://huggingface.co/Jackrong/Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled
+#   * upstream distilled reasoning model context
+# - https://huggingface.co/Qwen/Qwen3.5-27B
+#   * official mode-based sampling guidance (thinking/instruct/coding)
+#
+# Copy this file to mlx_config.yml to use directly.
+
+paths:
+  # Uses Ernest's preferred local MLX venv toolchain.
+  venv_bin: /Users/ernestyeung/Prop/openclaw/.venv/bin
+
+  # Point to local HF cache root (or a specific snapshot directory if preferred).
+  model_path: /Users/ernestyeung/.cache/huggingface/hub/models--mlx-community--Qwen3.5-27B-Claude-4.6-Opus-Distilled-MLX-6bit
+
+chat:
+  max_kv_size: 32768
+  default_system_prompt: "You are a helpful, thoughtful assistant. Think step by step before answering."
+
+serve:
+  host: 127.0.0.1
+  port: 8080
+  log_level: INFO
+  decode_concurrency: 1
+  prompt_concurrency: 1
+
+modes:
+  # Baseline thinking mode from Qwen guidance, but repetition_penalty raised to
+  # 1.15 for quantized stability per mlx-community model card.
+  thinking_general:
+    enable_thinking: true
+    temperature: 1.0
+    top_p: 0.95
+    top_k: 20
+    min_p: 0.0
+    presence_penalty: 1.5
+    repetition_penalty: 1.15
+    max_tokens: 8192
+    system_prompt: "You are a helpful, thoughtful assistant. Think step by step before answering."
+
+  # Precise coding tasks: Qwen recommends lower temperature + no presence penalty.
+  # Kept repetition_penalty=1.15 due to quantized reasoning behavior.
+  thinking_coding:
+    enable_thinking: true
+    temperature: 0.6
+    top_p: 0.95
+    top_k: 20
+    min_p: 0.0
+    presence_penalty: 0.0
+    repetition_penalty: 1.15
+    max_tokens: 8192
+    system_prompt: "You are an expert programmer. Be precise and correct."
+
+  # Instruct/non-thinking general mode:
+  # temp=0.7 from Qwen guidance, plus min_p=0.05 from mlx-community recommendation.
+  instruct_general:
+    enable_thinking: false
+    temperature: 0.7
+    top_p: 0.8
+    top_k: 20
+    min_p: 0.05
+    presence_penalty: 1.5
+    repetition_penalty: 1.15
+    max_tokens: 4096
+    system_prompt: "You are a helpful assistant."
+
+  # Instruct/non-thinking for heavier reasoning prompts.
+  # One Qwen section suggests top_p=1.0, top_k=40, presence_penalty=2.0.
+  instruct_reasoning:
+    enable_thinking: false
+    temperature: 1.0
+    top_p: 1.0
+    top_k: 40
+    min_p: 0.0
+    presence_penalty: 2.0
+    repetition_penalty: 1.15
+    max_tokens: 4096
+    system_prompt: "You are a careful reasoning assistant."

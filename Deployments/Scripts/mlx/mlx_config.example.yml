@@ -1,0 +1,71 @@
+# Copy this file to mlx_config.yml and edit as needed.
+
+paths:
+  venv_bin: /Users/ernestyeung/Prop/openclaw/.venv/bin
+  model_path: /Users/ernestyeung/.cache/huggingface/hub/models--mlx-community--Qwen3.5-27B-Claude-4.6-Opus-Distilled-MLX-6bit
+
+chat:
+  # All keys in this section are optional. If omitted, mlx_runner will not pass
+  # the corresponding CLI flag and mlx_lm.chat will use its own defaults.
+  max_kv_size: 32768
+  default_system_prompt: "You are a helpful, thoughtful assistant. Think step by step before answering."
+  # trust_remote_code: true
+  # fix_mistral_regex: true  # currently informational only (not exposed by mlx_lm.chat CLI)
+
+serve:
+  # All keys in this section are optional. If omitted, mlx_runner will not pass
+  # the corresponding CLI flag and mlx_lm.server will use its own defaults.
+  host: 127.0.0.1
+  port: 8080
+  log_level: INFO
+  decode_concurrency: 1
+  prompt_concurrency: 1
+  # trust_remote_code: true
+  # fix_mistral_regex: true  # currently informational only (not exposed by mlx_lm.server CLI)
+
+# Mode-specific defaults. These are used for both chat and serve.
+# IMPORTANT: keep max_tokens >= 4096 for this model family.
+modes:
+  thinking_general:
+    enable_thinking: true
+    temperature: 1.0
+    top_p: 0.95
+    top_k: 20
+    min_p: 0.0
+    presence_penalty: 1.5
+    repetition_penalty: 1.15
+    max_tokens: 8192
+    system_prompt: "You are a helpful, thoughtful assistant. Think step by step before answering."
+
+  thinking_coding:
+    enable_thinking: true
+    temperature: 0.6
+    top_p: 0.95
+    top_k: 20
+    min_p: 0.0
+    presence_penalty: 0.0
+    repetition_penalty: 1.15
+    max_tokens: 8192
+    system_prompt: "You are an expert programmer. Be precise and correct."
+
+  instruct_general:
+    enable_thinking: false
+    temperature: 0.7
+    top_p: 0.8
+    top_k: 20
+    min_p: 0.0
+    presence_penalty: 1.5
+    repetition_penalty: 1.15
+    max_tokens: 4096
+    system_prompt: "You are a helpful assistant."
+
+  instruct_reasoning:
+    enable_thinking: false
+    temperature: 1.0
+    top_p: 1.0
+    top_k: 40
+    min_p: 0.0
+    presence_penalty: 2.0
+    repetition_penalty: 1.0
+    max_tokens: 4096
+    system_prompt: "You are a helpful assistant."
