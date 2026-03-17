@@ -155,7 +155,7 @@ def main():
         expected = 1
         match = (result == expected)
         
-        print(f"({l},{m}){''<6} {str(result):<30} {expected:<15} {match}")
+        print("({},{})".format(l, m).ljust(10) + str(result).ljust(30) + str(expected).ljust(15) + str(match))
     
     # ============================================================
     # Part 4: Orthogonality Verification
@@ -190,7 +190,7 @@ def main():
         expected = 1 if (l1 == l2 and m1 == m2) else 0
         match = (result == expected)
 
-        print(f"({l1},{m1}){'':<5} ({l2},{m2}){'':<5} {str(result):<25} {expected:<15} {match}")
+        print("({},{})".format(l1, m1).ljust(10) + "({},{})".format(l2, m2).ljust(10) + str(result).ljust(25) + str(expected).ljust(15) + str(match))
 
     # ============================================================
     # Part 5: Relation to Geopotential (J2 connection)

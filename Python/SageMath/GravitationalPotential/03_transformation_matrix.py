@@ -71,7 +71,7 @@ def main():
     
     # Compute R * R^T
     RRT = R * R_transpose
-    RRT_simplified = RRT.apply_map(trig_simplify)
+    RRT_simplified = RRT.apply_map(lambda e: e.simplify_trig())
     
     print("\nR * R^T =")
     print(RRT_simplified)
@@ -98,7 +98,7 @@ def main():
     # Also verify R^T * R = I
     print("\nVerifying R^T * R = Identity matrix")
     RTR = R_transpose * R
-    RTR_simplified = RTR.apply_map(trig_simplify)
+    RTR_simplified = RTR.apply_map(lambda e: e.simplify_trig())
     
     print("\nR^T * R =")
     print(RTR_simplified)
@@ -122,7 +122,7 @@ def main():
     print("=" * 70)
     
     det_R = det(R)
-    det_R_simplified = trig_simplify(det_R)
+    det_R_simplified = det_R.simplify_trig()
     
     print(f"\ndet(R) = {det_R}")
     print(f"det(R) simplified = {det_R_simplified}")
@@ -184,13 +184,13 @@ def main():
     print("\nSince R is orthogonal: R^(-1) = R^T")
     
     R_inv = R.inverse()
-    R_inv_simplified = R_inv.apply_map(trig_simplify)
+    R_inv_simplified = R_inv.apply_map(lambda e: e.simplify_trig())
     
     print("\nR^(-1) =")
     print(R_inv_simplified)
     
     # Verify R^(-1) = R^T
-    diff = (R_inv_simplified - R_transpose).apply_map(trig_simplify)
+    diff = (R_inv_simplified - R_transpose).apply_map(lambda e: e.simplify_trig())
     print(f"\nR^(-1) - R^T = 0 matrix? {diff == matrix([[0,0,0],[0,0,0],[0,0,0]])}")
     
     # Transform back
