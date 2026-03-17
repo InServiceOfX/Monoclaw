@@ -33,15 +33,18 @@ services:
     tty: true
 
   # ─────────────────────────────────────────────
-  # Python: interactive python3 REPL with full sage env on PYTHONPATH
+  # Python: IPython REPL with full Sage env preloaded
+  # Uses `sage -ipython` — same Python as `sage` but drops into IPython
+  # prompt with all Sage objects already imported (no `from sage.all import *`
+  # needed — it's already done). Perfect for Python-style interactive work.
   # Examples:
-  #   docker compose run --rm python              # interactive python3 REPL
-  #   docker compose run --rm python python3 /work/myscript.py
+  #   docker compose run --rm python              # IPython REPL (Sage-aware)
+  # Inside: use factor(), matrix(), etc. directly — all Sage is preloaded.
   # ─────────────────────────────────────────────
   python:
     <<: *base
     entrypoint: ""
-    command: python3
+    command: ["sage", "-ipython"]
     stdin_open: true
     tty: true
 

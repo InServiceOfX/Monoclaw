@@ -33,17 +33,20 @@ docker compose run --rm cli sage /work/myscript.sage
 docker compose run --rm cli python3 /work/myscript.py
 ```
 
-### Interactive Python3 REPL (with full SageMath available)
+### Interactive IPython REPL (Sage-aware, Python style)
 ```bash
 docker compose run --rm python
-# → drops you into Python3 with SageMath on PYTHONPATH
-# Inside: from sage.all import *; then use sage objects normally
+# → drops you into IPython with ALL Sage objects already imported
+# No `from sage.all import *` needed — it's already done
+# Use factor(), matrix(), var(), etc. directly
+# Full Python syntax, tab completion, ?, ??
 ```
 
-### Run a Python script
-```bash
-docker compose run --rm python python3 /work/myscript.py
-```
+> **Implementation note:** Uses `sage -ipython` internally. SageMath ships its
+> own Python venv at a non-standard path — there is no `python3` on the system
+> PATH that has access to Sage packages. `sage -ipython` sets up the full
+> environment correctly. Running the bare venv python3 without `sage` fails on
+> Singular and other native libs.
 
 ### Jupyter Notebook server (persistent)
 ```bash
@@ -85,13 +88,13 @@ make down         # stop all services
 | Use case | Command |
 |---|---|
 | Sage-native syntax (`factor()`, `matrix()`, symbolic math) | `make cli` or `docker compose run --rm cli` |
-| Python scripting with Sage objects | `make python` — then `from sage.all import *` |
+| Python/IPython REPL with Sage objects (all preloaded) | `make python` — everything already imported, Python syntax |
 | Running a `.py` file | `docker compose run --rm python python3 /work/file.py` |
 | Running a `.sage` file | `docker compose run --rm cli sage /work/file.sage` |
 | Notebook / interactive exploration | `make jupyter` → http://localhost:8889 |
 
-**Note:** In Python3 mode, Sage is NOT auto-imported. You must do `from sage.all import *` manually.
-In Sage REPL (`sage:` prompt), everything is pre-imported.
+**Note:** Both `make cli` (Sage REPL) and `make python` (IPython) have all Sage objects preloaded.
+The difference is prompt style: `sage:` vs IPython `In [1]:`. IPython gives you tab-completion, `?`/`??` help, and cleaner Python syntax.
 
 ---
 
