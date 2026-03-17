@@ -1,0 +1,46 @@
+# SageMath Docker Compose — three deployment modes
+#
+# Image: sagemath/sagemath:latest  (10.8, Dec 2025 — pre-built, no build from source)
+#
+# Usage:
+#   docker compose run --rm cli              # interactive sage REPL
+#   docker compose run --rm cli sage -c "print(factor(100))"  # one-shot command
+#   docker compose run --rm cli sage /work/myscript.sage      # run a .sage file
+#   docker compose up -d jupyter             # Jupyter server at http://localhost:8889
+#   docker compose logs -f jupyter           # watch jupyter logs
+#   docker compose down                      # stop all
+
+x-base: &base
+  image: sagemath/sagemath:latest
+  volumes:
+    - ${NOTEBOOKS:-./notebooks}:/work
+  working_dir: /work
+
+services:
+  # ─────────────────────────────────────────────
+  # CLI: interactive sage REPL or one-shot commands
+  # Examples:
+  #   docker compose run --rm cli
+  #   docker compose run --rm cli sage -c "from sage.all import *; print(factor(2^64-1))"
+  #   docker compose run --rm cli sage /work/myscript.sage
+  #   docker compose run --rm cli python3 /work/myscript.py
+  # ─────────────────────────────────────────────
+  cli:
+    <<: *base
+    entrypoint: ""
+    command: sage
+    stdin_open: true
+    tty: true
+
+  # ─────────────────────────────────────────────
+  # Jupyter: browser-based notebook
+  # Open: http://localhost:8889  (8888 left free for Cadabra)
+  # No token/password — local use only
+  # ─────────────────────────────────────────────
+  jupyter:
+    <<: *base
+    entrypoint: sage-entrypoint
+    command: sage-jupyter --NotebookApp.token='' --NotebookApp.password=''
+    ports:
+      - "8889:8888"
+    restart: unless-stopped
