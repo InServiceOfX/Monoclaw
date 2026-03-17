@@ -33,12 +33,33 @@ docker compose run --rm cli sage /work/myscript.sage
 docker compose run --rm cli python3 /work/myscript.py
 ```
 
+### Interactive Python3 REPL (with full SageMath available)
+```bash
+docker compose run --rm python
+# → drops you into Python3 with SageMath on PYTHONPATH
+# Inside: from sage.all import *; then use sage objects normally
+```
+
+### Run a Python script
+```bash
+docker compose run --rm python python3 /work/myscript.py
+```
+
 ### Jupyter Notebook server (persistent)
 ```bash
 docker compose up -d jupyter
 # Open: http://localhost:8889
 # Stop:
 docker compose down
+```
+
+### Using the Makefile (convenience wrappers)
+```bash
+make jupyter      # start jupyter + prints "→ http://localhost:8889"
+make jupyter-logs # tail jupyter logs
+make cli          # interactive Sage REPL
+make python       # interactive Python3 REPL
+make down         # stop all services
 ```
 
 ---
@@ -56,6 +77,21 @@ docker compose down
 - Use browser at http://localhost:8889
 - Supports Sage worksheets + Python notebooks
 - Port 8889 (not 8888, to avoid conflict with Cadabra)
+
+---
+
+## Python3 vs Sage REPL — which to use?
+
+| Use case | Command |
+|---|---|
+| Sage-native syntax (`factor()`, `matrix()`, symbolic math) | `make cli` or `docker compose run --rm cli` |
+| Python scripting with Sage objects | `make python` — then `from sage.all import *` |
+| Running a `.py` file | `docker compose run --rm python python3 /work/file.py` |
+| Running a `.sage` file | `docker compose run --rm cli sage /work/file.sage` |
+| Notebook / interactive exploration | `make jupyter` → http://localhost:8889 |
+
+**Note:** In Python3 mode, Sage is NOT auto-imported. You must do `from sage.all import *` manually.
+In Sage REPL (`sage:` prompt), everything is pre-imported.
 
 ---
 

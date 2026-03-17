@@ -33,6 +33,19 @@ services:
     tty: true
 
   # ─────────────────────────────────────────────
+  # Python: interactive python3 REPL with full sage env on PYTHONPATH
+  # Examples:
+  #   docker compose run --rm python              # interactive python3 REPL
+  #   docker compose run --rm python python3 /work/myscript.py
+  # ─────────────────────────────────────────────
+  python:
+    <<: *base
+    entrypoint: ""
+    command: python3
+    stdin_open: true
+    tty: true
+
+  # ─────────────────────────────────────────────
   # Jupyter: browser-based notebook
   # Open: http://localhost:8889  (8888 left free for Cadabra)
   # No token/password — local use only
