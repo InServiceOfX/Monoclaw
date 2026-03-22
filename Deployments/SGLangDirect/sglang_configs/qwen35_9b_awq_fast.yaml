@@ -1,0 +1,54 @@
+# SGLang server config — Qwen3.5-9B AWQ 4-bit, FAST profile
+# RTX 3060 12GB, GPU device=1
+#
+# Use for: interactive single-request use, coding, reasoning tasks.
+# Context capped at 32768 (native Gated-Attention window) — no long-doc overhead.
+#
+# Architecture notes:
+#   - Qwen3.5-9B is a VLM (Gated DeltaNet + sparse GatedAttention hybrid)
+#   - AWQ INT4 via compressed-tensors, ~5-6 GB weights footprint on GPU
+#   - Vision encoder loaded but unused unless you send image tokens
+#   - quantization auto-detected from config.json (compressed-tensors)
+#   - Requires SGLang from main branch (lmsysorg/sglang:latest, not latest-cu130)
+#
+# Tune --mem-fraction-static by checking startup logs for available_gpu_mem:
+#   - 5–8 GB remaining = good
+#   - >8 GB remaining = increase in 0.01 steps
+#   - OOM = decrease in 0.01 steps
+
+model-path: /models/Qwen3.5-9B-AWQ-4bit
+reasoning-parser: qwen3
+host: "0.0.0.0"
+port: 30000
+
+# Memory: AWQ 4-bit weights ~5-6 GB, vision encoder ~1 GB.
+# 12 GB total — 0.82 leaves ~2.2 GB for activations/CUDA graph buffers.
+# Tune up to 0.87 if startup logs show >8 GB available_gpu_mem.
+mem-fraction-static: 0.82
+
+# Context: native window, no YaRN overhead.
+# Qwen3.5 text_config.max_position_embeddings = 262144 but Gated DeltaNet
+# layers don't need a KV cache slot — effective KV pressure is lower than
+# a pure-attention model. Still, keep this conservative for interactive use.
+context-length: 32768
+
+# Chunked prefill: safe default for 12 GB card.
+# Drop to 4096 if you see OOM on long prompts.
+chunked-prefill-size: 8192
+
+# Attention backend: auto-pick (FlashInfer on RTX 30xx if available in container,
+# else Triton). Do NOT hardcode flashinfer unless you benchmark it on this box.
+# attention-backend: flashinfer
+
+# Torch compile: accelerates small models at small batch sizes. Adds ~2-3 min warmup.
+# Uncomment to enable — validate first, latency savings are model-dependent.
+# enable-torch-compile: true
+# torch-compile-max-bs: 32
+
+# CUDA graph: enabled by default for small batch sizes, no need to set manually.
+# Increase only if you batch heavily.
+# cuda-graph-max-bs: 32
+
+# Schedule: fcfs for interactive single-user. Use lpm if you send many requests
+# with shared system prompt prefixes (RadixAttention cache hits).
+# schedule-policy: lpm

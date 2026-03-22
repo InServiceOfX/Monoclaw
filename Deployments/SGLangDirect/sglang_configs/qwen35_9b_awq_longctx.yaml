@@ -1,0 +1,35 @@
+# SGLang server config — Qwen3.5-9B AWQ 4-bit, LONG CONTEXT profile
+# RTX 3060 12GB, GPU device=1
+#
+# Use for: long documents, multi-turn with large history, research reading.
+# Context set to 131072 (half of native max) — practical limit on 12 GB VRAM.
+# At full 262144 you will OOM on this card with KV cache.
+#
+# Qwen3.5 model card says: "maintain at least 128K tokens to preserve thinking
+# capabilities." This profile meets that recommendation.
+#
+# Tradeoffs vs fast profile:
+#   - Lower mem-fraction-static to absorb larger KV cache
+#   - Smaller chunked-prefill-size to avoid prefill OOM
+#   - Concurrency reduced (more KV per request)
+
+model-path: /models/Qwen3.5-9B-AWQ-4bit
+reasoning-parser: qwen3
+host: "0.0.0.0"
+port: 30000
+
+# Lower than fast profile — KV cache grows with context length.
+# Check available_gpu_mem in startup logs; adjust in 0.01 steps.
+mem-fraction-static: 0.78
+
+context-length: 131072
+
+# Smaller chunks for long prompts — prevents prefill OOM.
+chunked-prefill-size: 4096
+
+# Limit concurrent requests under long-context KV pressure.
+# 1-4 concurrent requests is realistic on a 12 GB card at 131K context.
+max-running-requests: 4
+
+# More aggressive batching — at low concurrency, being conservative wastes KV room.
+schedule-conservativeness: 0.7

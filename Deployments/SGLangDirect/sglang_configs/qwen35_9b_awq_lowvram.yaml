@@ -1,0 +1,28 @@
+# SGLang server config — Qwen3.5-9B AWQ 4-bit, LOW VRAM profile
+# RTX 3060 12GB, GPU device=1
+#
+# Use for: running alongside other GPU processes (Nougat, diffusion, etc.)
+# or if fast/longctx profiles OOM on startup.
+#
+# Aggressive memory reduction: smaller KV pool, shorter context, tighter limits.
+
+model-path: /models/Qwen3.5-9B-AWQ-4bit
+reasoning-parser: qwen3
+host: "0.0.0.0"
+port: 30000
+
+# Conservative: leaves ~3-4 GB for other processes.
+mem-fraction-static: 0.72
+
+context-length: 16384
+
+chunked-prefill-size: 2048
+
+max-running-requests: 2
+
+# FP8 KV cache: halves KV memory footprint. Supported on CUDA 11.8+.
+# NOTE: accuracy degrades without scaling factors. Uncomment only if you
+# have a kv_scales.json from the model's quantization recipe, or you
+# accept the ~1-2 point quality loss on long outputs.
+# kv-cache-dtype: fp8_e4m3
+# quantization-param-path: /sglang_configs/kv_scales.json
