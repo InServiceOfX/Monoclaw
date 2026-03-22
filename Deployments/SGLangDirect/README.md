@@ -64,10 +64,44 @@ If decode OOMs → reduce `max-running-requests`.
 - SGLang's native `--config` support makes this first-class.
 - Swap profiles by passing a different argument, not editing a command list.
 
-**Why `lmsysorg/sglang:latest` not `latest-cu130`?**
-- Qwen3.5 requires SGLang from the main branch (per model card).
-- `latest-cu130` is a pinned older build. `latest` tracks the release.
-- If you need reproducibility, pin to a specific SHA or tag after confirming compatibility.
+**Image tag strategy**
+
+`lmsysorg/sglang` tags on Docker Hub:
+
+| Tag pattern | What it is | Stable? |
+|---|---|---|
+| `latest` | Last release build, CUDA 12.x | Opaque — don't use |
+| `latest-cu130` | Pinned release build, CUDA 13.0 | Yes, but old |
+| `dev` | Nightly main branch, CUDA 12.x | Rolling, mutable |
+| `dev-cu13` | Nightly main branch, CUDA 13.x | Rolling, mutable |
+| `nightly-dev-cu13-YYYYMMDD-SHA` | Pinned dated nightly, CUDA 13.x | Yes — use this |
+
+**Use `nightly-dev-cu13-YYYYMMDD-SHA`**: pinned, CUDA 13, main branch. Check the current tag in `launch.sh`.
+
+Qwen3.5 requires the main branch — `latest-cu130` and `latest` are release builds that predate Qwen3.5 support.
+
+To update to a newer nightly:
+```bash
+docker pull lmsysorg/sglang:dev-cu13   # pulls latest nightly
+# Then note the Digest and find the matching nightly-dev-cu13-YYYYMMDD-SHA tag on Docker Hub
+# Update DOCKER_IMAGE in launch.sh to the pinned tag
+```
+
+## Troubleshooting
+
+### `size_n = 32 is not divisible by tile_n_size = 64`
+
+Full error path: `compressed_tensors_wNa16.py → process_weights_after_loading → gptq_marlin_repack → RuntimeError`
+
+**Cause:** The Marlin GPTQ repack kernel requires `size_n` to be a multiple of 64. Qwen3.5's Gated DeltaNet layers have `in_proj_a` / `in_proj_b` projections with `n=32`. The AWQ recipe correctly excludes these from quantization (they're in the ignore list), but older SGLang release builds try to quantize them anyway via `compressed-tensors` path.
+
+**Fix:** Use `lmsysorg/sglang:nightly-dev-cu13-YYYYMMDD-SHA` (main branch nightly). The main branch has updated `compressed_tensors` handling for hybrid architectures. If the error persists on a new nightly, open an issue on the SGLang repo.
+
+**Also required:** `trust-remote-code: true` in the SGLang config. Qwen3.5's `Qwen3_5ForConditionalGeneration` architecture is not in the standard transformers release — the custom model code correctly handles the DeltaNet layers.
+
+### `Parameter model.layers.N.linear_attn.in_proj_a.weight not found`
+
+These are INFO-level warnings, not errors. The DeltaNet `in_proj_a/b` weights are excluded from the AWQ checkpoint by design (see `recipe.yaml` ignore list). SGLang initializes them as zeros/identity — this is expected behavior for this model variant.
 
 ## Vision / Multimodal
 

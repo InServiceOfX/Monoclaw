@@ -21,6 +21,10 @@ reasoning-parser: qwen3
 host: "0.0.0.0"
 port: 30000
 
+# Required: Qwen3.5 architecture is not in standard transformers release yet.
+# Custom model code handles Gated DeltaNet hybrid layers correctly.
+trust-remote-code: true
+
 # Memory: AWQ 4-bit weights ~5-6 GB, vision encoder ~1 GB.
 # 12 GB total — 0.82 leaves ~2.2 GB for activations/CUDA graph buffers.
 # Tune up to 0.87 if startup logs show >8 GB available_gpu_mem.

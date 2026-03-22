@@ -17,9 +17,20 @@ MODEL_CONTAINER_PATH="/models/Qwen3.5-9B-AWQ-4bit"
 CONFIGS_DIR="$(cd "$(dirname "$0")/sglang_configs" && pwd)"
 
 # ── image ────────────────────────────────────────────────────────────────────
-# Qwen3.5 requires SGLang from main branch (not latest-cu130).
-# lmsysorg/sglang:latest pulls the most recent release image.
-DOCKER_IMAGE="lmsysorg/sglang:latest"
+# Tag strategy (see README.md for details):
+#   dev-cu13                        = nightly main branch, CUDA 13, mutable
+#   nightly-dev-cu13-YYYYMMDD-SHA   = pinned dated snapshot, CUDA 13, immutable
+#
+# Use the pinned nightly for reproducibility. Update by changing the tag here
+# after validating the new nightly on this model.
+#
+# Host: CUDA 13.0, driver 580.76, RTX 3060 (device=1)
+# Qwen3.5 requires SGLang main branch — do NOT use latest-cu130.
+#
+# Current pinned tag: nightly-dev-cu13-20260321-94194537
+# To update: docker pull lmsysorg/sglang:dev-cu13 (gets latest nightly)
+#            then re-pin to the corresponding nightly-dev-cu13-YYYYMMDD-SHA tag.
+DOCKER_IMAGE="lmsysorg/sglang:nightly-dev-cu13-20260321-94194537"
 
 # ── validation ───────────────────────────────────────────────────────────────
 if [[ ! -f "$(dirname "$0")/${CONFIG_FILE}" ]]; then
