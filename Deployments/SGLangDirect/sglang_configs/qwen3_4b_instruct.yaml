@@ -1,0 +1,23 @@
+# SGLang server config — Qwen3-4B-Instruct-2507, BF16 (unquantized)
+# RTX 3060 12GB, GPU device=1
+#
+# Qwen3-4B BF16 = ~8GB — fits comfortably on 12GB.
+# Instruct-2507: standard chat model, no separate thinking mode.
+# Context: 32K native, supports up to 262K with rope scaling (but OOM on 3060).
+# Keeping 32K here for max KV cache headroom.
+
+model-path: /models/Qwen3-4B-Instruct-2507
+reasoning-parser: qwen3
+host: "0.0.0.0"
+port: 30000
+trust-remote-code: true
+
+context-length: 32768
+mem-fraction-static: 0.75
+max-running-requests: 4
+chunked-prefill-size: 8192
+schedule-conservativeness: 0.8
+
+# Nightly enables piecewise CUDA graph by default — OOMs on 12GB with 4B BF16.
+# Disable it; regular CUDA graph still works fine.
+disable-piecewise-cuda-graph: true

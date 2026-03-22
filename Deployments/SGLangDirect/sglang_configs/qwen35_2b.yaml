@@ -1,0 +1,26 @@
+# SGLang server config — Qwen3.5-2B, BF16 (unquantized)
+# RTX 3060 12GB, GPU device=1
+#
+# Qwen3_5ForConditionalGeneration — same hybrid GDN arch as 9B, just smaller.
+# BF16 ~5GB weights — very comfortable on 12GB.
+# Requires nightly image (GDN kernel support).
+#
+# Workarounds for nightly Triton JIT deadlock:
+#   - skip-server-warmup: skip the internal warmup request that triggers JIT
+#   - disable-piecewise-cuda-graph: OOMs and triggers extra Triton compilation
+#   - disable-cuda-graph: skip CUDA graph capture entirely for stability
+
+model-path: /models/Qwen3.5-2B
+reasoning-parser: qwen3
+host: "0.0.0.0"
+port: 30000
+trust-remote-code: true
+
+context-length: 32768
+mem-fraction-static: 0.80
+max-running-requests: 4
+chunked-prefill-size: 8192
+schedule-conservativeness: 0.8
+
+skip-server-warmup: true
+disable-cuda-graph: true

@@ -19,6 +19,10 @@ host: "0.0.0.0"
 port: 30000
 trust-remote-code: true
 
+# Qwen3.5 hybrid arch: in_proj_a/in_proj_b are BF16 [32, 4096] — size_n=32 < Marlin tile 64.
+# Fix: added short-form ignore entries to model config.json (was full path, SGLang needs short path).
+# config.json.bak preserved. No quantization override needed — auto-detect works now.
+
 # Lower than fast profile — KV cache grows with context length.
 # Check available_gpu_mem in startup logs; adjust in 0.01 steps.
 mem-fraction-static: 0.78
@@ -34,3 +38,11 @@ max-running-requests: 4
 
 # More aggressive batching — at low concurrency, being conservative wastes KV room.
 schedule-conservativeness: 0.7
+
+# Disable CUDA graph capture and force non-Triton linear attention backends
+# to avoid Triton JIT deadlock on first inference with this hybrid GDN model.
+disable-cuda-graph: true
+skip-server-warmup: true
+linear-attn-backend: triton
+linear-attn-decode-backend: triton
+linear-attn-prefill-backend: triton

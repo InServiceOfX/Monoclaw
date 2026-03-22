@@ -9,12 +9,36 @@
 set -euo pipefail
 
 PROFILE="${1:-fast}"
-CONFIG_FILE="sglang_configs/qwen35_9b_awq_${PROFILE}.yaml"
-
-# ── paths ────────────────────────────────────────────────────────────────────
-MODEL_HOST_PATH="/media/propdev/9dc1a908-7eff-4e1c-8231-ext4/home/propdev/Data/Models/LLM/cyankiwi/Qwen3.5-9B-AWQ-4bit"
-MODEL_CONTAINER_PATH="/models/Qwen3.5-9B-AWQ-4bit"
 CONFIGS_DIR="$(cd "$(dirname "$0")/sglang_configs" && pwd)"
+
+# ── profile → config file + model path ───────────────────────────────────────
+case "$PROFILE" in
+    fast|longctx|lowvram)
+        CONFIG_FILE="sglang_configs/qwen35_9b_awq_${PROFILE}.yaml"
+        MODEL_HOST_PATH="/media/propdev/9dc1a908-7eff-4e1c-8231-ext4/home/propdev/Data/Models/LLM/cyankiwi/Qwen3.5-9B-AWQ-4bit"
+        MODEL_CONTAINER_PATH="/models/Qwen3.5-9B-AWQ-4bit"
+        ;;
+    qwen3-4b)
+        CONFIG_FILE="sglang_configs/qwen3_4b_instruct.yaml"
+        MODEL_HOST_PATH="/media/propdev/9dc1a908-7eff-4e1c-8231-ext4/home/propdev/Data/Models/LLM/Qwen/Qwen3-4B-Instruct-2507"
+        MODEL_CONTAINER_PATH="/models/Qwen3-4B-Instruct-2507"
+        ;;
+    qwen35-2b)
+        CONFIG_FILE="sglang_configs/qwen35_2b.yaml"
+        MODEL_HOST_PATH="/media/propdev/9dc1a908-7eff-4e1c-8231-ext4/home/propdev/Data/Models/LLM/Qwen/Qwen3.5-2B"
+        MODEL_CONTAINER_PATH="/models/Qwen3.5-2B"
+        ;;
+    nanbeige)
+        CONFIG_FILE="sglang_configs/nanbeige41_3b.yaml"
+        MODEL_HOST_PATH="/media/propdev/9dc1a908-7eff-4e1c-8231-ext4/home/propdev/Data/Models/LLM/Nanbeige/Nanbeige4.1-3B"
+        MODEL_CONTAINER_PATH="/models/Nanbeige4.1-3B"
+        ;;
+    *)
+        echo "ERROR: unknown profile: $PROFILE"
+        echo "Available profiles: fast, longctx, lowvram, qwen3-4b, qwen35-2b, nanbeige"
+        exit 1
+        ;;
+esac
 
 # ── image ────────────────────────────────────────────────────────────────────
 # Tag strategy (see README.md for details):
@@ -30,12 +54,20 @@ CONFIGS_DIR="$(cd "$(dirname "$0")/sglang_configs" && pwd)"
 # Current pinned tag: nightly-dev-cu13-20260321-94194537
 # To update: docker pull lmsysorg/sglang:dev-cu13 (gets latest nightly)
 #            then re-pin to the corresponding nightly-dev-cu13-YYYYMMDD-SHA tag.
-DOCKER_IMAGE="lmsysorg/sglang:nightly-dev-cu13-20260321-94194537"
+# Qwen3.5 hybrid arch requires the nightly (GDN kernel support).
+# Standard BF16 models use latest-cu130 — the nightly's Triton deadlocks on first inference.
+case "$PROFILE" in
+    fast|longctx|lowvram|qwen35-2b)
+        DOCKER_IMAGE="lmsysorg/sglang:nightly-dev-cu13-20260321-94194537"
+        ;;
+    *)
+        DOCKER_IMAGE="lmsysorg/sglang:latest-cu130"
+        ;;
+esac
 
 # ── validation ───────────────────────────────────────────────────────────────
 if [[ ! -f "$(dirname "$0")/${CONFIG_FILE}" ]]; then
     echo "ERROR: config not found: ${CONFIG_FILE}"
-    echo "Available profiles: fast, longctx, lowvram"
     exit 1
 fi
 
@@ -59,6 +91,10 @@ docker run \
     -p 30000:30000 \
     -v "${MODEL_HOST_PATH}:${MODEL_CONTAINER_PATH}:ro" \
     -v "${CONFIGS_DIR}:/sglang_configs:ro" \
+    -v "/home/propdev/.cache/triton_sglang:/root/.triton:rw" \
+    -e "TRITON_CACHE_DIR=/root/.triton" \
+    -e "TOKENIZERS_PARALLELISM=false" \
+    -e "TRITON_DISABLE_LINE_INFO=1" \
     "${DOCKER_IMAGE}" \
     python3 -m sglang.launch_server \
-        --config "/sglang_configs/qwen35_9b_awq_${PROFILE}.yaml"
+        --config "/sglang_configs/$(basename "${CONFIG_FILE}")"
