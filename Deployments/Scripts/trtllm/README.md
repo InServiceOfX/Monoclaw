@@ -8,7 +8,10 @@ This folder provides a small config-driven wrapper around `trtllm-serve` so mode
 - `trtllm_config.example.yml` — baseline example config for local Qwen3 serving
 - `extra_llm_config.qwen3-0.6b.example.yml` — optional TensorRT-LLM YAML passed via `--config`
 - `serve.sh` — thin wrapper around `trtllm_runner.py serve`
-- `test-query.sh` — thin wrapper around `trtllm_runner.py probe`
+- `test-query.sh` — one-shot probe request
+- `chat.sh` — interactive terminal chat client from the host or any shell with Python
+- `health.sh` — check `/health`
+- `models.sh` — check `/v1/models`
 
 ## Quick start
 
@@ -23,9 +26,21 @@ cd /home/ernest/.openclaw/workspace/workspace2/repos/Monoclaw/Deployments/Script
 
 Then edit `trtllm_config.yml` and set the exact paths and limits you want.
 
+Important config split:
+
+- `paths.model_path` = where the model exists from the point of view of `trtllm-serve`
+  - inside a container this may be something like `/Data/Models/...`
+- `paths.host_model_path` = optional note for the host-side real path on that machine
+- `endpoint.host` / `endpoint.port` = where the host-side helper scripts should connect
+  - usually `127.0.0.1` and `30000`
+- `serve.host` / `serve.port` = what `trtllm-serve` should bind to when launched via `serve.sh`
+  - usually `0.0.0.0` and `30000`
+
 For a smoke test from another shell:
 
 ```bash
+./health.sh
+./models.sh
 ./test-query.sh
 ```
 
@@ -35,10 +50,25 @@ Or override the prompt:
 ./test-query.sh --prompt "Where is New York?"
 ```
 
+For interactive chatting from the host:
+
+```bash
+./chat.sh
+```
+
+Inside the interactive chat client:
+
+- type a message and press Enter
+- `/reset` clears conversation history
+- `/health` checks server health
+- `/models` lists served models
+- `/exit` or `/quit` leaves chat
+
 ## Why this setup
 
 - Keeps your `trtllm-serve` invocation reproducible
 - Moves model path and serve knobs into YAML
+- Lets you keep host-side and container-side model paths in one config
 - Makes it easier to carry a known-good config into Docker wrappers later
 - Gives a repeatable probe request instead of retyping curl payloads
 

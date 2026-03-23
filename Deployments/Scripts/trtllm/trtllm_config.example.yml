@@ -4,8 +4,12 @@ commands:
   trtllm_serve: trtllm-serve
 
 paths:
-  # Path as seen *inside the container* where trtllm-serve runs.
+  # Path as seen *inside the container* or environment where trtllm-serve runs.
   model_path: /Data/Models/LLM/Qwen/Qwen3-0.6B
+
+  # Optional host-side reference path for your own notes / alternate desktop setups.
+  # Not used by trtllm-serve directly, but useful to keep both paths in one config.
+  # host_model_path: /media/ernest/Samsung980ProPCI/Data/Models/LLM/Qwen/Qwen3-0.6B
 
   # Optional: path as seen by transformers/tokenizer if different from model_path.
   # tokenizer: /Data/Models/LLM/Qwen/Qwen3-0.6B
@@ -33,12 +37,23 @@ serve:
   enable_chunked_prefill: false
   grpc: false
 
+endpoint:
+  # Host-side endpoint you want client scripts to talk to.
+  # Useful when server-side bind host differs from client-side target.
+  host: 127.0.0.1
+  port: 30000
+
 probe:
   model_name: Qwen3-0.6B
   system_prompt: You are a helpful assistant.
   prompt: Where is New York?
   max_tokens: 32
   temperature: 0
+
+interactive:
+  keep_history: true
+  max_tokens: 128
+  temperature: 0.7
 
 environment:
   # Optional hint variable for surrounding scripts / docker wrappers.

@@ -4,12 +4,14 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import shlex
 import shutil
 import subprocess
 import sys
 from pathlib import Path
+from urllib import error, request
 
 try:
     import yaml  # type: ignore
@@ -164,40 +166,63 @@ def build_serve_command(args: argparse.Namespace, cfg: dict) -> tuple[list[str],
     return cmd, host, port
 
 
-def build_probe_command(args: argparse.Namespace, cfg: dict) -> tuple[list[str], str]:
+def resolve_endpoint(args: argparse.Namespace, cfg: dict) -> tuple[str, int]:
+    endpoint_cfg = cfg.get("endpoint", {}) or {}
+    serve_cfg = cfg.get("serve", {}) or {}
+    host = args.host if getattr(args, "host", None) is not None else endpoint_cfg.get("host") or serve_cfg.get("host", "127.0.0.1")
+    port = int(args.port if getattr(args, "port", None) is not None else endpoint_cfg.get("port") or serve_cfg.get("port", 8000))
+    return str(host), port
+
+
+def resolve_model_name(cfg: dict) -> str:
     probe_cfg = cfg.get("probe", {}) or {}
     serve_cfg = cfg.get("serve", {}) or {}
     paths = cfg.get("paths", {}) or {}
+    return str(probe_cfg.get("model_name") or serve_cfg.get("served_model_name") or Path(paths.get("model_path", "model")).name)
 
-    host = args.host if args.host is not None else serve_cfg.get("host", "127.0.0.1")
-    port = int(args.port if args.port is not None else serve_cfg.get("port", 8000))
-    model_name = probe_cfg.get("model_name") or serve_cfg.get("served_model_name") or Path(paths.get("model_path", "model")).name
+
+def build_chat_payload(cfg: dict, *, user_prompt: str, max_tokens: int | None = None, temperature: float | None = None, history: list[dict] | None = None) -> dict:
+    probe_cfg = cfg.get("probe", {}) or {}
     system_prompt = probe_cfg.get("system_prompt", "You are a helpful assistant.")
-    user_prompt = args.prompt if args.prompt is not None else probe_cfg.get("prompt", "Where is New York?")
-    max_tokens = int(args.max_tokens if args.max_tokens is not None else probe_cfg.get("max_tokens", 32))
-    temperature = args.temperature if args.temperature is not None else probe_cfg.get("temperature", 0)
+    payload = {
+        "model": resolve_model_name(cfg),
+        "messages": ([{"role": "system", "content": system_prompt}] + (history or []) + [{"role": "user", "content": user_prompt}]),
+        "max_tokens": int(max_tokens if max_tokens is not None else probe_cfg.get("max_tokens", 32)),
+        "temperature": temperature if temperature is not None else probe_cfg.get("temperature", 0),
+    }
+    return payload
 
-    json_payload = (
-        '{'
-        f'"model":"{model_name}",' 
-        f'"messages":[{{"role":"system","content":{system_prompt!r}}},{{"role":"user","content":{user_prompt!r}}}],'
-        f'"max_tokens":{max_tokens},'
-        f'"temperature":{temperature}'
-        '}'
+
+def http_json(method: str, url: str, payload: dict | None = None, timeout: float = 120.0) -> tuple[int, object]:
+    data = None
+    headers = {"Accept": "application/json"}
+    if payload is not None:
+        data = json.dumps(payload).encode("utf-8")
+        headers["Content-Type"] = "application/json"
+    req = request.Request(url, data=data, headers=headers, method=method)
+    try:
+        with request.urlopen(req, timeout=timeout) as resp:
+            body = resp.read().decode("utf-8")
+            return resp.status, json.loads(body) if body else {}
+    except error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="replace")
+        try:
+            parsed = json.loads(body) if body else {"error": body}
+        except Exception:
+            parsed = {"error": body}
+        return e.code, parsed
+
+
+def build_probe_command(args: argparse.Namespace, cfg: dict) -> tuple[str, dict]:
+    host, port = resolve_endpoint(args, cfg)
+    user_prompt = args.prompt if args.prompt is not None else (cfg.get("probe", {}) or {}).get("prompt", "Where is New York?")
+    payload = build_chat_payload(
+        cfg,
+        user_prompt=user_prompt,
+        max_tokens=args.max_tokens,
+        temperature=args.temperature,
     )
-    json_payload = json_payload.replace("'", '"')
-
-    cmd = [
-        "curl",
-        "-sS",
-        "--fail-with-body",
-        f"http://{host}:{port}/v1/chat/completions",
-        "-H",
-        "Content-Type: application/json",
-        "-d",
-        json_payload,
-    ]
-    return cmd, f"http://{host}:{port}/v1/chat/completions"
+    return f"http://{host}:{port}/v1/chat/completions", payload
 
 
 def run_serve(args: argparse.Namespace, cfg: dict) -> int:
@@ -209,11 +234,109 @@ def run_serve(args: argparse.Namespace, cfg: dict) -> int:
 
 
 def run_probe(args: argparse.Namespace, cfg: dict) -> int:
-    cmd, endpoint = build_probe_command(args, cfg)
+    endpoint, payload = build_probe_command(args, cfg)
     print(f"[trtllm_runner] probe endpoint={endpoint}")
-    print(f"[trtllm_runner] exec: {shlex.join(cmd)}")
-    completed = subprocess.run(cmd, check=False)
-    return completed.returncode
+    print(f"[trtllm_runner] payload: {json.dumps(payload, ensure_ascii=False)}")
+    status, body = http_json("POST", endpoint, payload)
+    print(json.dumps(body, indent=2, ensure_ascii=False))
+    return 0 if 200 <= status < 300 else 1
+
+
+def run_health(args: argparse.Namespace, cfg: dict) -> int:
+    host, port = resolve_endpoint(args, cfg)
+    url = f"http://{host}:{port}/health"
+    status, body = http_json("GET", url, None, timeout=15.0)
+    print(json.dumps(body, indent=2, ensure_ascii=False))
+    return 0 if 200 <= status < 300 else 1
+
+
+def run_models(args: argparse.Namespace, cfg: dict) -> int:
+    host, port = resolve_endpoint(args, cfg)
+    url = f"http://{host}:{port}/v1/models"
+    status, body = http_json("GET", url, None, timeout=15.0)
+    print(json.dumps(body, indent=2, ensure_ascii=False))
+    return 0 if 200 <= status < 300 else 1
+
+
+def extract_assistant_text(body: object) -> str:
+    if not isinstance(body, dict):
+        return ""
+    choices = body.get("choices")
+    if not isinstance(choices, list) or not choices:
+        return ""
+    first = choices[0]
+    if not isinstance(first, dict):
+        return ""
+    message = first.get("message")
+    if isinstance(message, dict):
+        content = message.get("content")
+        if isinstance(content, str):
+            return content
+    text = first.get("text")
+    if isinstance(text, str):
+        return text
+    return ""
+
+
+def run_chat(args: argparse.Namespace, cfg: dict) -> int:
+    host, port = resolve_endpoint(args, cfg)
+    endpoint = f"http://{host}:{port}/v1/chat/completions"
+    history_cfg = cfg.get("interactive", {}) or {}
+    keep_history = bool(history_cfg.get("keep_history", True))
+    default_max_tokens = int(history_cfg.get("max_tokens", (cfg.get("probe", {}) or {}).get("max_tokens", 128)))
+    default_temperature = history_cfg.get("temperature", (cfg.get("probe", {}) or {}).get("temperature", 0.7))
+
+    print(f"[trtllm_runner] interactive chat -> {endpoint}")
+    print("[trtllm_runner] Commands: /exit, /quit, /reset, /health, /models")
+
+    history: list[dict] = []
+    while True:
+        try:
+            prompt = input("you> ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print()
+            return 0
+
+        if not prompt:
+            continue
+        if prompt in {"/exit", "/quit"}:
+            return 0
+        if prompt == "/reset":
+            history = []
+            print("[trtllm_runner] conversation reset")
+            continue
+        if prompt == "/health":
+            status, body = http_json("GET", f"http://{host}:{port}/health", None, timeout=15.0)
+            print(json.dumps(body, indent=2, ensure_ascii=False))
+            if not (200 <= status < 300):
+                print(f"[trtllm_runner] health check failed with status {status}", file=sys.stderr)
+            continue
+        if prompt == "/models":
+            status, body = http_json("GET", f"http://{host}:{port}/v1/models", None, timeout=15.0)
+            print(json.dumps(body, indent=2, ensure_ascii=False))
+            if not (200 <= status < 300):
+                print(f"[trtllm_runner] models query failed with status {status}", file=sys.stderr)
+            continue
+
+        payload = build_chat_payload(
+            cfg,
+            user_prompt=prompt,
+            max_tokens=args.max_tokens if args.max_tokens is not None else default_max_tokens,
+            temperature=args.temperature if args.temperature is not None else default_temperature,
+            history=history if keep_history else [],
+        )
+        status, body = http_json("POST", endpoint, payload)
+        if not (200 <= status < 300):
+            print(json.dumps(body, indent=2, ensure_ascii=False), file=sys.stderr)
+            continue
+
+        reply = extract_assistant_text(body)
+        print(f"model> {reply}")
+
+        if keep_history:
+            history.append({"role": "user", "content": prompt})
+            history.append({"role": "assistant", "content": reply})
+
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -242,6 +365,20 @@ def build_parser() -> argparse.ArgumentParser:
     probe.add_argument("--max-tokens", type=int)
     probe.add_argument("--temperature", type=float)
 
+    health = sub.add_parser("health", help="Check /health")
+    health.add_argument("--host")
+    health.add_argument("--port", type=int)
+
+    models = sub.add_parser("models", help="Check /v1/models")
+    models.add_argument("--host")
+    models.add_argument("--port", type=int)
+
+    chat = sub.add_parser("chat", help="Interactive terminal chat client against /v1/chat/completions")
+    chat.add_argument("--host")
+    chat.add_argument("--port", type=int)
+    chat.add_argument("--max-tokens", type=int)
+    chat.add_argument("--temperature", type=float)
+
     return p
 
 
@@ -255,6 +392,12 @@ def main() -> int:
             return run_serve(args, cfg)
         if args.command == "probe":
             return run_probe(args, cfg)
+        if args.command == "health":
+            return run_health(args, cfg)
+        if args.command == "models":
+            return run_models(args, cfg)
+        if args.command == "chat":
+            return run_chat(args, cfg)
         parser.error(f"Unknown command: {args.command}")
         return 2
     except ConfigError as e:
