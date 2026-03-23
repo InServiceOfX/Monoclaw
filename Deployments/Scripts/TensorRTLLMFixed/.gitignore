@@ -1,0 +1,10 @@
+# Ignore live config files — use *.yml.example as templates instead.
+# Pattern: ignore all .yml, but NOT .yml.example
+trtllm_config.yml
+profiles/*.yml
+extra_llm_configs/*.yml
+
+# Re-include example files (git processes negations after positive rules)
+!profiles/*.yml.example
+!extra_llm_configs/*.yml.example
+!trtllm_config.yml.example

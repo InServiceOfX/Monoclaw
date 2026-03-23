@@ -1,0 +1,19 @@
+# Extra LLM API config for Nanbeige4.1-3B on RTX 3070 Notebook (8GB)
+# Passed via: trtllm-serve serve ... --config <this-file>
+#
+# Nanbeige4.1-3B: LlamaForCausalLM, ~7.3GB BF16 weights.
+# Same tight-fit situation as Qwen3-4B on 8GB — limited KV cache headroom.
+# trtllm auto-reduces attention window from native 262144 to whatever fits.
+
+kv_cache_config:
+  enable_block_reuse: true
+  free_gpu_memory_fraction: 0.50
+  tokens_per_block: 32
+
+scheduler_config:
+  waiting_queue_policy: fcfs
+  capacity_scheduler_policy: GUARANTEED_NO_EVICT
+
+enable_autotuner: true
+enable_chunked_prefill: true
+disable_overlap_scheduler: false

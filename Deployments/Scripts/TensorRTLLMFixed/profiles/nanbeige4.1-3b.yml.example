@@ -1,0 +1,65 @@
+# Profile: Nanbeige4.1-3B — instruct mode (LlamaForCausalLM)
+# RTX 3070 Notebook (8GB VRAM), BF16, 262144 context native
+#
+# Nanbeige4.1-3B: 3B params, ~7.3GB BF16 weights — tight on 8GB.
+# trtllm logs: weights=7.33GB, KV=2.17GB, peak=10.70GB (on 12GB card)
+# On 3070 8GB: same OOM concern as Qwen3-4B. Use low free_gpu_memory_fraction.
+# trtllm auto-reduces context window from 262144 to whatever fits — don't worry
+# about setting max_seq_len to match native context; trtllm will cap it.
+#
+# No reasoning_parser — this is a standard Llama instruct model, no thinking mode.
+# No tool_parser listed in model card.
+#
+# Nanbeige recommended inference params (model card):
+#   Temperature: 0.6, Top-p: 0.95, Repeat penalty: 1.0, Max New Tokens: 131072
+#
+# 3070 notes:
+#   - free_gpu_memory_fraction 0.50: model is ~7.3GB, leaves ~400MB for KV cache
+#   - max_seq_len 4096: practical limit given KV cache budget on 8GB
+#   - If fits: try bumping free_gpu_memory_fraction to 0.55-0.60 for more KV cache
+
+paths:
+  model_path: /Data/Models/LLM/Nanbeige/Nanbeige4.1-3B
+  host_model_path: /media/propdev/9dc1a908-7eff-4e1c-8231-ext4/home/propdev/Data/Models/LLM/Nanbeige/Nanbeige4.1-3B
+  extra_llm_config: /Monoclaw/Deployments/Scripts/TensorRTLLMFixed/extra_llm_configs/extra_llm_config.nanbeige4.1-3b.yml
+
+endpoint:
+  host: 127.0.0.1
+  port: 30000
+
+serve:
+  host: 0.0.0.0
+  port: 30000
+  served_model_name: Nanbeige4.1-3B
+  backend: pytorch
+  # No reasoning_parser — standard Llama instruct, no <think> tokens
+  gpus_per_node: 1
+  kv_cache_free_gpu_memory_fraction: 0.50
+  max_batch_size: 64
+  max_num_tokens: 4096
+  # trtllm will auto-reduce from 262144 to what fits in KV cache
+  max_seq_len: 4096
+  # Nanbeige uses trust_remote_code for its tokenizer
+  trust_remote_code: true
+
+probe:
+  model_name: Nanbeige4.1-3B
+  system_prompt: You are a helpful assistant.
+  prompt: What is the capital of France?
+  max_tokens: 32
+  temperature: 0
+
+# Nanbeige4.1-3B model card: Temperature=0.6, Top-p=0.95, Repeat penalty=1.0
+# repeat_penalty=1.0 is neutral (no penalty) — OpenAI API has no direct equivalent,
+# leave it out (default behavior = no repetition penalty).
+interactive:
+  keep_history: true
+  max_tokens: 512
+  temperature: 0.6
+  top_p: 0.95
+
+interactive_instruct:
+  keep_history: true
+  max_tokens: 512
+  temperature: 0.6
+  top_p: 0.95

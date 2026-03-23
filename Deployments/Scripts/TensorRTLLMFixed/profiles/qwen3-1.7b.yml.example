@@ -1,0 +1,65 @@
+# Profile: Qwen3-1.7B — thinking + instruct modes
+# RTX 3070 Notebook (8GB VRAM), BF16, 40960 context native
+#
+# Qwen3-1.7B: 1.7B params, ~3.4GB BF16 weights — very comfortable on 8GB.
+# Supports thinking (<think>...</think>) and instruct modes via reasoning_parser.
+# Native context: 40960. trtllm adjusts window based on available KV cache memory.
+#
+# 3070 inference notes:
+#   - free_gpu_memory_fraction 0.80: leaves ~1.6GB for CUDA graphs + NCCL buffers
+#   - max_num_tokens 8192: batching efficiency; don't go higher than 16384 on 8GB
+#   - max_batch_size 256: more than enough for single-user desktop use
+#   - enable_chunked_prefill false: simpler, lower latency for short prompts
+
+paths:
+  model_path: /Data/Models/LLM/Qwen/Qwen3-1.7B
+  host_model_path: /media/propdev/9dc1a908-7eff-4e1c-8231-ext4/home/propdev/Data/Models/LLM/Qwen/Qwen3-1.7B
+  extra_llm_config: /Monoclaw/Deployments/Scripts/TensorRTLLMFixed/extra_llm_configs/extra_llm_config.qwen3-1.7b.yml
+
+endpoint:
+  host: 127.0.0.1
+  port: 30000
+
+serve:
+  host: 0.0.0.0
+  port: 30000
+  served_model_name: Qwen3-1.7B
+  backend: pytorch
+  reasoning_parser: qwen3    # Parses <think>...</think> into reasoning_content field
+  gpus_per_node: 1
+  kv_cache_free_gpu_memory_fraction: 0.80
+  max_batch_size: 256
+  max_num_tokens: 8192       # Max tokens in a batch (prefill+decode) — 8192 is efficient for 3070
+  max_seq_len: 40960         # Native context for Qwen3-1.7B
+  num_postprocess_workers: 1 # CPU workers for OpenAI response formatting
+
+probe:
+  model_name: Qwen3-1.7B
+  system_prompt: You are a helpful assistant.
+  prompt: What is the capital of France?
+  max_tokens: 32
+  temperature: 0
+
+# Per-request defaults used by chat.sh / trtllm_runner.py interactive mode.
+# These are NOT server flags — they're sent in each API request.
+# Qwen3 model card:
+#   thinking mode:  Temperature=0.6, TopP=0.95, TopK=20, MinP=0
+#   instruct mode:  Temperature=0.7, TopP=0.8,  TopK=20, MinP=0
+# DO NOT use temperature=0 (greedy) — causes repetition loops on Qwen3.
+interactive:
+  keep_history: true
+  max_tokens: 512
+  # thinking mode defaults (override per-request for instruct mode)
+  temperature: 0.6
+  top_p: 0.95
+  top_k: 20
+  min_p: 0.0
+
+# Instruct mode overrides (used by chat.sh when --no-think is passed)
+interactive_instruct:
+  keep_history: true
+  max_tokens: 512
+  temperature: 0.7
+  top_p: 0.8
+  top_k: 20
+  min_p: 0.0

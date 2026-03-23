@@ -1,0 +1,25 @@
+# Extra LLM API config for Qwen3-4B on RTX 3070 Notebook (8GB)
+# Passed via: trtllm-serve serve ... --config <this-file>
+#
+# ⚠️  Qwen3-4B BF16 = ~8.2GB weights. On an 8GB card this is right at the limit.
+# trtllm will use however little free VRAM remains for KV cache.
+# If it OOMs on load: use Qwen3-1.7B instead.
+# If it loads: expect very short context window (~2-4K tokens).
+
+kv_cache_config:
+  enable_block_reuse: true
+  # Very conservative — weights consume almost all 8GB.
+  # Adjust upward in 0.05 steps if you have headroom.
+  free_gpu_memory_fraction: 0.50
+  tokens_per_block: 32          # Smaller blocks = less waste in limited KV budget
+
+scheduler_config:
+  waiting_queue_policy: fcfs
+  capacity_scheduler_policy: GUARANTEED_NO_EVICT
+
+enable_autotuner: true
+
+# Chunked prefill helps when context is short (avoids OOM on long prompts).
+enable_chunked_prefill: true
+
+disable_overlap_scheduler: false

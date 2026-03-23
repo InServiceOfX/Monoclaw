@@ -1,0 +1,37 @@
+# Extra LLM API config for Qwen3-1.7B on RTX 3070 Notebook (8GB)
+# Passed via: trtllm-serve serve ... --config <this-file>
+# These keys override or supplement what trtllm-serve CLI flags set.
+# Only use keys supported by the PyTorch backend (backend: pytorch).
+
+# ── KV cache ──────────────────────────────────────────────────────────────────
+# Qwen3-1.7B weights ~3.4GB, leaves ~4.6GB free on 8GB card.
+# free_gpu_memory_fraction 0.80 = 0.80 * 4.6GB ≈ 3.7GB for KV cache.
+# With 32-token blocks and Qwen3's KV shape, this is ~15-20K tokens of context.
+# tokens_per_block: larger blocks → better memory utilization, slightly more
+# fragmentation. 64 is a good balance for Ampere (3070 is SM86).
+kv_cache_config:
+  enable_block_reuse: true      # Cache prefix KV blocks across requests (big win for system prompts)
+  free_gpu_memory_fraction: 0.80
+  tokens_per_block: 64          # Up from default 32 — better utilization on 3070
+
+# ── scheduler ─────────────────────────────────────────────────────────────────
+# FCFS: first-come-first-served. Lowest overhead for single-user interactive.
+# GUARANTEED_NO_EVICT: never evict KV blocks mid-request (more stable).
+scheduler_config:
+  waiting_queue_policy: fcfs
+  capacity_scheduler_policy: GUARANTEED_NO_EVICT
+
+# ── autotuner ─────────────────────────────────────────────────────────────────
+# Runs on first boot, finds fastest GEMM/attention kernel for your exact GPU.
+# Results cached in /root/.triton/autotune — instant on subsequent starts.
+enable_autotuner: true
+
+# ── chunked prefill ───────────────────────────────────────────────────────────
+# false = lower latency for short prompts (interactive chat).
+# true = better throughput for long documents / batch workloads.
+enable_chunked_prefill: false
+
+# ── overlap scheduler ─────────────────────────────────────────────────────────
+# Pipelines CPU scheduling work with GPU compute — small throughput gain.
+# Safe to enable on pytorch backend for single-GPU.
+disable_overlap_scheduler: false

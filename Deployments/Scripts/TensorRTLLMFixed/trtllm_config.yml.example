@@ -1,0 +1,88 @@
+# Base defaults shared across model profiles.
+# Copy this file to trtllm_config.yml and keep it fairly generic.
+# Put model-specific overrides in profiles/*.yml and select them with --profile
+# or by exporting TRTLLM_PROFILE=<name>.
+
+commands:
+  trtllm_serve: trtllm-serve
+
+# Docker container settings for trtllm_launch.sh
+docker:
+  image: tensorrt-llm-fixed/release:1.3.0rc0
+  gpu_id: 1                      # which GPU to use (device=N)
+  container_name: trtllm-serve   # --name for docker run
+  volumes:
+    - host: /media/propdev/9dc1a908-7eff-4e1c-8231-ext4/home/propdev/Data
+      container: /Data
+    - host: /home/propdev/Data
+      container: /Data1
+    - host: /home/propdev/Prop/InServiceOfX
+      container: /InServiceOfX
+    - host: /home/propdev/.openclaw/workspace/repos/Monoclaw
+      container: /Monoclaw
+      readonly: true
+  env:
+    NVIDIA_DISABLE_REQUIRE: "1"
+    CUDA_VISIBLE_DEVICES: "0"   # inside container, device=0 (mapped from gpu_id above)
+
+paths:
+  # Model path should usually come from a profile.
+  # model_path: /Data/Models/LLM/Qwen/Qwen3-0.6B
+
+  # Optional host-side reference path for your own notes / alternate desktop setups.
+  # host_model_path: /media/ernest/Samsung980ProPCI/Data/Models/LLM/Qwen/Qwen3-0.6B
+
+  # Optional: path as seen by transformers/tokenizer if different from model_path.
+  # tokenizer: /Data/Models/LLM/Qwen/Qwen3-0.6B
+
+  # Optional YAML passed through to --config. This config overrides CLI args.
+  # extra_llm_config: /workspace/Deployments/Scripts/trtllm/extra_llm_config.qwen3-0.6b.yml
+
+  # Optional custom chat template path.
+  # chat_template: /workspace/Deployments/Scripts/trtllm/chat_templates/qwen3.jinja
+
+endpoint:
+  host: 127.0.0.1
+  port: 30000
+
+serve:
+  host: 0.0.0.0
+  port: 30000
+  backend: pytorch
+  log_level: info
+  gpus_per_node: 1
+  max_beam_width: 1
+  num_postprocess_workers: 1
+  trust_remote_code: false
+  enable_chunked_prefill: false
+  grpc: false
+
+probe:
+  system_prompt: You are a helpful assistant.
+  prompt: Where is New York?
+  max_tokens: 32
+  temperature: 0
+
+interactive:
+  keep_history: true
+  max_tokens: 128
+  temperature: 0.7
+
+environment:
+  # Optional hint variable for surrounding scripts / docker wrappers.
+  # mount_hint_env_var: TRTLLM_MODEL_MOUNT_ROOT
+
+modes:
+  thinking_general:
+    reasoning_parser: qwen3
+    tool_parser: qwen3
+
+  thinking_coding:
+    reasoning_parser: qwen3
+    tool_parser: qwen3_coder
+
+  instruct_general: {}
+
+  reasoning_qwen3:
+    reasoning_parser: qwen3
+    tool_parser: qwen3

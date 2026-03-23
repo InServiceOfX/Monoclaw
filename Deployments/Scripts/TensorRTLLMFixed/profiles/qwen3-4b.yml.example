@@ -1,0 +1,63 @@
+# Profile: Qwen3-4B — thinking + instruct modes
+# RTX 3070 Notebook (8GB VRAM), BF16, 40960 context native
+#
+# Qwen3-4B: 4B params, ~8.2GB BF16 weights — tight fit on 8GB.
+# trtllm logs show it works: weights=8.22GB, KV cache=2.36GB, peak=11.47GB
+# BUT that was on desktop RTX 3060 (12GB). On 3070 Notebook (8GB) it will OOM
+# at BF16. Use this profile as-is if you have >=10GB VRAM, or see lowvram notes.
+#
+# On 3070 8GB:
+#   - free_gpu_memory_fraction MUST be low (0.50-0.55) to leave room for model weights
+#   - KV cache will be very small (~500MB) — short conversations only
+#   - Alternatively: use Qwen3-1.7B which fits comfortably
+#
+# 3070 notes:
+#   - max_seq_len 8192: conservative — KV cache is the bottleneck here
+#   - max_batch_size 64: reasonable for 8GB
+#   - If OOM on load: this model doesn't fit BF16 on 8GB, use 1.7B instead
+
+paths:
+  model_path: /Data/Models/LLM/Qwen/Qwen3-4B
+  host_model_path: /media/propdev/9dc1a908-7eff-4e1c-8231-ext4/home/propdev/Data/Models/LLM/Qwen/Qwen3-4B
+  extra_llm_config: /Monoclaw/Deployments/Scripts/TensorRTLLMFixed/extra_llm_configs/extra_llm_config.qwen3-4b.yml
+
+endpoint:
+  host: 127.0.0.1
+  port: 30000
+
+serve:
+  host: 0.0.0.0
+  port: 30000
+  served_model_name: Qwen3-4B
+  backend: pytorch
+  reasoning_parser: qwen3
+  gpus_per_node: 1
+  # Low fraction — model weights consume most of 8GB. Adjust down if OOM.
+  kv_cache_free_gpu_memory_fraction: 0.50
+  max_batch_size: 64
+  max_num_tokens: 4096
+  # Conservative context: KV cache is tiny on 8GB with 4B weights loaded
+  max_seq_len: 8192
+
+probe:
+  model_name: Qwen3-4B
+  system_prompt: You are a helpful assistant.
+  prompt: What is the capital of France?
+  max_tokens: 32
+  temperature: 0
+
+interactive:
+  keep_history: true
+  max_tokens: 512
+  temperature: 0.6   # thinking mode (Qwen3 model card)
+  top_p: 0.95
+  top_k: 20
+  min_p: 0.0
+
+interactive_instruct:
+  keep_history: true
+  max_tokens: 512
+  temperature: 0.7   # instruct mode (Qwen3 model card)
+  top_p: 0.8
+  top_k: 20
+  min_p: 0.0
