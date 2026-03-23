@@ -29,4 +29,9 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-exec python3 "$RUNNER" --config "$SCRIPT_DIR/trtllm_config.yml" serve --mode "$MODE" ${ARGS[@]+"${ARGS[@]}"}
+PROFILE_ARGS=()
+if [[ -n "${TRTLLM_PROFILE:-}" ]]; then
+  PROFILE_ARGS+=(--profile "$TRTLLM_PROFILE")
+fi
+
+exec python3 "$RUNNER" --config "$SCRIPT_DIR/trtllm_config.yml" "${PROFILE_ARGS[@]}" serve --mode "$MODE" ${ARGS[@]+"${ARGS[@]}"}

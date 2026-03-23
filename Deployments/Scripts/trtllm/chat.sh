@@ -10,4 +10,9 @@ if [[ ! -f "$SCRIPT_DIR/trtllm_config.yml" ]]; then
   echo "   Edit: $SCRIPT_DIR/trtllm_config.yml"
 fi
 
-exec python3 "$RUNNER" --config "$SCRIPT_DIR/trtllm_config.yml" chat "$@"
+PROFILE_ARGS=()
+if [[ -n "${TRTLLM_PROFILE:-}" ]]; then
+  PROFILE_ARGS+=(--profile "$TRTLLM_PROFILE")
+fi
+
+exec python3 "$RUNNER" --config "$SCRIPT_DIR/trtllm_config.yml" "${PROFILE_ARGS[@]}" chat "$@"

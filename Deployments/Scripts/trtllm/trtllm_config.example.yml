@@ -1,14 +1,16 @@
-# Copy this file to trtllm_config.yml and edit as needed.
+# Base defaults shared across model profiles.
+# Copy this file to trtllm_config.yml and keep it fairly generic.
+# Put model-specific overrides in profiles/*.yml and select them with --profile
+# or by exporting TRTLLM_PROFILE=<name>.
 
 commands:
   trtllm_serve: trtllm-serve
 
 paths:
-  # Path as seen *inside the container* or environment where trtllm-serve runs.
-  model_path: /Data/Models/LLM/Qwen/Qwen3-0.6B
+  # Model path should usually come from a profile.
+  # model_path: /Data/Models/LLM/Qwen/Qwen3-0.6B
 
   # Optional host-side reference path for your own notes / alternate desktop setups.
-  # Not used by trtllm-serve directly, but useful to keep both paths in one config.
   # host_model_path: /media/ernest/Samsung980ProPCI/Data/Models/LLM/Qwen/Qwen3-0.6B
 
   # Optional: path as seen by transformers/tokenizer if different from model_path.
@@ -20,31 +22,23 @@ paths:
   # Optional custom chat template path.
   # chat_template: /workspace/Deployments/Scripts/trtllm/chat_templates/qwen3.jinja
 
+endpoint:
+  host: 127.0.0.1
+  port: 30000
+
 serve:
   host: 0.0.0.0
   port: 30000
   backend: pytorch
   log_level: info
-  served_model_name: Qwen3-0.6B
   gpus_per_node: 1
-  kv_cache_free_gpu_memory_fraction: 0.72
-  max_batch_size: 32
-  max_num_tokens: 2048
-  max_seq_len: 8192
   max_beam_width: 1
   num_postprocess_workers: 1
   trust_remote_code: false
   enable_chunked_prefill: false
   grpc: false
 
-endpoint:
-  # Host-side endpoint you want client scripts to talk to.
-  # Useful when server-side bind host differs from client-side target.
-  host: 127.0.0.1
-  port: 30000
-
 probe:
-  model_name: Qwen3-0.6B
   system_prompt: You are a helpful assistant.
   prompt: Where is New York?
   max_tokens: 32

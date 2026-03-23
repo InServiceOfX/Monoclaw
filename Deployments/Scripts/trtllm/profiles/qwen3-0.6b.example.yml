@@ -1,0 +1,30 @@
+paths:
+  model_path: /Data/Models/LLM/Qwen/Qwen3-0.6B
+  host_model_path: /media/ernest/Samsung980ProPCI/Data/Models/LLM/Qwen/Qwen3-0.6B
+
+endpoint:
+  host: 127.0.0.1
+  port: 30000
+
+serve:
+  host: 0.0.0.0
+  port: 30000
+  served_model_name: Qwen3-0.6B
+  backend: pytorch
+  gpus_per_node: 1
+  kv_cache_free_gpu_memory_fraction: 0.9
+  max_batch_size: 2048
+  max_num_tokens: 8192
+  max_seq_len: 40960
+
+probe:
+  model_name: Qwen3-0.6B
+  system_prompt: You are a helpful assistant.
+  prompt: Where is New York?
+  max_tokens: 32
+  temperature: 0
+
+interactive:
+  keep_history: true
+  max_tokens: 256
+  temperature: 0.7

@@ -1,11 +1,12 @@
 # TensorRT-LLM local serving (config-driven)
 
-This folder provides a small config-driven wrapper around `trtllm-serve` so model path, host/port, parsing mode, and conservative single-GPU limits are not hardcoded into ad-hoc commands.
+This folder provides a config-driven wrapper around `trtllm-serve` with a **base config + per-model profiles** layout, so model path, host/port, parsing mode, and model-specific limits are not hardcoded into ad-hoc commands.
 
 ## Files
 
 - `trtllm_runner.py` — runs `trtllm-serve serve` or sends a probe request from YAML settings
-- `trtllm_config.example.yml` — baseline example config for local Qwen3 serving
+- `trtllm_config.example.yml` — base shared defaults
+- `profiles/` — per-model override files you switch with `--profile`
 - `extra_llm_config.qwen3-0.6b.example.yml` — optional TensorRT-LLM YAML passed via `--config`
 - `serve.sh` — thin wrapper around `trtllm_runner.py serve`
 - `test-query.sh` — one-shot probe request
@@ -13,35 +14,54 @@ This folder provides a small config-driven wrapper around `trtllm-serve` so mode
 - `health.sh` — check `/health`
 - `models.sh` — check `/v1/models`
 
-## Quick start
+## Recommended layout
 
-Inside the environment or container where `trtllm-serve` exists:
+Best choice for your use case: **one generic base config plus separate model profile YAMLs**.
+
+Why I think this is the right balance:
+
+- shared defaults live in one place
+- model-specific paths and limits stay isolated
+- switching models is simple
+- moving to another desktop just means editing or cloning a profile
+- it avoids turning one giant YAML into a swamp
+
+## Quick start
 
 ```bash
 cd /home/ernest/.openclaw/workspace/workspace2/repos/Monoclaw/Deployments/Scripts/trtllm
-
-# first run auto-copies trtllm_config.example.yml -> trtllm_config.yml
-./serve.sh
+cp trtllm_config.example.yml trtllm_config.yml
+cp profiles/qwen3-0.6b.example.yml profiles/qwen3-0.6b.yml
 ```
 
-Then edit `trtllm_config.yml` and set the exact paths and limits you want.
+Then edit `trtllm_config.yml` only for shared defaults, and edit `profiles/qwen3-0.6b.yml` for model-specific values.
 
 Important config split:
 
+**Base config (`trtllm_config.yml`)**
+- shared command defaults
+- shared endpoint defaults
+- shared interactive/probe defaults
+- shared modes
+
+**Profile (`profiles/<name>.yml`)**
 - `paths.model_path` = where the model exists from the point of view of `trtllm-serve`
   - inside a container this may be something like `/Data/Models/...`
 - `paths.host_model_path` = optional note for the host-side real path on that machine
+- `serve.served_model_name`
+- model-specific batch/token/cache limits
+- model-specific endpoint/port if you want
+
+Host/client split still applies:
 - `endpoint.host` / `endpoint.port` = where the host-side helper scripts should connect
-  - usually `127.0.0.1` and `30000`
 - `serve.host` / `serve.port` = what `trtllm-serve` should bind to when launched via `serve.sh`
-  - usually `0.0.0.0` and `30000`
 
 For a smoke test from another shell:
 
 ```bash
-./health.sh
-./models.sh
-./test-query.sh
+TRTLLM_PROFILE=qwen3-0.6b ./health.sh
+TRTLLM_PROFILE=qwen3-0.6b ./models.sh
+TRTLLM_PROFILE=qwen3-0.6b ./test-query.sh
 ```
 
 Or override the prompt:
@@ -53,7 +73,7 @@ Or override the prompt:
 For interactive chatting from the host:
 
 ```bash
-./chat.sh
+TRTLLM_PROFILE=qwen3-0.6b ./chat.sh
 ```
 
 Inside the interactive chat client:
@@ -67,10 +87,35 @@ Inside the interactive chat client:
 ## Why this setup
 
 - Keeps your `trtllm-serve` invocation reproducible
-- Moves model path and serve knobs into YAML
-- Lets you keep host-side and container-side model paths in one config
+- Separates shared defaults from per-model details
+- Lets you keep host-side and container-side model paths in one profile
 - Makes it easier to carry a known-good config into Docker wrappers later
 - Gives a repeatable probe request instead of retyping curl payloads
+
+## Profile selection
+
+There are two easy ways to select a profile.
+
+### Option A: environment variable
+
+```bash
+TRTLLM_PROFILE=qwen3-0.6b ./chat.sh
+TRTLLM_PROFILE=qwen3-0.6b ./serve.sh
+```
+
+### Option B: direct runner usage
+
+```bash
+python3 trtllm_runner.py --config trtllm_config.yml --profile qwen3-0.6b chat
+python3 trtllm_runner.py --config trtllm_config.yml --profile qwen3-0.6b serve
+```
+
+Profiles are resolved from:
+- `profiles/<name>`
+- `profiles/<name>.yml`
+- `profiles/<name>.yaml`
+
+You can also pass an explicit path to a YAML file.
 
 ## Recommended first stable baseline for 8 GB-ish VRAM
 

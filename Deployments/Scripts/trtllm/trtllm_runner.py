@@ -21,6 +21,7 @@ except Exception:
 
 DEFAULT_CONFIG = Path(__file__).with_name("trtllm_config.yml")
 EXAMPLE_CONFIG = Path(__file__).with_name("trtllm_config.example.yml")
+PROFILES_DIR = Path(__file__).with_name("profiles")
 
 MODE_ALIASES = {
     "thinking": "thinking_general",
@@ -35,7 +36,43 @@ class ConfigError(RuntimeError):
     pass
 
 
-def load_config(config_path: Path) -> dict:
+def load_yaml_file(path: Path) -> dict:
+    with path.open("r", encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+    if not isinstance(data, dict):
+        raise ConfigError(f"Config root must be a YAML mapping/object: {path}")
+    return data
+
+
+def deep_merge(base: dict, override: dict) -> dict:
+    merged = dict(base)
+    for key, value in override.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = deep_merge(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
+
+
+def resolve_profile_path(profile: str) -> Path:
+    raw = Path(profile).expanduser()
+    candidates = []
+    if raw.is_absolute() or raw.parent != Path("."):
+        candidates.append(raw)
+    else:
+        candidates.extend([
+            PROFILES_DIR / profile,
+            PROFILES_DIR / f"{profile}.yml",
+            PROFILES_DIR / f"{profile}.yaml",
+        ])
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    tried = ", ".join(str(p) for p in candidates)
+    raise ConfigError(f"Profile '{profile}' not found. Tried: {tried}")
+
+
+def load_config(config_path: Path, profile: str | None = None) -> dict:
     if yaml is None:
         raise ConfigError("PyYAML is required. Install with: python3 -m pip install pyyaml")
 
@@ -45,11 +82,12 @@ def load_config(config_path: Path) -> dict:
             f"Copy {EXAMPLE_CONFIG.name} -> {DEFAULT_CONFIG.name} and edit it."
         )
 
-    with config_path.open("r", encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
-
-    if not isinstance(data, dict):
-        raise ConfigError("Config root must be a YAML mapping/object")
+    data = load_yaml_file(config_path)
+    if profile:
+        profile_path = resolve_profile_path(profile)
+        profile_data = load_yaml_file(profile_path)
+        data = deep_merge(data, profile_data)
+        data.setdefault("_meta", {})["profile_path"] = str(profile_path)
     return data
 
 
@@ -225,8 +263,15 @@ def build_probe_command(args: argparse.Namespace, cfg: dict) -> tuple[str, dict]
     return f"http://{host}:{port}/v1/chat/completions", payload
 
 
+def maybe_print_profile(cfg: dict) -> None:
+    profile_path = ((cfg.get("_meta", {}) or {}).get("profile_path"))
+    if profile_path:
+        print(f"[trtllm_runner] profile={profile_path}")
+
+
 def run_serve(args: argparse.Namespace, cfg: dict) -> int:
     cmd, host, port = build_serve_command(args, cfg)
+    maybe_print_profile(cfg)
     print(f"[trtllm_runner] endpoint=http://{host}:{port}/v1")
     print(f"[trtllm_runner] exec: {shlex.join(cmd)}")
     os.execvp(cmd[0], cmd)
@@ -235,6 +280,7 @@ def run_serve(args: argparse.Namespace, cfg: dict) -> int:
 
 def run_probe(args: argparse.Namespace, cfg: dict) -> int:
     endpoint, payload = build_probe_command(args, cfg)
+    maybe_print_profile(cfg)
     print(f"[trtllm_runner] probe endpoint={endpoint}")
     print(f"[trtllm_runner] payload: {json.dumps(payload, ensure_ascii=False)}")
     status, body = http_json("POST", endpoint, payload)
@@ -244,6 +290,7 @@ def run_probe(args: argparse.Namespace, cfg: dict) -> int:
 
 def run_health(args: argparse.Namespace, cfg: dict) -> int:
     host, port = resolve_endpoint(args, cfg)
+    maybe_print_profile(cfg)
     url = f"http://{host}:{port}/health"
     status, body = http_json("GET", url, None, timeout=15.0)
     print(json.dumps(body, indent=2, ensure_ascii=False))
@@ -252,6 +299,7 @@ def run_health(args: argparse.Namespace, cfg: dict) -> int:
 
 def run_models(args: argparse.Namespace, cfg: dict) -> int:
     host, port = resolve_endpoint(args, cfg)
+    maybe_print_profile(cfg)
     url = f"http://{host}:{port}/v1/models"
     status, body = http_json("GET", url, None, timeout=15.0)
     print(json.dumps(body, indent=2, ensure_ascii=False))
@@ -286,6 +334,7 @@ def run_chat(args: argparse.Namespace, cfg: dict) -> int:
     default_max_tokens = int(history_cfg.get("max_tokens", (cfg.get("probe", {}) or {}).get("max_tokens", 128)))
     default_temperature = history_cfg.get("temperature", (cfg.get("probe", {}) or {}).get("temperature", 0.7))
 
+    maybe_print_profile(cfg)
     print(f"[trtllm_runner] interactive chat -> {endpoint}")
     print("[trtllm_runner] Commands: /exit, /quit, /reset, /health, /models")
 
@@ -342,6 +391,7 @@ def run_chat(args: argparse.Namespace, cfg: dict) -> int:
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Run trtllm-serve from YAML config")
     p.add_argument("--config", default=str(DEFAULT_CONFIG), help="Path to YAML config (default: trtllm_config.yml)")
+    p.add_argument("--profile", help="Named profile under profiles/ or explicit YAML path to merge over the base config")
 
     sub = p.add_subparsers(dest="command", required=True)
 
@@ -387,7 +437,7 @@ def main() -> int:
     args = parser.parse_args()
 
     try:
-        cfg = load_config(Path(args.config).expanduser())
+        cfg = load_config(Path(args.config).expanduser(), args.profile)
         if args.command == "serve":
             return run_serve(args, cfg)
         if args.command == "probe":
