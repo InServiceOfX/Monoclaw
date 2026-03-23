@@ -1,0 +1,60 @@
+# Copy this file to trtllm_config.yml and edit as needed.
+
+commands:
+  trtllm_serve: trtllm-serve
+
+paths:
+  # Path as seen *inside the container* where trtllm-serve runs.
+  model_path: /Data/Models/LLM/Qwen/Qwen3-0.6B
+
+  # Optional: path as seen by transformers/tokenizer if different from model_path.
+  # tokenizer: /Data/Models/LLM/Qwen/Qwen3-0.6B
+
+  # Optional YAML passed through to --config. This config overrides CLI args.
+  # extra_llm_config: /workspace/Deployments/Scripts/trtllm/extra_llm_config.qwen3-0.6b.yml
+
+  # Optional custom chat template path.
+  # chat_template: /workspace/Deployments/Scripts/trtllm/chat_templates/qwen3.jinja
+
+serve:
+  host: 0.0.0.0
+  port: 30000
+  backend: pytorch
+  log_level: info
+  served_model_name: Qwen3-0.6B
+  gpus_per_node: 1
+  kv_cache_free_gpu_memory_fraction: 0.72
+  max_batch_size: 32
+  max_num_tokens: 2048
+  max_seq_len: 8192
+  max_beam_width: 1
+  num_postprocess_workers: 1
+  trust_remote_code: false
+  enable_chunked_prefill: false
+  grpc: false
+
+probe:
+  model_name: Qwen3-0.6B
+  system_prompt: You are a helpful assistant.
+  prompt: Where is New York?
+  max_tokens: 32
+  temperature: 0
+
+environment:
+  # Optional hint variable for surrounding scripts / docker wrappers.
+  # mount_hint_env_var: TRTLLM_MODEL_MOUNT_ROOT
+
+modes:
+  thinking_general:
+    reasoning_parser: qwen3
+    tool_parser: qwen3
+
+  thinking_coding:
+    reasoning_parser: qwen3
+    tool_parser: qwen3_coder
+
+  instruct_general: {}
+
+  reasoning_qwen3:
+    reasoning_parser: qwen3
+    tool_parser: qwen3

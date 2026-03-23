@@ -1,0 +1,18 @@
+# Example TensorRT-LLM YAML config for a small single-GPU Qwen3 run.
+# Passed with: trtllm-serve serve ... --config <this-file>
+# Adjust upward only after a stable baseline is working.
+
+enable_iter_perf_stats: true
+batch_wait_timeout_ms: 0
+batch_wait_timeout_iters: 0
+batch_wait_max_tokens_ratio: 0
+enable_chunked_prefill: false
+enable_autotuner: true
+print_iter_log: false
+
+kv_cache_config:
+  enable_block_reuse: true
+  free_gpu_memory_fraction: 0.72
+
+scheduler_config:
+  waiting_queue_policy: fcfs
