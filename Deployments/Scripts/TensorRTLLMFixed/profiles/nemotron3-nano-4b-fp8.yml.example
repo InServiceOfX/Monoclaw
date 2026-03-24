@@ -1,0 +1,61 @@
+# Profile: NVIDIA-Nemotron-3-Nano-4B-FP8
+# RTX 3060 (12GB VRAM), FP8
+#
+# Architecture: nemotron_h (Mamba-2 hybrid — mostly SSM layers + only 4 attention layers)
+# NOT a standard transformer — requires cuda_graph_config + disable_overlap_scheduler.
+# Context: 262,144 tokens native.
+# Reasoning: <think>...</think> traces, controlled via enable_thinking in chat template.
+# Compressed from Nemotron-Nano-9B-v2 via NVIDIA Elastic framework.
+#
+# VRAM estimate: ~5GB FP8 weights (~32% less than BF16). More KV cache headroom vs BF16.
+# Recommended temps (from NVIDIA README):
+#   reasoning tasks: temperature=1.0, top_p=0.95
+#   tool calling:    temperature=0.6, top_p=0.95
+
+paths:
+  model_path: /Data/Models/LLM/nvidia/NVIDIA-Nemotron-3-Nano-4B-FP8
+  host_model_path: /path/to/your/Data/Models/LLM/nvidia/NVIDIA-Nemotron-3-Nano-4B-FP8
+  extra_llm_config: /Monoclaw/Deployments/Scripts/TensorRTLLMFixed/extra_llm_configs/extra_llm_config.nemotron3-nano-4b-fp8.yml
+
+endpoint:
+  host: 127.0.0.1
+  port: 30000
+
+serve:
+  host: 0.0.0.0
+  port: 30000
+  served_model_name: Nemotron3-Nano-4B-FP8
+  backend: pytorch
+  reasoning_parser: nano_v3        # Custom parser shipped with model: nano_v3_reasoning_parser.py
+  gpus_per_node: 1
+  max_batch_size: 4                # Mamba SSM cache scales linearly with batch_size — 32 → 1.23GB OOM on 12GB
+  max_num_tokens: 8192             # FP8 saves ~2.4GB vs BF16 — more headroom for tokens
+  max_seq_len: 32768               # FP8 frees up enough VRAM to push context higher
+  num_postprocess_workers: 1
+
+probe:
+  model_name: Nemotron3-Nano-4B-FP8
+  system_prompt: You are a helpful assistant.
+  prompt: What is the capital of France?
+  max_tokens: 32
+  temperature: 0.6
+
+# Per-request defaults for interactive use.
+# Per NVIDIA model card:
+#   reasoning mode: temperature=1.0, top_p=0.95
+#   non-reasoning:  temperature=0.6, top_p=0.95
+interactive:
+  keep_history: true
+  max_tokens: 1024
+  temperature: 1.0
+  top_p: 0.95
+  top_k: 0              # Nemotron card does not specify top_k — leave unset (0 = disabled)
+  min_p: 0.0
+
+interactive_instruct:
+  keep_history: true
+  max_tokens: 1024
+  temperature: 0.6
+  top_p: 0.95
+  top_k: 0
+  min_p: 0.0

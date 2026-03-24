@@ -1,0 +1,38 @@
+# Extra LLM API config for NVIDIA-Nemotron-3-Nano-4B-FP8 on RTX 3060 (12GB)
+# Passed via: trtllm-serve serve ... --config <this-file>
+#
+# IMPORTANT: nemotron_h is a Mamba-2 hybrid architecture (mostly SSM + 4 attention layers).
+# It requires specific settings that differ from pure-transformer models:
+#   - disable_overlap_scheduler: true  (required for Mamba hybrid — per NVIDIA README)
+#   - cuda_graph_config: required for stable inference
+#   - moe_config.backend: CUTLASS (per NVIDIA README)
+#   - enable_block_reuse: false (per NVIDIA README — don't change this)
+#
+# FP8 specifics:
+#   - weights ~5GB (vs 7.4GB BF16) — ~32% reduction, meaningful extra VRAM headroom
+#   - hf_quant_config.json in model dir sets kv_cache_quant_algo=FP8
+#   - dtype: "auto" picks up FP8 KV cache from hf_quant_config automatically
+
+# ── KV cache ──────────────────────────────────────────────────────────────────
+# FP8 weights ~5GB, leaves ~7GB free on 3060 12GB — can afford higher fraction vs BF16.
+# enable_block_reuse: false — required per NVIDIA README for this architecture.
+kv_cache_config:
+  dtype: "auto"
+  enable_block_reuse: false
+  free_gpu_memory_fraction: 0.70   # FP8 saves ~2.4GB vs BF16 — push fraction higher
+
+# ── CUDA graph ────────────────────────────────────────────────────────────────
+# Required for nemotron_h Mamba hybrid. Per NVIDIA README.
+# max_batch_size must match serve.max_batch_size.
+cuda_graph_config:
+  max_batch_size: 4              # Must match serve.max_batch_size
+  enable_padding: true
+
+# ── Overlap scheduler ─────────────────────────────────────────────────────────
+# MUST be disabled for Mamba hybrid architecture. Per NVIDIA README.
+disable_overlap_scheduler: true
+
+# ── MoE backend ───────────────────────────────────────────────────────────────
+# CUTLASS backend required. Per NVIDIA README.
+moe_config:
+  backend: CUTLASS
