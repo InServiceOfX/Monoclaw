@@ -219,7 +219,7 @@ def resolve_model_name(cfg: dict) -> str:
     return str(probe_cfg.get("model_name") or serve_cfg.get("served_model_name") or Path(paths.get("model_path", "model")).name)
 
 
-def build_chat_payload(cfg: dict, *, user_prompt: str, max_tokens: int | None = None, temperature: float | None = None, history: list[dict] | None = None) -> dict:
+def build_chat_payload(cfg: dict, *, user_prompt: str, max_tokens: int | None = None, temperature: float | None = None, history: list[dict] | None = None, no_think: bool = False) -> dict:
     probe_cfg = cfg.get("probe", {}) or {}
     system_prompt = probe_cfg.get("system_prompt", "You are a helpful assistant.")
     payload = {
@@ -228,6 +228,8 @@ def build_chat_payload(cfg: dict, *, user_prompt: str, max_tokens: int | None = 
         "max_tokens": int(max_tokens if max_tokens is not None else probe_cfg.get("max_tokens", 32)),
         "temperature": temperature if temperature is not None else probe_cfg.get("temperature", 0),
     }
+    if no_think:
+        payload["chat_template_kwargs"] = {"enable_thinking": False}
     return payload
 
 
@@ -373,8 +375,13 @@ def run_chat(args: argparse.Namespace, cfg: dict) -> int:
             max_tokens=args.max_tokens if args.max_tokens is not None else default_max_tokens,
             temperature=args.temperature if args.temperature is not None else default_temperature,
             history=history if keep_history else [],
+            no_think=getattr(args, "no_think", False),
         )
-        status, body = http_json("POST", endpoint, payload)
+        try:
+            status, body = http_json("POST", endpoint, payload)
+        except Exception as exc:
+            print(f"[trtllm_runner] request failed: {exc} — retry with /reset or retype your message", file=sys.stderr)
+            continue
         if not (200 <= status < 300):
             print(json.dumps(body, indent=2, ensure_ascii=False), file=sys.stderr)
             continue
@@ -428,6 +435,8 @@ def build_parser() -> argparse.ArgumentParser:
     chat.add_argument("--port", type=int)
     chat.add_argument("--max-tokens", type=int)
     chat.add_argument("--temperature", type=float)
+    chat.add_argument("--no-think", action="store_true", default=False,
+                      help="Disable thinking/reasoning mode (sets enable_thinking=false in chat_template_kwargs)")
 
     return p
 
