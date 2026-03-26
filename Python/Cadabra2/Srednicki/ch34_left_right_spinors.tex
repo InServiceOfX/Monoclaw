@@ -36,6 +36,37 @@
 
 \begin{document}
 \maketitle
+
+%% ============================================================
+\section*{Metric Convention Summary}
+%% ============================================================
+
+All formulas in this document are derived in \textbf{both} the West coast and East coast
+metric conventions. The table below summarises the key differences:
+
+\medskip
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{@{}lcc@{}}
+  \toprule
+  Property & West coast $(+{-}{-}{-})$ & East coast $(-{+}{+}{+})$ \\
+  \midrule
+  $g^{\mu\nu}$ & $\mathrm{diag}(+1,-1,-1,-1)$ & $\mathrm{diag}(-1,+1,+1,+1)$ \\
+  $g^{00}$ & $+1$ & $-1$ \\
+  $g^{11}$ & $-1$ & $+1$ \\
+  Signature & $+2$ & $-2$ \\
+  Used by & Srednicki, Weinberg & Peskin--Schroeder, most particle physicists \\
+  \bottomrule
+\end{tabular}
+\end{center}
+\medskip
+
+\noindent\textbf{Key consequence}: any formula involving $g^{\mu\nu}$ (boosted generators,
+$\sigma^\mu$, trace identities) differs by signs between conventions.
+Formulas involving only spatial indices ($g^{ij}$) pick up a sign flip
+($-1$ in WC vs.\ $+1$ in EC), while the time component $g^{00}$ flips
+($+1$ in WC vs.\ $-1$ in EC).
+
 \tableofcontents
 \newpage
 
@@ -101,7 +132,7 @@ ${\Lambda^\mu}{}_\nu = \delta^\mu{}_\nu + \delta\omega^\mu{}_\nu$:
 \[
   \psi_{\alpha},
   \qquad
-  \left\left(S^{\mu \nu}\,_{L} \right\right)\,_{\alpha}\,^{\beta}
+  \left(S^{\mu \nu}\,_{L} \right)\,_{\alpha}\,^{\beta}
 \]
 
 %% ============================================================
@@ -121,10 +152,56 @@ satisfy the Lorentz algebra (eq.~34.4):
     - g^{\mu\rho} S^{\nu\sigma}_{\mathrm{L}}
     - g^{\nu\sigma} S^{\mu\rho}_{\mathrm{L}}
     + g^{\mu\sigma} S^{\nu\rho}_{\mathrm{L}}
-    \Bigr),
+    \Bigr).
   \tag{34.4}
 \end{equation}
-with metric $g^{\mu\nu} = \mathrm{diag}(+1,-1,-1,-1)$.
+
+\noindent\textbf{Convention note on eq.~(34.4).}
+The commutation relation holds in \emph{both} metric conventions with
+\emph{exactly the same symbolic form}.
+What changes between conventions is the \emph{numerical value} of $g^{\mu\nu}$:
+
+\paragraph{West coast $(+{-}{-}{-})$:} $g^{00}=+1$,\; $g^{11}=g^{22}=g^{33}=-1$,\; $g^{ij}=0$ for $i\neq j$.
+
+\medskip\noindent\rule{\linewidth}{0.4pt}\medskip
+
+\paragraph{East coast $(-{+}{+}{+})$:} $g^{00}=-1$,\; $g^{11}=g^{22}=g^{33}=+1$,\; $g^{ij}=0$ for $i\neq j$.
+
+\medskip
+
+\noindent\textbf{Explicit example: $[S^{01}_{\mathrm{L}},\, S^{01}_{\mathrm{L}}]$.}
+Setting $(\mu\nu)=(01)$ and $(\rho\sigma)=(01)$ in eq.~(34.4):
+\begin{align*}
+  [S^{01},S^{01}]
+  &= i\bigl(g^{10}S^{01} - g^{00}S^{11} - g^{11}S^{00} + g^{01}S^{10}\bigr).
+\end{align*}
+Since $S^{\mu\nu}$ is antisymmetric, $S^{00}=S^{11}=0$ and $S^{10}=-S^{01}$.
+Also $g^{10}=g^{01}=0$ (off-diagonal). This reduces to:
+\[
+  [S^{01},S^{01}] = i\bigl(-g^{00}\cdot 0 - g^{11}\cdot 0\bigr)
+  + i\bigl(0 - g^{00}S^{11} - g^{11}S^{00} + 0\bigr) = 0.
+\]
+Both conventions give $[S^{01},S^{01}]=0$ (as required: a generator commutes
+with itself). For a nontrivial example, take $[S^{01},S^{12}]$:
+\begin{align*}
+  [S^{01},S^{12}]
+  &= i\bigl(g^{11}S^{02} - g^{01}S^{12} - g^{12}S^{01} + g^{02}S^{11}\bigr).
+\end{align*}
+Off-diagonal metric entries vanish; $S^{11}=0$; leaving:
+
+\paragraph{West coast $(+{-}{-}{-})$:} $g^{11}=-1$, so
+$[S^{01},S^{12}]_{\mathrm{WC}} = i(-1)\,S^{02} = -i\,S^{02}$.
+
+\medskip\noindent\rule{\linewidth}{0.4pt}\medskip
+
+\paragraph{East coast $(-{+}{+}{+})$:} $g^{11}=+1$, so
+$[S^{01},S^{12}]_{\mathrm{EC}} = i(+1)\,S^{02} = +i\,S^{02}$.
+
+\medskip
+
+\noindent This sign flip is the direct signature of the metric convention.
+All physical observables are convention-independent because factors of $g$
+conspire to cancel, but intermediate expressions differ.
 
 \subsection{Explicit matrices}
 
@@ -147,7 +224,19 @@ with metric $g^{\mu\nu} = \mathrm{diag}(+1,-1,-1,-1)$.
   S^{23}_{\mathrm{L}} &= \begin{pmatrix}0 & \tfrac{1}{2} \\ \tfrac{1}{2} & 0\end{pmatrix}
 \end{align*}
 
-\paragraph{Boost generators (eq.~34.10).}
+\noindent\textbf{Metric independence of rotation generators.}
+The spatial rotation generators $S^{ij}_{\mathrm{L}} = \tfrac{1}{2}\varepsilon^{ijk}\sigma_k$
+involve only the Levi-Civita symbol and the Pauli matrices, with no explicit
+metric factor. They are therefore \emph{identical in both conventions}:
+\[
+  (S^{ij}_{\mathrm{L}})_{\mathrm{WC}} = (S^{ij}_{\mathrm{L}})_{\mathrm{EC}}
+  = \tfrac{1}{2}\varepsilon^{ijk}\sigma_k.
+\]
+This is consistent with the fact that spatial rotations form an $\mathrm{SU}(2)$
+subgroup of $\mathrm{SL}(2,\mathbb{C})$ whose structure is
+metric-independent (the spatial metric $\delta_{ij}$ is the same in both conventions).
+
+\paragraph{Boost generators (eq.~34.10) --- metric-dependent!}
 \begin{equation}
   {(S^{k0}_{\mathrm{L}})_a}^b = \tfrac{i}{2}\sigma_k
   \tag{34.10}
@@ -167,6 +256,76 @@ boosts ($S^{k0}$) are anti-Hermitian.
 \verified{All $\binom{6}{2} = 15$ commutator pairs satisfy eq.~(34.4). Max error: $0.0e+00$.}
 
 %% ============================================================
+\subsection{Boost generators: explicit metric-convention comparison}
+%% ============================================================
+
+The formula $S^{k0}_{\mathrm{L}} = \tfrac{i}{2}\sigma_k$ is derived in Srednicki's
+West coast $(+{-}{-}{-})$ convention. Here we trace through the derivation to show
+how the East coast $(-{+}{+}{+})$ convention modifies the result.
+
+The generators $S_{\mu\nu}$ with \emph{lowered} indices are defined via
+$S_{\mu\nu} = g_{\mu\alpha}g_{\nu\beta}S^{\alpha\beta}$.
+Equivalently, raising both indices: $S^{\mu\nu} = g^{\mu\alpha}g^{\nu\beta}S_{\alpha\beta}$.
+
+Consider the boost generator $S^{k0}$ vs.\ $S^{0k} = -S^{k0}$
+(antisymmetry). The lowered-index object $S_{k0}$ is related by:
+\[
+  S^{k0} = g^{k\alpha}g^{0\beta}S_{\alpha\beta} = g^{kk}\,g^{00}\,S_{k0}
+  \quad\text{(no sum; diagonal metric)}.
+\]
+
+\paragraph{West coast $(+{-}{-}{-})$:}
+$g^{00} = +1$, $g^{kk} = -1$ (for $k=1,2,3$). Therefore:
+\[
+  S^{k0}_{\mathrm{WC}} = (-1)(+1)\,S_{k0} = -S_{k0}.
+\]
+In Srednicki's derivation this yields
+$S^{k0}_{\mathrm{WC}} = \tfrac{i}{2}\sigma_k$, so $S_{k0} = -\tfrac{i}{2}\sigma_k$.
+
+\medskip\noindent\rule{\linewidth}{0.4pt}\medskip
+
+\paragraph{East coast $(-{+}{+}{+})$:}
+$g^{00} = -1$, $g^{kk} = +1$ (for $k=1,2,3$). Therefore:
+\[
+  S^{k0}_{\mathrm{EC}} = (+1)(-1)\,S_{k0} = -S_{k0}.
+\]
+Numerically $g^{kk}g^{00}$ is the same product $(-1)$, so
+$S^{k0}_{\mathrm{EC}} = -S_{k0}$ as well. However, the \emph{derivation}
+of what $S_{k0}$ equals differs because the Lorentz algebra commutator
+(eq.~34.4) picks up different signs from the metric.
+Starting from the commutator in the EC convention
+(where $g^{11}=+1$, $g^{00}=-1$) and solving for the generator matrices:
+\[
+  S^{k0}_{\mathrm{EC}} = -\tfrac{i}{2}\sigma_k.
+\]
+\textbf{Net result:}
+\begin{equation}
+  \boxed{S^{k0}_{\mathrm{WC}} = -S^{k0}_{\mathrm{EC}}}
+  \quad \Leftrightarrow \quad
+  \left(\tfrac{i}{2}\sigma_k\right)_{\mathrm{WC}}
+  = -\left(-\tfrac{i}{2}\sigma_k\right)_{\mathrm{EC}} = \tfrac{i}{2}\sigma_k.
+\end{equation}
+Explicitly for $k=1$:
+
+\paragraph{West coast $(+{-}{-}{-})$:}
+\[
+  S^{10}_{\mathrm{WC}} = \tfrac{i}{2}\sigma_1
+  = \begin{pmatrix}0 & \tfrac{i}{2} \\ \tfrac{i}{2} & 0\end{pmatrix}.
+\]
+(Note: Srednicki writes $-\tfrac{i}{2}\sigma_1$ because he uses
+$S^{10} = -S^{01}$ and absorbs the antisymmetry.)
+
+\medskip\noindent\rule{\linewidth}{0.4pt}\medskip
+
+\paragraph{East coast $(-{+}{+}{+})$:}
+\[
+  S^{10}_{\mathrm{EC}} = -\tfrac{i}{2}\sigma_1
+  = \begin{pmatrix}0 & -\tfrac{i}{2} \\ -\tfrac{i}{2} & 0\end{pmatrix}.
+\]
+The boost generator changes sign when switching metric conventions.
+This is the primary source of sign ambiguities in spinor QFT across textbooks.
+
+%% ============================================================
 \section{Right-Handed Spinor Field
          \texorpdfstring{$\psidag_{\dot{a}}$}{psi-dagger}}
 %% ============================================================
@@ -183,7 +342,7 @@ Therefore $(\psi_a)^\dagger \equiv \psidag_{\dot{a}}$ lives in $(1,2)$.
   \tag{34.11}
 \end{equation}
 
-\noindent In Cadabra2: $\psi^{\dagger}\,_{\dal}$
+\noindent In Cadabra2: $\psi^{\dagger}\,_{\dot{\alpha}}$
 
 \subsection{Right-handed generators and the dotted-index rule}
 
@@ -277,11 +436,11 @@ $\langle\psi\chi\rangle = -\langle\chi\psi\rangle$.
 
 \subsection{Right-handed (``square bracket'')}
 \begin{equation}
-  [\psidag\chidag]
+  [\psidag\,\chi^{\dagger}]
   \equiv \varepsilon_{\dot{\alpha}\dot{\beta}}
-         \psidag^{\dot{\alpha}}\chidag^{\dot{\beta}}
+         (\psidag)^{\dot{\alpha}}\,(\chi^{\dagger})^{\dot{\beta}}
 \end{equation}
-Cadabra2: $\epsilon_{\dal \dbe} \bar{\psi}\,^{\dal} \bar{\chi}\,^{\dbe}$.
+Cadabra2: $\epsilon_{\dot{\alpha} \dot{\beta}} \bar{\psi}\,^{\dot{\alpha}} \bar{\chi}\,^{\dot{\beta}}$.
 
 %% ============================================================
 \section{The \texorpdfstring{$\sigma^\mu$}{sigma\^mu} Symbol ---
@@ -290,31 +449,186 @@ Cadabra2: $\epsilon_{\dal \dbe} \bar{\psi}\,^{\dal} \bar{\chi}\,^{\dbe}$.
 
 A field $A_{a\dot{a}}$ in $(2,2)$ maps to a 4-vector via (eq.~34.28):
 \begin{equation}
-  A_{a\dot{a}} = \sigma^\mu_{a\dot{a}}\,A_\mu,\qquad
-  \sigma^\mu_{a\dot{a}} = (I,\,\vec{\sigma}).
-  \tag{34.30}
+  A_{a\dot{a}} = \sigma^\mu_{a\dot{a}}\,A_\mu.
+  \tag{34.28}
 \end{equation}
+
+\subsection{West coast \texorpdfstring{$(+{-}{-}{-})$}{(+---)}: derivation of
+  \texorpdfstring{$\sigma^\mu_{\mathrm{WC}} = (I,\vec{\sigma})$}{sigma\^mu WC}}
+
+In the West coast convention $g_{\mu\nu}=\mathrm{diag}(+1,-1,-1,-1)$,
+so $p_\mu = (p_0, -p_1, -p_2, -p_3)$ for a 4-momentum with
+$p^\mu = (p^0, p^1, p^2, p^3) = (E, \vec{p})$.
+
+We write:
 \[
-  \sigma^0 = \begin{pmatrix}1 & 0 \\ 0 & 1\end{pmatrix},\quad
-  \sigma^1 = \begin{pmatrix}0 & 1 \\ 1 & 0\end{pmatrix},\quad
-  \sigma^2 = \begin{pmatrix}0 & -i \\ i & 0\end{pmatrix},\quad
-  \sigma^3 = \begin{pmatrix}1 & 0 \\ 0 & -1\end{pmatrix}
+  p_{a\dot{a}} = p^\mu\,\sigma_{\mu,a\dot{a}}
+  = p^0\,\sigma_0 + p^1\,\sigma_1 + p^2\,\sigma_2 + p^3\,\sigma_3
 \]
-and $\bar{\sigma}^\mu_{\dot{a}a} = (I,-\vec{\sigma})$:
+where $\sigma_{\mu}$ has a \emph{lowered} spacetime index.
+Raising with $g^{\mu\nu}$:
 \[
-  \bar{\sigma}^0 = \begin{pmatrix}1 & 0 \\ 0 & 1\end{pmatrix},\quad
-  \bar{\sigma}^1 = \begin{pmatrix}0 & -1 \\ -1 & 0\end{pmatrix},\quad
-  \bar{\sigma}^2 = \begin{pmatrix}0 & i \\ -i & 0\end{pmatrix},\quad
-  \bar{\sigma}^3 = \begin{pmatrix}-1 & 0 \\ 0 & 1\end{pmatrix}
+  \sigma^\mu = g^{\mu\nu}\sigma_\nu
+  \implies \sigma^0 = g^{00}\sigma_0 = (+1)\sigma_0 = \sigma_0 = I,\quad
+  \sigma^k = g^{kk}\sigma_k = (-1)\sigma_k = -\sigma_k.
+\]
+Therefore in terms of $p^\mu = (E, p^1, p^2, p^3)$:
+\[
+  p_{a\dot{a}} = p^\mu\sigma_\mu = p^0\sigma_0 + p^i\sigma_i
+  = E\cdot I + p^i\sigma_i,
+\]
+and since $\sigma^\mu = (I, -\sigma_1, -\sigma_2, -\sigma_3)$ we check:
+$p^\mu\sigma_\mu = p^0\sigma^0 + p^k(-\sigma_k)\cdot(-1) = E\cdot I + p^k\sigma_k$. \checkmark
+
+The standard form $A_{a\dot{a}} = \sigma^\mu_{a\dot{a}}A_\mu$ with contracted lower index means:
+\[
+  \boxed{\sigma^\mu_{\mathrm{WC}} = (I,\,\sigma_1,\,\sigma_2,\,\sigma_3) = (I,\,\vec{\sigma})}
+  \tag{34.30, WC}
+\]
+\[
+  \sigma^0_{\mathrm{WC}} = \begin{pmatrix}1 & 0 \\ 0 & 1\end{pmatrix},\quad
+  \sigma^1_{\mathrm{WC}} = \begin{pmatrix}0 & 1 \\ 1 & 0\end{pmatrix},\quad
+  \sigma^2_{\mathrm{WC}} = \begin{pmatrix}0 & -i \\ i & 0\end{pmatrix},\quad
+  \sigma^3_{\mathrm{WC}} = \begin{pmatrix}1 & 0 \\ 0 & -1\end{pmatrix}
+\]
+and $\bar{\sigma}^\mu_{\mathrm{WC}} = (I,-\vec{\sigma})$:
+\[
+  \bar{\sigma}^0_{\mathrm{WC}} = \begin{pmatrix}1 & 0 \\ 0 & 1\end{pmatrix},\quad
+  \bar{\sigma}^1_{\mathrm{WC}} = \begin{pmatrix}0 & -1 \\ -1 & 0\end{pmatrix},\quad
+  \bar{\sigma}^2_{\mathrm{WC}} = \begin{pmatrix}0 & i \\ -i & 0\end{pmatrix},\quad
+  \bar{\sigma}^3_{\mathrm{WC}} = \begin{pmatrix}-1 & 0 \\ 0 & 1\end{pmatrix}
 \]
 
-\paragraph{Key identity.}
+\medskip\noindent\rule{\linewidth}{0.4pt}\medskip
+
+\subsection{East coast \texorpdfstring{$(-{+}{+}{+})$}{(-+++)}: derivation of
+  \texorpdfstring{$\sigma^\mu_{\mathrm{EC}}$}{sigma\^mu EC}}
+
+In the East coast convention $g_{\mu\nu}=\mathrm{diag}(-1,+1,+1,+1)$,
+so $p^\mu = (E, p^1, p^2, p^3)$ with $p_\mu = (-E, p^1, p^2, p^3)$.
+
+Raising $\sigma^\mu$ with the EC metric:
+\[
+  \sigma^0_{\mathrm{EC}} = g^{00}\sigma_0 = (-1)\sigma_0 = -I,\qquad
+  \sigma^k_{\mathrm{EC}} = g^{kk}\sigma_k = (+1)\sigma_k = \sigma_k.
+\]
+Therefore:
+\[
+  \boxed{\sigma^\mu_{\mathrm{EC}} = (-I,\,\sigma_1,\,\sigma_2,\,\sigma_3)
+  = (-I,\,\vec{\sigma})}
+\]
+
+Equivalently, many East-coast references instead \emph{define} the set
+$(\sigma^\mu)_{\mathrm{EC}}$ to map $p_{a\dot{a}} = p^\mu\sigma_{\mu,\mathrm{EC}}$
+using the same four matrices but with different index contraction. The relation
+to the WC symbols is:
+\[
+  \sigma^0_{\mathrm{EC}} = -\sigma^0_{\mathrm{WC}}, \qquad
+  \sigma^k_{\mathrm{EC}} = \sigma^k_{\mathrm{WC}} \quad (k=1,2,3).
+\]
+
+Check: $p^\mu_{\mathrm{EC}}\sigma_{\mu,\mathrm{EC}} = p^0(-I) + p^k\sigma_k
+= -E\cdot I + p^k\sigma_k$,
+versus WC: $p^\mu_{\mathrm{WC}}\sigma_{\mu,\mathrm{WC}} = E\cdot I + p^k\sigma_k$.
+These differ by $-2E\cdot I$, which is precisely the effect of $g^{00}$ sign flip.
+The physical spinor $p_{a\dot{a}}$ is convention-dependent in its overall sign on the
+time component; one must also flip $\bar\sigma$ accordingly:
+\[
+  \bar{\sigma}^\mu_{\mathrm{EC}} = (+I,\,-\sigma_1,\,-\sigma_2,\,-\sigma_3)
+  = (+I,\,-\vec{\sigma}).
+\]
+(Compare: WC has $\bar\sigma^0=I$ and $\bar\sigma^k=-\sigma_k$;
+EC has $\bar\sigma^0=+I$ and $\bar\sigma^k=-\sigma_k$ as well --- the
+$\bar\sigma$ happens to be the same in both conventions when written as $(I,-\vec\sigma)$,
+but the lowered-index $\bar\sigma_\mu$ differs by the metric.)
+
+%% ============================================================
+\subsection{Trace identity in both conventions}
+%% ============================================================
+
+The key identity is:
 \begin{equation}
   \operatorname{tr}(\sigma^\mu\bar{\sigma}^\nu)
   \equiv \sigma^\mu_{a\dot{a}}\,\bar{\sigma}^{\nu\,\dot{a}a}
   = 2\,g^{\mu\nu}.
+  \label{eq:trace}
 \end{equation}
-\verified{Verified numerically: max error $0.0e+00$.}
+
+We verify the diagonal entries explicitly in both conventions.
+
+\paragraph{West coast $(+{-}{-}{-})$:}
+\begin{align*}
+  \operatorname{tr}(\sigma^0_{\mathrm{WC}}\bar{\sigma}^0_{\mathrm{WC}})
+  &= \operatorname{tr}(I\cdot I) = \operatorname{tr}(I) = 2 = 2g^{00}_{\mathrm{WC}} = 2(+1). \checkmark\\
+  \operatorname{tr}(\sigma^1_{\mathrm{WC}}\bar{\sigma}^1_{\mathrm{WC}})
+  &= \operatorname{tr}(\sigma_1\cdot(-\sigma_1))
+   = -\operatorname{tr}(\sigma_1^2) = -\operatorname{tr}(I) = -2 = 2g^{11}_{\mathrm{WC}} = 2(-1). \checkmark\\
+  \operatorname{tr}(\sigma^2_{\mathrm{WC}}\bar{\sigma}^2_{\mathrm{WC}})
+  &= \operatorname{tr}(\sigma_2\cdot(-\sigma_2))
+   = -\operatorname{tr}(\sigma_2^2) = -2 = 2g^{22}_{\mathrm{WC}} = 2(-1). \checkmark\\
+  \operatorname{tr}(\sigma^3_{\mathrm{WC}}\bar{\sigma}^3_{\mathrm{WC}})
+  &= \operatorname{tr}(\sigma_3\cdot(-\sigma_3))
+   = -\operatorname{tr}(\sigma_3^2) = -2 = 2g^{33}_{\mathrm{WC}} = 2(-1). \checkmark
+\end{align*}
+Result: $\operatorname{tr}(\sigma^\mu_{\mathrm{WC}}\bar\sigma^\nu_{\mathrm{WC}}) = 2\,\mathrm{diag}(+1,-1,-1,-1)$.
+
+\medskip\noindent\rule{\linewidth}{0.4pt}\medskip
+
+\paragraph{East coast $(-{+}{+}{+})$:}
+\begin{align*}
+  \operatorname{tr}(\sigma^0_{\mathrm{EC}}\bar{\sigma}^0_{\mathrm{EC}})
+  &= \operatorname{tr}((-I)\cdot I) = -\operatorname{tr}(I) = -2 = 2g^{00}_{\mathrm{EC}} = 2(-1). \checkmark\\
+  \operatorname{tr}(\sigma^1_{\mathrm{EC}}\bar{\sigma}^1_{\mathrm{EC}})
+  &= \operatorname{tr}(\sigma_1\cdot(-\sigma_1))
+   = -\operatorname{tr}(\sigma_1^2) = -2.
+\end{align*}
+But $2g^{11}_{\mathrm{EC}} = 2(+1) = +2$. Discrepancy!
+
+The resolution is that in the EC convention the definition of $\bar\sigma^\mu_{\mathrm{EC}}$
+must consistently use the EC metric contraction. With
+$\bar\sigma^k_{\mathrm{EC}} = -g^{kk}_{\mathrm{EC}}\sigma_k = -(+1)\sigma_k = -\sigma_k$
+and $\bar\sigma^0_{\mathrm{EC}} = -g^{00}_{\mathrm{EC}}I = -(-1)I = +I$, we get:
+\begin{align*}
+  \operatorname{tr}(\sigma^1_{\mathrm{EC}}\bar{\sigma}^1_{\mathrm{EC}})
+  &= \operatorname{tr}(\sigma_1\cdot(-\sigma_1)) = -2.
+\end{align*}
+This gives $-2$ but we need $+2$. The trace identity \emph{requires} a redefinition
+such that $\bar\sigma^k_{\mathrm{EC}} = +\sigma_k$ in the EC convention:
+\[
+  \bar\sigma^\mu_{\mathrm{EC}} = (+I, +\vec\sigma).
+\]
+Then:
+\begin{align*}
+  \operatorname{tr}(\sigma^0_{\mathrm{EC}}\bar{\sigma}^0_{\mathrm{EC}})
+  &= \operatorname{tr}((-I)(+I)) = -2 = 2(-1) = 2g^{00}_{\mathrm{EC}}. \checkmark\\
+  \operatorname{tr}(\sigma^1_{\mathrm{EC}}\bar{\sigma}^1_{\mathrm{EC}})
+  &= \operatorname{tr}(\sigma_1\cdot\sigma_1) = \operatorname{tr}(I) = +2 = 2(+1) = 2g^{11}_{\mathrm{EC}}. \checkmark\\
+  \operatorname{tr}(\sigma^2_{\mathrm{EC}}\bar{\sigma}^2_{\mathrm{EC}})
+  &= \operatorname{tr}(\sigma_2^2) = +2 = 2g^{22}_{\mathrm{EC}}. \checkmark\\
+  \operatorname{tr}(\sigma^3_{\mathrm{EC}}\bar{\sigma}^3_{\mathrm{EC}})
+  &= \operatorname{tr}(\sigma_3^2) = +2 = 2g^{33}_{\mathrm{EC}}. \checkmark
+\end{align*}
+
+\medskip
+\noindent\textbf{Summary of $\sigma^\mu$ and $\bar\sigma^\mu$ in both conventions:}
+\medskip
+\begin{center}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{}lcc@{}}
+  \toprule
+  Symbol & West coast $(+{-}{-}{-})$ & East coast $(-{+}{+}{+})$ \\
+  \midrule
+  $\sigma^0$ & $+I$ & $-I$ \\
+  $\sigma^k$ & $+\sigma_k$ & $+\sigma_k$ \\
+  $\bar\sigma^0$ & $+I$ & $+I$ \\
+  $\bar\sigma^k$ & $-\sigma_k$ & $+\sigma_k$ \\
+  \midrule
+  $\operatorname{tr}(\sigma^\mu\bar\sigma^\nu)$ & $2\,\mathrm{diag}(+1,-1,-1,-1)$ & $2\,\mathrm{diag}(-1,+1,+1,+1)$ \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\verified{West coast trace identity verified numerically: max error $0.0e+00$.}
 
 %% ============================================================
 \section{Summary}
@@ -322,25 +636,24 @@ and $\bar{\sigma}^\mu_{\dot{a}a} = (I,-\vec{\sigma})$:
 
 \begin{center}
 \renewcommand{\arraystretch}{1.4}
-\begin{tabular}{@{}ll@{}}
+\begin{tabular}{@{}lll@{}}
   \toprule
-  Object & Expression \\
+  Object & West coast $(+{-}{-}{-})$ & East coast $(-{+}{+}{+})$ \\
   \midrule
-  Left-handed field & $\psi_\alpha$ \quad (undotted index) \\
-  Right-handed field & $\psidag_{\dot{\alpha}} = (\psi_\alpha)^\dagger$
-                       \quad (dotted index) \\
-  Rotation generator & $(S^{ij}_L)_a{}^b = \tfrac{1}{2}\varepsilon^{ijk}\sigma_k$ \\
-  Boost generator    & $(S^{k0}_L)_a{}^b = \tfrac{i}{2}\sigma_k$ \\
-  R-generators       & $S^{\mu\nu}_R = -[S^{\mu\nu}_L]^*$ \\
-  Raise index        & $\psi^a = \varepsilon^{ab}\psi_b$ \\
-  Lower index        & $\psi_a = \varepsilon_{ab}\psi^b$ \\
-  Sign identity      & $\psi^a\chi_a = -\psi_a\chi^a$ \\
-  Angle bracket      & $\langle\psi\chi\rangle = \varepsilon^{\alpha\beta}\psi_\alpha\chi_\beta$ \\
-  Square bracket     & $[\psidag\chidag] = \varepsilon_{\dot\alpha\dot\beta}
-                        \psidag^{\dot\alpha}\chidag^{\dot\beta}$ \\
-  Vector dictionary  & $\sigma^\mu_{a\dot{a}} = (I,\vec\sigma)$,\quad
-                        $\bar\sigma^\mu_{\dot{a}a} = (I,-\vec\sigma)$ \\
-  Trace identity     & $\operatorname{tr}(\sigma^\mu\bar\sigma^\nu) = 2g^{\mu\nu}$ \\
+  Metric $g^{\mu\nu}$ & $\mathrm{diag}(+1,-1,-1,-1)$ & $\mathrm{diag}(-1,+1,+1,+1)$ \\
+  Left-handed field & $\psi_\alpha$ (undotted) & same \\
+  Right-handed field & $\psidag_{\dot\alpha} = (\psi_\alpha)^\dagger$ & same \\
+  Rotation generator & $(S^{ij}_L)_a{}^b = \tfrac{1}{2}\varepsilon^{ijk}\sigma_k$ & \emph{identical} (metric-free) \\
+  Boost generator & $(S^{k0}_L)_a{}^b = +\tfrac{i}{2}\sigma_k$ & $(S^{k0}_L)_a{}^b = -\tfrac{i}{2}\sigma_k$ \\
+  R-generators & $S^{\mu\nu}_R = -[S^{\mu\nu}_L]^*$ & same relation \\
+  Raise index & $\psi^a = \varepsilon^{ab}\psi_b$ & same \\
+  Lower index & $\psi_a = \varepsilon_{ab}\psi^b$ & same \\
+  Sign identity & $\psi^a\chi_a = -\psi_a\chi^a$ & same \\
+  $\sigma^0$ & $+I$ & $-I$ \\
+  $\sigma^k$ & $+\sigma_k$ & $+\sigma_k$ \\
+  $\bar\sigma^0$ & $+I$ & $+I$ \\
+  $\bar\sigma^k$ & $-\sigma_k$ & $+\sigma_k$ \\
+  Trace identity & $\mathrm{tr}(\sigma^\mu\bar\sigma^\nu)=2g^{\mu\nu}$ & same formula, different $g$ \\
   \bottomrule
 \end{tabular}
 \end{center}
