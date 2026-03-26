@@ -1,5 +1,8 @@
 \documentclass[12pt]{article}
 \usepackage{amsmath, amssymb, amsthm}
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+\newtheorem*{physinterp}{Physical Interpretation}
 \usepackage{mathtools}
 \usepackage{tensor}
 \usepackage{geometry}
@@ -69,6 +72,606 @@ Formulas involving only spatial indices ($g^{ij}$) pick up a sign flip
 
 \tableofcontents
 \newpage
+
+%% ============================================================
+\section{The Lorentz Algebra and its
+  \texorpdfstring{$\mathfrak{su}(2)\oplus\mathfrak{su}(2)$}{su(2)+su(2)}
+  Structure}
+%% ============================================================
+
+\subsection{The six generators of \texorpdfstring{$\mathrm{SO}(1,3)$}{SO(1,3)}}
+
+The Lorentz group $\mathrm{SO}(1,3)$ is a six-dimensional Lie group.
+Its Lie algebra $\mathfrak{so}(1,3)$ is spanned by six generators,
+conventionally split into:
+\begin{itemize}
+  \item \textbf{Rotations:} $J_i = \tfrac{1}{2}\varepsilon_{ijk}M^{jk}$,\quad $i=1,2,3$
+  \item \textbf{Boosts:} $K_i = M^{i0}$,\quad $i=1,2,3$
+\end{itemize}
+where $M^{\mu\nu} = -M^{\nu\mu}$ are the antisymmetric generators of the
+defining (4-dimensional vector) representation.
+
+The commutation relations of the Lorentz algebra are:
+\begin{align}
+  [J_i,\, J_j] &= i\,\varepsilon_{ijk}\,J_k
+  \label{eq:JJ}\\
+  [J_i,\, K_j] &= i\,\varepsilon_{ijk}\,K_k
+  \label{eq:JK}\\
+  [K_i,\, K_j] &= -i\,\varepsilon_{ijk}\,J_k
+  \label{eq:KK}
+\end{align}
+Equation~\eqref{eq:JJ} says the rotations by themselves close into an
+$\mathfrak{su}(2)$ algebra.
+Equation~\eqref{eq:JK} says the boosts $K_i$ transform as a 3-vector under
+rotations --- exactly what one expects from a physical boost parameter.
+Equation~\eqref{eq:KK} is the key relation: two boosts do \emph{not} close
+into another boost; instead they produce a rotation (Thomas precession).
+The crucial minus sign in~\eqref{eq:KK} is a direct consequence of the
+Lorentzian signature: in $\mathrm{SO}(4)$ (Euclidean) one would get $+i\varepsilon_{ijk}J_k$.
+
+\begin{remark}
+  Equations \eqref{eq:JJ}--\eqref{eq:KK} are convention-independent:
+  they hold in both the West coast $(+{-}{-}{-})$ and East coast
+  $(-{+}{+}{+})$ signatures when $J_i$ and $K_i$ are defined as above.
+  (One can verify this from the master commutator
+  $[M^{\mu\nu},M^{\rho\sigma}] = i(g^{\nu\rho}M^{\mu\sigma}
+  - g^{\mu\rho}M^{\nu\sigma} - g^{\nu\sigma}M^{\mu\rho}
+  + g^{\mu\sigma}M^{\nu\rho})$
+  by substituting the explicit definitions of $J_i$ and $K_i$.)
+\end{remark}
+
+%%------------------------------------------------------------
+\subsection{The \texorpdfstring{$N_i,\,N_i^\dagger$}{N, N†} combinations}
+
+Define new combinations (Srednicki eq.~33.16):
+\begin{align}
+  N_i &\equiv \tfrac{1}{2}(J_i - iK_i),
+  \label{eq:Ndef}\\
+  N_i^\dagger &\equiv \tfrac{1}{2}(J_i + iK_i).
+  \label{eq:Ndagdef}
+\end{align}
+We claim these satisfy
+\begin{align}
+  [N_i, N_j] &= i\varepsilon_{ijk}N_k,
+  \label{eq:NN}\\
+  [N_i^\dagger, N_j^\dagger] &= i\varepsilon_{ijk}N_k^\dagger,
+  \label{eq:NdagNdag}\\
+  [N_i, N_j^\dagger] &= 0.
+  \label{eq:NNdag}
+\end{align}
+We now derive each relation explicitly, step by step.
+
+%%------------------------------------------------------------
+\subsection{Derivation of \texorpdfstring{$[N_i,N_j]=i\varepsilon_{ijk}N_k$}{[N,N]=iepsN}}
+
+\paragraph{Step 1: Expand the commutator.}
+\begin{align}
+  [N_i, N_j]
+  &= \Bigl[\tfrac{1}{2}(J_i - iK_i),\; \tfrac{1}{2}(J_j - iK_j)\Bigr]
+  \notag\\
+  &= \tfrac{1}{4}\Bigl[J_i - iK_i,\; J_j - iK_j\Bigr].
+\end{align}
+Using bilinearity of the commutator:
+\begin{align}
+  [J_i - iK_i,\; J_j - iK_j]
+  &= [J_i, J_j]
+     - i[J_i, K_j]
+     - i[K_i, J_j]
+     + i^2[K_i, K_j]
+  \notag\\
+  &= [J_i, J_j]
+     - i[J_i, K_j]
+     - i[K_i, J_j]
+     - [K_i, K_j].
+  \label{eq:NN_expand}
+\end{align}
+
+\paragraph{Step 2: Substitute the three Lorentz commutators.}
+\begin{align*}
+  [J_i, J_j] &= i\varepsilon_{ijk}J_k,\\
+  [J_i, K_j] &= i\varepsilon_{ijk}K_k,\\
+  [K_i, J_j] &= -[J_j, K_i] = -i\varepsilon_{jik}K_k = +i\varepsilon_{ijk}K_k,\\
+  [K_i, K_j] &= -i\varepsilon_{ijk}J_k.
+\end{align*}
+(In the third line we used $\varepsilon_{jik} = -\varepsilon_{ijk}$.)
+
+\paragraph{Step 3: Substitute into \eqref{eq:NN_expand}.}
+\begin{align}
+  [J_i - iK_i,\; J_j - iK_j]
+  &= i\varepsilon_{ijk}J_k
+     - i(i\varepsilon_{ijk}K_k)
+     - i(i\varepsilon_{ijk}K_k)
+     - (-i\varepsilon_{ijk}J_k)
+  \notag\\
+  &= i\varepsilon_{ijk}J_k
+     + \varepsilon_{ijk}K_k
+     + \varepsilon_{ijk}K_k
+     + i\varepsilon_{ijk}J_k
+  \notag\\
+  &= 2i\varepsilon_{ijk}J_k + 2\varepsilon_{ijk}K_k
+  \notag\\
+  &= 2\varepsilon_{ijk}(iJ_k + K_k).
+  \label{eq:step3}
+\end{align}
+
+\paragraph{Step 4: Identify the result.}
+Note that $iJ_k + K_k = i(J_k - iK_k)$. Therefore:
+\begin{align}
+  [J_i - iK_i,\; J_j - iK_j]
+  &= 2\varepsilon_{ijk}\cdot i(J_k - iK_k)
+   = 4i\varepsilon_{ijk}\cdot\tfrac{1}{2}(J_k - iK_k)
+   = 4i\varepsilon_{ijk}N_k.
+\end{align}
+Multiplying by $\tfrac{1}{4}$:
+\begin{equation}
+  \boxed{[N_i, N_j] = \tfrac{1}{4}\cdot 4i\varepsilon_{ijk}N_k = i\varepsilon_{ijk}N_k.}
+\end{equation}
+
+\paragraph{Key insight on signs.}
+The crucial role of the sign in $[K_i,K_j]=-i\varepsilon_{ijk}J_k$ is
+visible in Step~3: the $i^2 = -1$ from the $(-i)(-i)$ prefactor
+\emph{combined} with the minus sign in $[K_i,K_j]$
+produces a \emph{double negative}, giving $+i\varepsilon_{ijk}J_k$
+contribution that adds constructively with the $[J_i,J_j]$ term.
+Had we instead had $[K_i,K_j]=+i\varepsilon_{ijk}J_k$
+(as in $\mathfrak{so}(4)$), the $J$ terms would cancel and we would not
+obtain a closed $\mathfrak{su}(2)$ algebra for $N_i$.
+
+%%------------------------------------------------------------
+\subsection{Derivation of
+  \texorpdfstring{$[N_i^\dagger,N_j^\dagger]=i\varepsilon_{ijk}N_k^\dagger$}%
+    {[N†,N†]=iepsN†}}
+
+By an identical calculation with $iK \to -iK$:
+\begin{align}
+  [J_i + iK_i,\; J_j + iK_j]
+  &= [J_i, J_j]
+     + i[J_i, K_j]
+     + i[K_i, J_j]
+     + i^2[K_i, K_j]
+  \notag\\
+  &= i\varepsilon_{ijk}J_k
+     + i(i\varepsilon_{ijk}K_k)
+     + i(i\varepsilon_{ijk}K_k)
+     + (-1)(-i\varepsilon_{ijk}J_k)
+  \notag\\
+  &= i\varepsilon_{ijk}J_k
+     - \varepsilon_{ijk}K_k
+     - \varepsilon_{ijk}K_k
+     + i\varepsilon_{ijk}J_k
+  \notag\\
+  &= 2i\varepsilon_{ijk}J_k - 2\varepsilon_{ijk}K_k
+  \notag\\
+  &= 2\varepsilon_{ijk}(iJ_k - K_k)
+   = 4i\varepsilon_{ijk}\cdot\tfrac{1}{2}(J_k + iK_k)
+   = 4i\varepsilon_{ijk}N_k^\dagger.
+\end{align}
+Hence:
+\begin{equation}
+  \boxed{[N_i^\dagger, N_j^\dagger] = i\varepsilon_{ijk}N_k^\dagger.}
+\end{equation}
+
+%%------------------------------------------------------------
+\subsection{Derivation of
+  \texorpdfstring{$[N_i,N_j^\dagger]=0$}{[N,N†]=0}}
+
+\begin{align}
+  [N_i, N_j^\dagger]
+  &= \Bigl[\tfrac{1}{2}(J_i - iK_i),\; \tfrac{1}{2}(J_j + iK_j)\Bigr]
+  \notag\\
+  &= \tfrac{1}{4}\Bigl[J_i - iK_i,\; J_j + iK_j\Bigr]
+  \notag\\
+  &= \tfrac{1}{4}\Bigl(
+       [J_i, J_j] + i[J_i, K_j] - i[K_i, J_j] - i^2[K_i, K_j]
+     \Bigr)
+  \notag\\
+  &= \tfrac{1}{4}\Bigl(
+       i\varepsilon_{ijk}J_k
+       + i(i\varepsilon_{ijk}K_k)
+       - i(i\varepsilon_{ijk}K_k)
+       + [K_i, K_j]
+     \Bigr)
+  \notag\\
+  &= \tfrac{1}{4}\Bigl(
+       i\varepsilon_{ijk}J_k
+       - \varepsilon_{ijk}K_k
+       + \varepsilon_{ijk}K_k
+       + (-i\varepsilon_{ijk}J_k)
+     \Bigr)
+  \notag\\
+  &= \tfrac{1}{4}\Bigl(i\varepsilon_{ijk}J_k - i\varepsilon_{ijk}J_k\Bigr) = 0.
+\end{align}
+\begin{equation}
+  \boxed{[N_i, N_j^\dagger] = 0.}
+\end{equation}
+
+%%------------------------------------------------------------
+\subsection{The isomorphism statement --- over \texorpdfstring{$\mathbb{C}$}{C}}
+
+The computation above shows that the six operators
+$\{N_i, N_i^\dagger\}$ split into two commuting copies of the
+$\mathfrak{su}(2)$ algebra.  However, one must be careful about the field:
+
+\begin{remark}[Over $\mathbb{R}$: no isomorphism]
+  Over the reals, $\mathfrak{so}(1,3) \not\cong \mathfrak{su}(2)\oplus\mathfrak{su}(2)$.
+  The reason is that the generators $K_i$ of boosts are \emph{not Hermitian}
+  (and cannot be made so while keeping $J_i$ Hermitian, because the Lorentz
+  group is non-compact).  Consequently $N_i^\dagger$ is the Hermitian
+  conjugate of $N_i$, not an independent generator: there are only 6
+  real independent generators, not 6+6.
+  The real form $\mathfrak{su}(2)\oplus\mathfrak{su}(2)$ has only
+  \emph{compact} unitary representations, while $\mathrm{SO}(1,3)$ has
+  no finite-dimensional unitary representations (other than the trivial one).
+\end{remark}
+
+\begin{remark}[Over $\mathbb{C}$: the isomorphism holds]
+  Consider the \emph{complexification}
+  $\mathfrak{so}(1,3)_\mathbb{C} \equiv \mathfrak{so}(1,3)\otimes_\mathbb{R}\mathbb{C}$.
+  This is the complex Lie algebra obtained by allowing complex linear combinations
+  of the real generators $\{J_i, K_i\}$.  In this larger algebra, $N_i$ and
+  $N_i^\dagger$ \emph{are} independent (not related by a reality condition),
+  and our calculation proves:
+  \begin{equation}
+    \mathfrak{so}(1,3)_\mathbb{C}
+    \;\cong\;
+    \mathfrak{sl}(2,\mathbb{C}) \oplus \mathfrak{sl}(2,\mathbb{C})
+    \;\cong\;
+    \mathfrak{su}(2)_\mathbb{C} \oplus \mathfrak{su}(2)_\mathbb{C}.
+    \label{eq:iso}
+  \end{equation}
+  The two copies are called $\mathfrak{su}(2)_L$ (generated by $N_i$) and
+  $\mathfrak{su}(2)_R$ (generated by $N_i^\dagger$).
+  (The subscripts $L/R$ correspond to left-handed and right-handed chirality
+  of the associated spinors.)
+\end{remark}
+
+The physical content of~\eqref{eq:iso} is that the representation theory
+of the Lorentz group (for finite-dimensional, not necessarily unitary, reps)
+reduces to \emph{two independent} $\mathfrak{su}(2)$ problems.
+
+%%------------------------------------------------------------
+\subsection{Irreducible representations: the \texorpdfstring{$(n,n')$}{(n,n')} labels}
+
+Because $\mathfrak{su}(2)_L \oplus \mathfrak{su}(2)_R$ is semisimple with
+each factor being $\mathfrak{su}(2)$, its irreducible representations
+are tensor products:
+\begin{equation}
+  V_{(n,n')} = V_n^L \otimes V_{n'}^R,
+\end{equation}
+where $V_n^L$ is the spin-$n$ irrep of $\mathfrak{su}(2)_L$ and
+$V_{n'}^R$ is the spin-$n'$ irrep of $\mathfrak{su}(2)_R$,
+with $n,n' \in \{0, \tfrac{1}{2}, 1, \tfrac{3}{2}, \ldots\}$.
+
+The dimension of the $(n,n')$ representation is:
+\begin{equation}
+  \dim(n,n') = (2n+1)(2n'+1).
+\end{equation}
+
+\medskip
+\noindent\textbf{Table of physical representations.}  In Srednicki's
+notation, representations are often labelled by their dimensions
+$(2n+1, 2n'+1)$:
+
+\begin{center}
+\renewcommand{\arraystretch}{1.45}
+\begin{tabular}{@{}ccccl@{}}
+  \toprule
+  $(n,n')$ & Srednicki dim & dim & Physical field & Notes \\
+  \midrule
+  $(0,0)$ & $(1,1)$ & 1 & Scalar $\phi$ & Trivial rep \\
+  $(\tfrac{1}{2},0)$ & $(2,1)$ & 2 & Left Weyl $\psi_a$ & $N_i^\dagger$ trivial \\
+  $(0,\tfrac{1}{2})$ & $(1,2)$ & 2 & Right Weyl $\psidag_{\dot a}$ & $N_i$ trivial \\
+  $(\tfrac{1}{2},\tfrac{1}{2})$ & $(2,2)$ & 4 & 4-vector $A^\mu$ & \\
+  $(1,0)$ & $(3,1)$ & 3 & Self-dual 2-form $F^+_{\mu\nu}$ & Left field strength \\
+  $(0,1)$ & $(1,3)$ & 3 & Anti-self-dual 2-form $F^-_{\mu\nu}$ & Right field strength \\
+  $(1,1)$ & $(3,3)$ & 9 & Traceless symmetric tensor $h^{\mu\nu}_\perp$ & Graviton \\
+  $(\tfrac{1}{2},1)$ & $(2,3)$ & 6 & Rarita-Schwinger $\psi^\mu_a$ & Gravitino \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\begin{physinterp}
+  The $(n,n')$ labels have direct physical meaning:
+  $n$ is the ``left-handed spin'' (the eigenvalue of $|\vec{N}|$)
+  and $n'$ is the ``right-handed spin'' (the eigenvalue of $|\vec{N}^\dagger|$).
+  A field transforming in the $(\tfrac{1}{2},0)$ rep is a 2-component left-handed
+  Weyl spinor because $\mathfrak{su}(2)_L$ acts nontrivially (as the spin-$\tfrac{1}{2}$
+  representation) while $\mathfrak{su}(2)_R$ acts trivially.
+  Under parity, $J_i \to J_i$ but $K_i \to -K_i$, which swaps $N_i \leftrightarrow N_i^\dagger$,
+  hence $(n,n') \to (n',n)$.
+  A left-handed Weyl spinor $(\tfrac{1}{2},0)$ maps to a right-handed one $(0,\tfrac{1}{2})$
+  under parity --- exactly what we expect physically.
+\end{physinterp}
+
+%% ============================================================
+\section{Tensor Product Decompositions of Lorentz Representations}
+%% ============================================================
+
+\subsection{Warmup: \texorpdfstring{$\mathrm{SU}(2)$}{SU(2)} Clebsch-Gordan decomposition}
+
+For $\mathrm{SU}(2)$, representations are labelled by spin $j \in \{0,\tfrac{1}{2},1,\ldots\}$,
+and the tensor product decomposes via the Clebsch-Gordan series:
+\begin{equation}
+  j_1 \otimes j_2 = |j_1-j_2| \oplus (|j_1-j_2|+1) \oplus \cdots \oplus (j_1+j_2).
+  \label{eq:CG}
+\end{equation}
+The most important case is the fundamental representation $j=\tfrac{1}{2}$
+(the 2-dimensional ``doublet'' or ``spinor'' representation):
+\begin{equation}
+  \tfrac{1}{2} \otimes \tfrac{1}{2}
+  = 0 \oplus 1,
+  \qquad\text{i.e., in dimensions: }\quad
+  \mathbf{2} \otimes \mathbf{2} = \mathbf{1} \oplus \mathbf{3}.
+\end{equation}
+
+\paragraph{Why this decomposition?}
+The tensor product space $\mathbf{2}\otimes\mathbf{2}$ is 4-dimensional.
+Label the basis of each $\mathbf{2}$ as $\{|{\uparrow}\rangle, |{\downarrow}\rangle\}$,
+with indices $a,b \in \{1,2\}$.  A general element of $\mathbf{2}\otimes\mathbf{2}$
+is a tensor $T^{ab}$ with two indices.  We decompose into irreducible parts using
+the standard Young tableau approach --- projecting onto definite symmetry under
+$a \leftrightarrow b$:
+
+\begin{itemize}
+  \item \textbf{Antisymmetric subspace} (Young tableau: single column of 2 boxes):
+  \[
+    T^{[ab]} = \tfrac{1}{2}(T^{ab} - T^{ba}).
+  \]
+  This is a 1-dimensional space (for $2\times 2$ antisymmetric matrices).
+  The unique (up to scale) invariant tensor is $\varepsilon^{ab}$, and the singlet state is:
+  \[
+    |0,0\rangle = \frac{|{\uparrow\downarrow}\rangle - |{\downarrow\uparrow}\rangle}{\sqrt{2}}
+    = \frac{1}{\sqrt{2}}\varepsilon^{ab}|a\rangle\otimes|b\rangle.
+  \]
+  This is the spin-0 singlet, the $j=0$ rep. Its dimension is 1.
+
+  \item \textbf{Symmetric subspace} (Young tableau: single row of 2 boxes):
+  \[
+    T^{(ab)} = \tfrac{1}{2}(T^{ab} + T^{ba}).
+  \]
+  This is a 3-dimensional space (for $2\times 2$ symmetric matrices).
+  Basis: $|{\uparrow\uparrow}\rangle$,
+  $(|{\uparrow\downarrow}\rangle+|{\downarrow\uparrow}\rangle)/\sqrt{2}$,
+  $|{\downarrow\downarrow}\rangle$ --- the three states $|1,m\rangle$ for $m=1,0,-1$.
+  This is the spin-1 triplet, the $j=1$ rep.  Its dimension is 3.
+\end{itemize}
+
+We write this compactly as:
+\begin{equation}
+  \mathbf{2}\otimes\mathbf{2} = \mathbf{1}_A \oplus \mathbf{3}_S,
+  \label{eq:su2_22}
+\end{equation}
+where the subscripts $A$ (antisymmetric) and $S$ (symmetric) refer to
+the symmetry of the tensor product under index exchange.
+
+\paragraph{The invariant tensor $\varepsilon^{ab}$.}
+The fact that a singlet ($j=0$, trivial rep) appears in $\mathbf{2}\otimes\mathbf{2}$
+is equivalent to the existence of an invariant antisymmetric 2-index tensor
+$\varepsilon^{ab}$ (with $\varepsilon^{12}=-\varepsilon^{21}=1$).
+Under $\mathrm{SU}(2)$ transformations $U$: $T^{ab} \to U^a{}_c U^b{}_d T^{cd}$,
+and $\varepsilon^{ab}$ is invariant because $\det U = 1$ for $U\in\mathrm{SU}(2)$.
+This $\varepsilon^{ab}$ is the metric of the spinor space --- it raises and lowers
+spinor indices just as $g^{\mu\nu}$ does for spacetime vectors.
+
+%%------------------------------------------------------------
+\subsection{Lorentz tensor products: \texorpdfstring{$(2,1)\otimes(2,1)$}{(2,1)x(2,1)}}
+
+Now we work with the Lorentz group.  Using the isomorphism
+$\mathrm{SO}(1,3)_\mathbb{C} \cong \mathrm{SU}(2)_L \times \mathrm{SU}(2)_R$,
+a representation $(d_L, d_R)$ (in Srednicki's dimension notation) means:
+$d_L = 2n_L+1$-dimensional under $\mathrm{SU}(2)_L$, and
+$d_R = 2n_R+1$-dimensional under $\mathrm{SU}(2)_R$.
+
+The tensor product decomposes factor by factor:
+\begin{equation}
+  (d_L, d_R) \otimes (d_L', d_R')
+  = (d_L \otimes_L d_L') \otimes (d_R \otimes_R d_R'),
+\end{equation}
+where each factor is decomposed via the $\mathrm{SU}(2)$ Clebsch-Gordan rule.
+
+\medskip
+\noindent\textbf{Case: $(2,1)\otimes(2,1)$, i.e., $(\tfrac{1}{2},0)\otimes(\tfrac{1}{2},0)$.}
+
+This is the tensor product of two left-handed Weyl spinors $\psi_a \otimes \chi_b$,
+which lives in a space with indices $(a,b)$.
+
+\begin{align*}
+  \text{SU(2)}_L\text{ factor:} &\quad
+  \tfrac{1}{2}\otimes\tfrac{1}{2} = 0_A \oplus 1_S,
+  \quad\text{i.e.,}\quad \mathbf{2}\otimes\mathbf{2} = \mathbf{1}_A \oplus \mathbf{3}_S.\\[3pt]
+  \text{SU(2)}_R\text{ factor:} &\quad
+  0\otimes 0 = 0\quad\text{(trivial: stays 1-dimensional).}
+\end{align*}
+
+Combining:
+\begin{equation}
+  \boxed{(2,1)\otimes(2,1) = (1,1)_A \oplus (3,1)_S.}
+  \label{eq:21x21}
+\end{equation}
+Dimension check: $2\times 2 = 1\times 1 + 3\times 1 = 1 + 3 = 4$. $\checkmark$
+
+\paragraph{What is the $(1,1)_A$ piece?}
+The antisymmetric part of $\psi_a\chi_b$ is:
+\[
+  \psi_a\chi_b - \psi_b\chi_a
+  = -\varepsilon_{ab}\,(\varepsilon^{cd}\psi_c\chi_d)
+  = -\varepsilon_{ab}\,\psi^c\chi_c.
+\]
+The scalar $\psi^c\chi_c = \psi^a\chi_a$ is a Lorentz scalar (the antisymmetric
+singlet), and $\varepsilon_{ab}$ is its ``carrier'' --- the invariant tensor
+of $\mathrm{SL}(2,\mathbb{C})$.  This is exactly the epsilon symbol used to
+contract left-handed spinor indices:
+\[
+  \langle\psi\chi\rangle \equiv \varepsilon^{ab}\psi_a\chi_b = \psi^a\chi_a.
+\]
+
+\paragraph{What is the $(3,1)_S$ piece?}
+The symmetric part $\psi_{(a}\chi_{b)} = \tfrac{1}{2}(\psi_a\chi_b + \psi_b\chi_a)$
+transforms in the $(3,1)$ representation.  Under the identification
+$\mathrm{SU}(2)_L \sim \mathrm{SL}(2,\mathbb{C})$, the symmetric 2-index spinor
+$\psi_{(a}\chi_{b)}$ corresponds to the self-dual part of an antisymmetric
+2-form $F^+_{\mu\nu}$.  Specifically, the three independent components of
+$\psi_{(a}\chi_{b)}$ map bijectively to the three complex self-dual components
+of $F^{\mu\nu}$ (the ``left-handed field strength'').
+
+\begin{physinterp}
+  Equation~\eqref{eq:21x21} explains why the epsilon symbol $\varepsilon_{ab}$
+  \emph{must exist} as a Lorentz-invariant tensor: it is precisely the singlet
+  in the tensor product of two left-handed spinors.  Its existence is
+  guaranteed by the algebra, not assumed.  Similarly, the existence of the
+  self-dual field strength as a $(3,1)$ object under Lorentz transformations
+  (which is the basis for the Ashtekar formulation of GR and for twistor methods
+  in $\mathcal{N}=4$ SYM) follows directly from this decomposition.
+\end{physinterp}
+
+%%------------------------------------------------------------
+\subsection{Lorentz tensor products: \texorpdfstring{$(2,2)\otimes(2,2)$}{(2,2)x(2,2)}}
+
+\noindent\textbf{Case: $(2,2)\otimes(2,2)$, i.e., $(\tfrac{1}{2},\tfrac{1}{2})\otimes(\tfrac{1}{2},\tfrac{1}{2})$.}
+
+This is the tensor product of two 4-vectors $A^\mu \otimes B^\nu$.
+The result lives in the space of $4\times 4$ tensors $T^{\mu\nu}$, which is 16-dimensional.
+
+\begin{align*}
+  \text{SU(2)}_L\text{ factor:} &\quad
+  \tfrac{1}{2}\otimes\tfrac{1}{2} = 0_A \oplus 1_S,
+  \quad\text{i.e.,}\quad \mathbf{2}\otimes\mathbf{2} = \mathbf{1}_A \oplus \mathbf{3}_S.\\[3pt]
+  \text{SU(2)}_R\text{ factor:} &\quad
+  \tfrac{1}{2}\otimes\tfrac{1}{2} = 0_A \oplus 1_S,
+  \quad\text{i.e.,}\quad \mathbf{2}\otimes\mathbf{2} = \mathbf{1}_A \oplus \mathbf{3}_S.
+\end{align*}
+
+Taking all combinations:
+\begin{align}
+  (2,2)\otimes(2,2)
+  &= (\mathbf{1}_A \oplus \mathbf{3}_S)_L \otimes (\mathbf{1}_A \oplus \mathbf{3}_S)_R
+  \notag\\
+  &= (\mathbf{1}_A\otimes\mathbf{1}_A)
+     \oplus (\mathbf{1}_A\otimes\mathbf{3}_S)
+     \oplus (\mathbf{3}_S\otimes\mathbf{1}_A)
+     \oplus (\mathbf{3}_S\otimes\mathbf{3}_S)
+  \notag\\
+  &= (1,1)_{AA} \oplus (1,3)_{AS} \oplus (3,1)_{SA} \oplus (3,3)_{SS}.
+  \label{eq:22x22_raw}
+\end{align}
+
+\noindent We now translate this into tensor language and re-label by symmetry.
+
+For two 4-vectors $A^\mu$, $B^\nu$, the tensor $T^{\mu\nu} = A^\mu B^\nu$ decomposes as:
+\begin{align}
+  T^{\mu\nu}
+  &= \underbrace{g^{\mu\nu}\,\frac{A_\rho B^\rho}{4}}_{\text{trace part, dim }1}
+   + \underbrace{T^{[\mu\nu]}}_{\text{antisymmetric, dim }6}
+   + \underbrace{T^{(\mu\nu)}_\perp}_{\text{traceless symmetric, dim }9}
+\end{align}
+where $T^{[\mu\nu]} = \tfrac{1}{2}(A^\mu B^\nu - A^\nu B^\mu)$
+and $T^{(\mu\nu)}_\perp = \tfrac{1}{2}(A^\mu B^\nu + A^\nu B^\mu) - \tfrac{1}{4}g^{\mu\nu}A_\rho B^\rho$.
+
+Dimension check: $1 + 6 + 9 = 16 = 4\times 4$. $\checkmark$
+
+Now we identify each piece with a Lorentz representation:
+\begin{itemize}
+  \item The \textbf{trace} $g^{\mu\nu}A_\mu B_\nu$ is a scalar: rep $(1,1)$, dimension 1.
+  \item The \textbf{antisymmetric tensor} $A^{[\mu}B^{\nu]}$ is a 6-dimensional space,
+        which further decomposes as $(3,1)\oplus(1,3)$ (self-dual and anti-self-dual
+        2-forms), each 3-dimensional.
+  \item The \textbf{traceless symmetric tensor} $T^{(\mu\nu)}_\perp$ is the $(3,3)$ rep,
+        dimension 9.
+\end{itemize}
+
+Thus:
+\begin{equation}
+  \boxed{(2,2)\otimes(2,2) = (1,1)_S \oplus (3,1)_A \oplus (1,3)_A \oplus (3,3)_S.}
+  \label{eq:22x22}
+\end{equation}
+Here the subscript refers to the symmetry under exchange of the \emph{spacetime}
+indices $\mu \leftrightarrow \nu$:
+$S$ = symmetric, $A$ = antisymmetric.
+
+Dimension check: $1 + 3 + 3 + 9 = 16 = 4\times 4$. $\checkmark$
+
+\medskip
+\noindent\textbf{Each piece explained:}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{@{}cccll@{}}
+  \toprule
+  Rep & Sym & dim & Invariant tensor / Field & Physical role \\
+  \midrule
+  $(1,1)_S$ & symm.\ ($\mu\nu$) & 1
+    & $g^{\mu\nu}$ (metric) & Lorentz scalar; trace of $T^{\mu\nu}$ \\
+  $(3,1)_A$ & antisym.\ ($\mu\nu$) & 3
+    & $F^+_{\mu\nu}$ (self-dual 2-form) & Left-handed field strength \\
+  $(1,3)_A$ & antisym.\ ($\mu\nu$) & 3
+    & $F^-_{\mu\nu}$ (anti-self-dual 2-form) & Right-handed field strength \\
+  $(3,3)_S$ & symm.\ ($\mu\nu$), traceless & 9
+    & $h_{\mu\nu}$ (traceless sym.\ tensor) & Graviton / spin-2 field \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\begin{physinterp}
+  \textbf{Why does $g^{\mu\nu}$ exist?}
+  The metric $g^{\mu\nu}$ is an invariant tensor in the product
+  $(2,2)\otimes(2,2)$ precisely because the $(1,1)$ singlet appears there.
+  By Schur's lemma, any Lorentz-invariant map from $V_{(1/2,1/2)}\otimes V_{(1/2,1/2)}$
+  to the trivial representation must be proportional to $g^{\mu\nu}$.
+  In other words: $g^{\mu\nu}$ does not need to be ``postulated'' separately ---
+  its existence as an invariant tensor is forced by the group theory of the Lorentz
+  group acting on 4-vectors.
+
+  \textbf{Why does the electromagnetic field strength split?}
+  A real antisymmetric 2-form $F^{\mu\nu}$ decomposes into self-dual $(F^+)$ and
+  anti-self-dual $(F^-)$ parts under the Hodge star: $F^{\pm} = \tfrac{1}{2}(F \pm {*F})$.
+  Over $\mathbb{C}$, these are the $(3,1)$ and $(1,3)$ representations respectively.
+  Under parity (which swaps $L\leftrightarrow R$), $F^+ \leftrightarrow F^-$,
+  which is why Maxwell's equations in vacuum are parity-symmetric but a theory
+  coupling only to one chirality would be parity-violating.
+
+  \textbf{The graviton.}
+  A linearized gravitational perturbation $h_{\mu\nu} = h_{\nu\mu}$, $h^\mu{}_\mu=0$
+  lives in the $(3,3)$ representation.  This is the unique spin-2 irrep at each
+  value of $(n,n')$ with $n=n'=1$.  Its helicity states are $\lambda = \pm 2$,
+  consistent with the massless graviton.
+
+  \textbf{The sigma matrices $\sigma^\mu_{a\dot{a}}$ as intertwining operators.}
+  The map $A^\mu \mapsto A_{a\dot{a}} = \sigma^\mu_{a\dot{a}}A_\mu$ is a
+  Lorentz-equivariant isomorphism between the $(2,2)$ vector representation and
+  the $(2,1)\otimes(1,2) = (2,2)$ bispinor representation.
+  Its existence is guaranteed by the fact that both are the unique 4-dimensional
+  Lorentz irrep (up to equivalence), and the sigma matrices are the explicit
+  matrix elements of this isomorphism.
+\end{physinterp}
+
+%%------------------------------------------------------------
+\subsection{Summary table of tensor product decompositions}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{@{}llcl@{}}
+  \toprule
+  Product & Decomposition & Dim check & Key invariant tensor \\
+  \midrule
+  $\mathbf{2}\otimes\mathbf{2}$ (SU(2))
+    & $\mathbf{1}_A \oplus \mathbf{3}_S$
+    & $1+3=4$ $\checkmark$
+    & $\varepsilon^{ab}$ (SU(2) metric) \\
+  $(2,1)\otimes(2,1)$
+    & $(1,1)_A \oplus (3,1)_S$
+    & $1+3=4$ $\checkmark$
+    & $\varepsilon^{ab}$ (SL(2,$\mathbb{C}$) metric) \\
+  $(1,2)\otimes(1,2)$
+    & $(1,1)_A \oplus (1,3)_S$
+    & $1+3=4$ $\checkmark$
+    & $\varepsilon^{\dot{a}\dot{b}}$ (SL(2,$\mathbb{C}$) metric) \\
+  $(2,2)\otimes(2,2)$
+    & $(1,1)_S \oplus (3,1)_A \oplus (1,3)_A \oplus (3,3)_S$
+    & $1+3+3+9=16$ $\checkmark$
+    & $g^{\mu\nu}$ (Lorentz metric) \\
+  \bottomrule
+\end{tabular}
+\end{center}
 
 %% ============================================================
 \section{Lorentz Group Representations}
