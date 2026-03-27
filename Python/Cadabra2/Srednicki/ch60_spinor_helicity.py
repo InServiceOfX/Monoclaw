@@ -65,7 +65,7 @@ print(SEP)
 #           [ σ̄^μ  ,   0   ]]
 #
 # where σ^μ = (I, σ⃗) and σ̄^μ = (I, -σ⃗)  [eq. 34.30 & 36.2]
-# Metric: g^{μν} = diag(+1, -1, -1, -1)  (Srednicki sign convention)
+# Metric: g^{μν} = diag(-1, +1, +1, +1)  [Srednicki Eq. 1.8 / 2.4, mostly-plus -+++]
 
 sigma = {
     1: np.array([[0, 1],  [1, 0]],   dtype=complex),
@@ -709,7 +709,7 @@ ket_sq_qF, ket_an_qF, bra_sq_qF, bra_an_qF = massless_spinors_general(omega_F, n
 
 LHS_F13 = np.zeros((4,4), dtype=complex)
 for mu in range(4):
-    # γ_μ = g_{μμ} γ^μ (diagonal metric: g_{00}=1, g_{ii}=-1)
+    # γ_μ = g_{μμ} γ^μ (diagonal metric: g_{00}=-1, g_{ii}=+1  [Srednicki -+++])
     gam_mu_lower = g[mu,mu] * gam[mu]
     # scalar: ⟨q|γ_μ|k] = row · matrix · column
     scalar_mu = bra_an_qF @ gam_mu_lower @ ket_sq_kF

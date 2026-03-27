@@ -118,10 +118,9 @@ def eps3(i, j, k):
     """Levi-Civita symbol ε^{ijk}, indices 1,2,3."""
     return int(np.linalg.det([[i==1,i==2,i==3],[j==1,j==2,j==3],[k==1,k==2,k==3]]))
 
-# Metric signature (- + + +) → g^{μν}: g^{00}=-1, g^{ii}=+1 for i=1,2,3.
-# BUT WAIT: Srednicki uses metric (+,-,-,-) in the spinor chapters!
-# Actually, let's check: in eq. 34.4, g^{μρ} appears. Srednicki uses
-# the "mostly minus" convention (+,-,-,-).
+# Srednicki's metric (Eq. 1.8 / 2.4): g_{μν} = diag(-1,+1,+1,+1)  "mostly-plus"
+# So g^{μν} = diag(-1,+1,+1,+1) as well (same eigenvalues).
+# g^{00} = -1,  g^{ii} = +1  for i=1,2,3.
 
 # eq. 34.9:  (S^ij_L)_a^b = ½ ε^{ijk} σ_k   (spatial rotation generators)
 # eq. 34.10: (S^k0_L)_a^b = (i/2) σ_k         (boost generators)
@@ -185,23 +184,16 @@ for mu in range(4):
 
 sec("§34.C  Verify [S^μν_L, S^ρσ_L] = Lorentz algebra  (numpy)")
 
-# Metric: Srednicki (+,-,-,-)
-g = np.diag([1., -1., -1., -1.])
+# Metric: Srednicki diag(-1,+1,+1,+1)  [Eq. 1.8 / 2.4, mostly-plus]
+g = np.diag([-1., 1., 1., 1.])
 
 def comm(A, B):
     return A @ B - B @ A
 
 def lorentz_rhs(mu, nu, rho, sig):
-    """RHS of the Lorentz commutator.
-    Srednicki eq. 34.4 notation: i(g^{μρ} S^{νσ} - (μ↔ν)) - (ρ↔σ)
-    BUT the metric factors are g^{νρ} and g^{νσ} style — verified by:
-      the (2,1) representation matrices must satisfy
-      [J_3, J_1] = iε_{312} J_2  with J_k = ½σ_k.
-    Correct form:
-      i(g^{νρ} S^{μσ} - g^{μρ} S^{νσ} - g^{νσ} S^{μρ} + g^{μσ} S^{νρ})
-    (Note: μ and ν are SWAPPED in the metric factors relative to a naive
-     reading of the formula. This is standard Lorentz algebra; the
-     MMD parse of the book has a notation ambiguity here.)
+    """RHS of the Lorentz commutator — Srednicki eq. 34.4:
+      [S^{μν}, S^{ρσ}] = i(g^{μρ} S^{νσ} - g^{νρ} S^{μσ} - g^{μσ} S^{νρ} + g^{νσ} S^{μρ})
+    with g^{μν} = diag(-1,+1,+1,+1)  [Srednicki Eq. 1.8].
     """
     def S(m, n):
         if m == n:
@@ -210,10 +202,10 @@ def lorentz_rhs(mu, nu, rho, sig):
             return S_L[m][n]
         return -S_L[n][m]   # antisymmetry: S^{nm} = -S^{mn}
     return 1j * (
-        g[nu, rho] * S(mu, sig)
-        - g[mu, rho] * S(nu, sig)
-        - g[nu, sig] * S(mu, rho)
-        + g[mu, sig] * S(nu, rho)
+        g[mu, rho] * S(nu, sig)
+        - g[nu, rho] * S(mu, sig)
+        - g[mu, sig] * S(nu, rho)
+        + g[nu, sig] * S(mu, rho)
     )
 
 print("Checking [S^μν_L, S^ρσ_L] = RHS  for all independent pairs...")
@@ -425,25 +417,26 @@ for mu in range(4):
 # Verify the key identity:  tr(σ^μ σ̄^ν) = 2 g^{μν}
 # where the trace is over both spinor indices:
 #   tr(σ^μ σ̄^ν) = σ^μ_{aȧ} σ̄^{ν ȧa}  (matrix product, then trace)
-# This follows from σ^0=I, σ̄^0=I, σ^i=σ_i, σ̄^i=-σ_i:
-#   μ=ν=0: tr(I·I) = 2  = 2g^{00} = 2(+1) = 2 ✓
-#   μ=ν=i: tr(σ_i·(-σ_i)) = -tr(I) = -2 = 2g^{ii} = 2(-1) = -2 ✓
+# This follows from σ^0=I, σ̄^0=I, σ^i=σ_i, σ̄^i=-σ_i and g=diag(-1,+1,+1,+1):
+#   μ=ν=0: tr(I·I) = 2  = -2g^{00} = -2(-1) = 2 ✓
+#   μ=ν=i: tr(σ_i·(-σ_i)) = -tr(I) = -2 = -2g^{ii} = -2(+1) = -2 ✓
 #   μ≠ν: tr(σ^μ σ̄^ν) = 0  (traceless cross terms, Pauli algebra) ✓
+# So: tr(σ^μ σ̄^ν) = -2 g^{μν}  (Srednicki mostly-plus, cf. eq. 35.5)
 #
 # This is a precursor to the sigma-bar algebra in Ch. 35.
-print("\nChecking tr(σ^μ σ̄^ν) = 2 g^{μν}:")
+print("\nChecking tr(σ^μ σ̄^ν) = -2 g^{μν}  [Srednicki mostly-plus]:")
 trace_matrix = np.zeros((4, 4), dtype=complex)
 for mu in range(4):
     for nu in range(4):
         trace_matrix[mu, nu] = np.trace(sigma_vec[mu] @ sigmabar_vec[nu])
 
-expected = 2 * g   # 2 * diag(+1,-1,-1,-1)
+expected = -2 * g   # -2 * diag(-1,+1,+1,+1) = diag(+2,-2,-2,-2)
 err = np.max(np.abs(trace_matrix - expected))
 print("  tr(σ^μ σ̄^ν) =")
 for row in trace_matrix.real:
     print("   ", row)
-print(f"  Max error vs 2g^{{μν}}: {err:.2e}")
-print("  ✓ tr(σ^μ σ̄^ν) = 2g^{μν} verified" if err < 1e-12 else "  ✗ MISMATCH!")
+print(f"  Max error vs -2g^{{μν}}: {err:.2e}")
+print("  ✓ tr(σ^μ σ̄^ν) = -2g^{μν} verified" if err < 1e-12 else "  ✗ MISMATCH!")
 
 # =============================================================================
 # §34.G  CADABRA2 ALGEBRAIC REPRESENTATION

@@ -13,8 +13,7 @@ What this file covers (section by section):
   §37.G  Cadabra2 symbolic index structure for the quantized field
 
 Reference: Srednicki QFT, Chapter 37.
-Metric convention: (+,-,-,-) / mostly-plus for sigma matrices.
-                   However, Srednicki's eq. numbering uses mostly-plus g_{μν}.
+Metric convention: Srednicki g_{μν} = diag(-1,+1,+1,+1)  [Eq. 1.8, mostly-plus -+++]
 
 Run with:
     python3 ch37_canonical_quantization.py

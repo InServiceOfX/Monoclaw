@@ -34,12 +34,12 @@ export const chapters: Chapter[] = [
     status: "done",
     scriptFile: "ch34_left_right_spinors.py",
     description:
-      "Introduces the two-component Weyl spinor formalism for massless fermions. Defines undotted (left-handed) and dotted (right-handed) spinor indices, the epsilon tensor for raising/lowering, and the van der Waerden notation. Establishes the metric and sign conventions used throughout.",
+      "Introduces the two-component Weyl spinor formalism for massless fermions. Defines undotted (left-handed) and dotted (right-handed) spinor indices, the epsilon tensor for raising/lowering, and the van der Waerden notation. Establishes the mostly-plus metric g_{μν}=diag(-1,+1,+1,+1) (Srednicki Eq. 1.8) and sign conventions used throughout.",
     equations: [
       {
         label: "Metric",
-        latex: "g_{\\mu\\nu} = \\mathrm{diag}(+1,-1,-1,-1)",
-        description: "Mostly-minus metric signature",
+        latex: "g_{\\mu\\nu} = \\mathrm{diag}(-1,+1,+1,+1)",
+        description: "Mostly-plus metric signature (Srednicki Eq. 1.8 / 2.4)",
       },
       {
         label: "Epsilon tensor (undotted)",

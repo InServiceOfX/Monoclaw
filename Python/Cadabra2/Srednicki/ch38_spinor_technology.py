@@ -13,8 +13,7 @@ What this file covers (section by section):
   §38.G  Cadabra2 symbolic verification of all key identities
 
 Reference: Srednicki QFT, Chapter 38.
-Metric convention: (+,-,-,-) / mostly-plus for σ matrices.
-                   Srednicki uses g_{μν} = diag(−1,+1,+1,+1).
+Metric convention: Srednicki g_{μν} = diag(-1,+1,+1,+1)  [Eq. 1.8, mostly-plus -+++]
 
 Run with:
     python3 ch38_spinor_technology.py

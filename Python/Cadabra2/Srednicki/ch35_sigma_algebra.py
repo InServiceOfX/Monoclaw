@@ -69,8 +69,8 @@ print("  Undotted (left-handed, (2,1)):  α β γ δ")
 print("  Dotted   (right-handed, (1,2)): α̇ β̇ γ̇ δ̇")
 print("  Spacetime:                       μ ν ρ σ")
 
-# Metric g^{μν} = diag(+1,-1,-1,-1)  [Srednicki's (+,-,-,-) signature]
-g = np.diag([1., -1., -1., -1.])
+# Metric g^{μν} = diag(-1,+1,+1,+1)  [Srednicki Eq. 1.8 / 2.4, mostly-plus -+++]
+g = np.diag([-1., 1., 1., 1.])
 
 # ε symbols: index order is row=first index, col=second index
 # ε_{12} = -1, ε_{21} = +1  (since ε_{12} = ε^{21} * determinant = ... )
@@ -293,11 +293,12 @@ if max_err_sigmabar < 1e-12:
 else:
     print("✗ MISMATCH in σ̄ computation!")
 
-# Now verify tr(σ^μ σ̄^ν) = 2 g^{μν}
+# Now verify tr(σ^μ σ̄^ν) = -2 g^{μν}   [Srednicki mostly-plus g=diag(-1,+1,+1,+1)]
 # tr(σ^μ σ̄^ν) = σ^μ_{aȧ} σ̄^{ν ȧa} = Tr_matrix[σ^μ · σ̄^ν]
 # where the matrix product contracts ȧ (shared column/row index)
 # and the trace contracts a.
-print("\nChecking tr(σ^μ σ̄^ν) = 2 g^{μν}:")
+# With g=diag(-1,+1,+1,+1): -2g^{00}=+2, -2g^{ii}=-2 → diag(+2,-2,-2,-2)
+print("\nChecking tr(σ^μ σ̄^ν) = -2 g^{μν}  [Srednicki mostly-plus]:")
 trace_mat = np.zeros((4, 4), dtype=complex)
 for mu in range(4):
     for nu in range(4):
@@ -306,13 +307,13 @@ for mu in range(4):
         # Trace = δ_a^b → sum over a
         trace_mat[mu, nu] = np.trace(sigma_vec[mu] @ sigmabar_vec[nu])
 
-err_trace = np.max(np.abs(trace_mat - 2 * g))
+err_trace = np.max(np.abs(trace_mat - (-2 * g)))
 print("  tr(σ^μ σ̄^ν) =")
 for row in trace_mat.real:
     print("   ", row)
-print(f"  Max error vs 2 g^{{μν}}: {err_trace:.2e}")
+print(f"  Max error vs -2 g^{{μν}}: {err_trace:.2e}")
 if err_trace < 1e-12:
-    print("  ✓ tr(σ^μ σ̄^ν) = 2 g^{μν} verified!")
+    print("  ✓ tr(σ^μ σ̄^ν) = -2 g^{μν} verified!")
 
 # =============================================================================
 # §35.E  GENERATORS IN TERMS OF σ, σ̄  [eq 35.21-35.22]
@@ -616,7 +617,7 @@ checks = [
     ("σ^μ_{aȧ} σ_{μ bḃ} = -2 ε_{ab} ε_{ȧḃ}", err_35_4),
     ("ε^{ab} ε^{ȧḃ} σ^μ_{aȧ} σ^ν_{bḃ} = -2g^{μν}", err_35_5),
     ("σ̄^μ = (I,-σ⃗)  [eq 35.20]", max_err_sigmabar),
-    ("tr(σ^μ σ̄^ν) = 2g^{μν}", err_trace),
+    ("tr(σ^μ σ̄^ν) = -2g^{μν}  [mostly-plus]", err_trace),
     ("S^μν_L = (i/4)(σ^μ σ̄^ν - σ^ν σ̄^μ)  [eq 35.21]", max_err_SL),
     ("S^μν_R = -(i/4)(σ̄^μ σ^ν - σ̄^ν σ^μ) [eq 35.22]", max_err_SR),
     ("σ^μ σ̄^ν + σ^ν σ̄^μ = -2g^{μν} I₂", max_err_cliff),
