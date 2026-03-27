@@ -153,7 +153,8 @@ print("  ✓ σ^0 = I₂  ⟹  {ψ_α, ψ†^β̇} = δ_α^{β̇} δ³(x-y)" if 
 sec("§37.B  Mode Expansion of the Weyl Field  [eq. 37.7]")
 
 # Cadabra2 symbolic mode expansion (at a fixed x for clarity)
-field_psi = Ex(
+# Note: display-only — not parsed as Ex() to avoid index-mismatch on sum terms
+field_psi_str = (
     r"\int \frac{d^3p}{(2\pi)^3} \sum_{s} "
     r"(b_{s}(p) u_{\alpha}^{s}(p) e^{ipx} + ddag_{s}(p) v_{\alpha}^{s}(p) e^{-ipx})"
 )
@@ -545,7 +546,7 @@ print()
 
 # Declare σ^0 as Kronecker delta for the CAR
 sigma0_expr = Ex(r"\sigma^{0}_{\alpha}^{\dal}")
-print(f"  σ^0_{αα̇} = δ_{αα̇} = {sigma0_expr}")
+print(f"  sigma^0_{{alpha alpha_dot}} = delta_{{alpha alpha_dot}} = {sigma0_expr}")
 print()
 
 # Full CAR in Cadabra2

@@ -43,13 +43,8 @@ cadabra2.AntiSymmetric(Ex(r"\epsilon_{\alpha\beta}"))
 cadabra2.AntiSymmetric(Ex(r"\epsilon^{\alpha\beta}"))
 cadabra2.AntiSymmetric(Ex(r"\epsilon_{\dal\dbe}"))
 cadabra2.AntiSymmetric(Ex(r"\epsilon^{\dal\dbe}"))
-
-# Metric declared as diagonal
-cadabra2.DiagonalMetric(Ex(r"\eta^{\mu\nu}"))
-cadabra2.DiagonalMetric(Ex(r"\eta_{\mu\nu}"))
-
-# Levi-Civita
-cadabra2.EpsilonTensor(Ex(r"\epsilon^{\mu\nu\rho\sigma}"), Ex(r"delta=\delta"))
+# Note: DiagonalMetric and EpsilonTensor are not available in this cadabra2 build;
+# metric and Levi-Civita properties are handled numerically via numpy.
 
 # ── numpy setup ───────────────────────────────────────────────────────────
 I2 = np.eye(2, dtype=complex)
@@ -319,10 +314,11 @@ print(f"  Tr[σ̄^μ σ^ν] = −2 g^{{μν}}?  max error = {err_trace2_bar:.2e}
 
 sec("§38.C  4-Trace: Tr[σ^μ σ̄^ν σ^ρ σ̄^σ]  [eq. 38.6]")
 
-print("Four-sigma trace identity (Srednicki eq. 38.6):")
+print("Four-sigma trace identity (Srednicki eq. 38.6, mostly-plus metric):")
 print()
 print("  Tr[σ^μ σ̄^ν σ^ρ σ̄^σ]")
-print("  = 2(g^{μν}g^{ρσ} − g^{μρ}g^{νσ} + g^{μσ}g^{νρ}) − 2i ε^{μνρσ}")
+print("  = 2(g^{μν}g^{ρσ} − g^{μρ}g^{νσ} + g^{μσ}g^{νρ}) + 2i ε^{μνρσ}")
+print("  [sign: +2i with Srednicki mostly-plus g=diag(-1,+1,+1,+1)]")
 print()
 
 # Compute the 4-trace numerically
@@ -334,7 +330,8 @@ for mu in range(4):
                 mat = sigma_vec[mu] @ sigmabar_vec[nu] @ sigma_vec[rho] @ sigmabar_vec[sig]
                 trace_4[mu, nu, rho, sig] = np.trace(mat)
 
-# Compute the expected RHS: 2(g^{μν}g^{ρσ} - g^{μρ}g^{νσ} + g^{μσ}g^{νρ}) - 2i ε^{μνρσ}
+# Compute the expected RHS: 2(g^{μν}g^{ρσ} - g^{μρ}g^{νσ} + g^{μσ}g^{νρ}) + 2i ε^{μνρσ}
+# The +2i sign is correct for Srednicki's mostly-plus metric convention.
 rhs_4trace = np.zeros((4, 4, 4, 4), dtype=complex)
 for mu in range(4):
     for nu in range(4):
@@ -344,13 +341,13 @@ for mu in range(4):
                     2 * (g[mu, nu] * g[rho, sig]
                          - g[mu, rho] * g[nu, sig]
                          + g[mu, sig] * g[nu, rho])
-                    - 2j * epsilon[mu, nu, rho, sig]
+                    + 2j * epsilon[mu, nu, rho, sig]
                 )
 
 err_4trace = np.max(np.abs(trace_4 - rhs_4trace))
 print(f"  Numerical verification — Max error: {err_4trace:.2e}")
 if err_4trace < 1e-12:
-    print("  ✓ Tr[σ^μ σ̄^ν σ^ρ σ̄^σ] = 2(g^{μν}g^{ρσ} − g^{μρ}g^{νσ} + g^{μσ}g^{νρ}) − 2i ε^{μνρσ}")
+    print("  ✓ Tr[σ^μ σ̄^ν σ^ρ σ̄^σ] = 2(g^{μν}g^{ρσ} − g^{μρ}g^{νσ} + g^{μσ}g^{νρ}) + 2i ε^{μνρσ}")
     print("     verified for all 256 index combinations!")
 else:
     print("  ✗ MISMATCH!")
@@ -387,8 +384,8 @@ for mu, nu, rho, sig, label in cases:
 # The conjugate trace: Tr[σ̄^μ σ^ν σ̄^ρ σ^σ]
 print("Conjugate trace Tr[σ̄^μ σ^ν σ̄^ρ σ^σ]:")
 print("  = (Tr[σ^σ σ̄^ρ σ^ν σ̄^μ])* = complex conjugate with μ↔σ, ν↔ρ")
-print("  = 2(g^{μν}g^{ρσ} − g^{μρ}g^{νσ} + g^{μσ}g^{νρ}) + 2i ε^{μνρσ}")
-print("  (Note: +2i ε instead of −2i ε due to complex conjugation)")
+print("  = 2(g^{μν}g^{ρσ} − g^{μρ}g^{νσ} + g^{μσ}g^{νρ}) − 2i ε^{μνρσ}")
+print("  (Note: -2i ε, sign flipped from +2i relative to the unbarred trace)")
 
 trace_4_bar = np.zeros((4, 4, 4, 4), dtype=complex)
 for mu in range(4):
@@ -407,7 +404,7 @@ for mu in range(4):
                     2 * (g[mu, nu] * g[rho, sig]
                          - g[mu, rho] * g[nu, sig]
                          + g[mu, sig] * g[nu, rho])
-                    + 2j * epsilon[mu, nu, rho, sig]
+                    - 2j * epsilon[mu, nu, rho, sig]
                 )
 
 err_4trace_bar = np.max(np.abs(trace_4_bar - rhs_4trace_bar))
@@ -741,9 +738,9 @@ checks = [
      err_trace2),
     ("Tr[σ̄^μ σ^ν] = −2 g^{μν}",
      err_trace2_bar),
-    ("Tr[σ^μ σ̄^ν σ^ρ σ̄^σ] = 2(g^{μν}g^{ρσ}−...) − 2iε  [eq. 38.6]",
+    ("Tr[σ^μ σ̄^ν σ^ρ σ̄^σ] = 2(g^{μν}g^{ρσ}−...) + 2iε  [eq. 38.6]",
      err_4trace),
-    ("Tr[σ̄^μ σ^ν σ̄^ρ σ^σ] = 2(g^{μν}g^{ρσ}−...) + 2iε",
+    ("Tr[σ̄^μ σ^ν σ̄^ρ σ^σ] = 2(g^{μν}g^{ρσ}−...) − 2iε",
      err_4trace_bar),
     ("ε^{αβ} ε_{βγ} = δ^α_γ  (ε invertibility)",
      err_inv),
@@ -779,10 +776,10 @@ print("""
   4-TRACE IDENTITY  [eq. 38.6]
   ──────────────────────────────
     Tr[σ^μ σ̄^ν σ^ρ σ̄^σ]
-      = 2(g^{μν}g^{ρσ} − g^{μρ}g^{νσ} + g^{μσ}g^{νρ}) − 2i ε^{μνρσ}
-    Tr[σ̄^μ σ^ν σ̄^ρ σ^σ]
       = 2(g^{μν}g^{ρσ} − g^{μρ}g^{νσ} + g^{μσ}g^{νρ}) + 2i ε^{μνρσ}
-    (Conjugate traces differ by sign of ε term)
+    Tr[σ̄^μ σ^ν σ̄^ρ σ^σ]
+      = 2(g^{μν}g^{ρσ} − g^{μρ}g^{νσ} + g^{μσ}g^{νρ}) − 2i ε^{μνρσ}
+    (Conjugate traces differ by sign of ε term; +2i for σσ̄σσ̄, −2i for σ̄σσ̄σ)
 
   INDEX GYMNASTICS  [eq. 38.7–38.13]
   ────────────────────────────────────
