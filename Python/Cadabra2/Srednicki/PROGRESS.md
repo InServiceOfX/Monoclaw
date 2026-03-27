@@ -9,12 +9,12 @@
 | Ch.36 | Weyl Lagrangian | ✅ `ch36_weyl_lagrangian.py` | ✅ | EOM, kinetic term, mass term |
 | Ch.60 | Spinor Helicity / MHV | ✅ `ch60_spinor_helicity.py` | — | Twistors, angle/square brackets, polarization vectors, Fierz; no export script yet |
 
-## In Progress / Spawned
+## Completed Chapters (cont.)
 
-| Chapter | Topic | Branch | Status | Notes |
-|---------|-------|--------|--------|-------|
-| Ch.37 | Canonical Quantization of Spinor Fields I | `feat/srednicki-ch37` | 🔄 script exists, not verified complete | Anticommutation relations, mode expansion, basis spinors u^s v^s |
-| Ch.38 | Spinor Technology | `feat/srednicki-ch38` | 🔄 script exists, not verified complete | σ^μ completeness, trace identities, Fierz, van der Waerden index gymnastics |
+| Chapter | Topic | Script | Export/PDF | Notes |
+|---------|-------|--------|------------|-------|
+| Ch.37 | Canonical Quantization of Spinor Fields I | ✅ `ch37_canonical_quantization.py` | ✅ | CARs, mode expansion, basis spinors u^s v^s, normal-ordered H, spin-statistics |
+| Ch.38 | Spinor Technology | ✅ `ch38_spinor_technology.py` | ✅ | σ completeness, 2-trace, 4-trace (+2iε sign), index gymnastics, Fierz |
 
 ## Not Started
 
@@ -28,11 +28,13 @@
 
 ## Last Worked On
 
-**2026-03-24** — Added `AGENTS.md` and `PROGRESS.md`. Ch.37 and Ch.38 scripts
-exist on `feat/srednicki-ch37`/`feat/srednicki-ch38` branches but completion
-status of those scripts is unverified (spawned to sub-agent, not confirmed to
-run cleanly). Next task: verify ch37 + ch38 scripts run without error in Docker,
-write export scripts, then proceed to Ch.48.
+**2026-03-27** — Verified ch37 + ch38 scripts run clean in `cadabra2-ubuntu:24.04` Docker.
+Fixed bugs: ch37 `Ex()` free-index-sum crash (mode expansion), ch38 unavailable
+`DiagonalMetric`/`EpsilonTensor` API calls, ch38 4-trace ε sign (correct: +2i for
+Tr[σσ̄σσ̄] with mostly-plus metric). All 9 numerical checks pass. Wrote
+`ch37_export_latex.py` and `ch38_export_latex.py`; produced 6-page PDFs for both
+chapters. Committed to `feat/srednicki-ch37-ch38-breakdown`, pushed.
+Next task: Ch.48 (spinors for massless particles).
 
 ## Notes / Caveats
 
