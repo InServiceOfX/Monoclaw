@@ -1,8 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import config from '../config/mission-control.json'
 
 // ─── config ──────────────────────────────────────────────────────────────────
 
-const SCRIPT_DIR = '/home/propdev/.openclaw/workspace/repos/Monoclaw/Deployments/Scripts/TensorRTLLMFixed'
+const localLLM = (config as unknown as {
+  localLLM?: {
+    trtllmScriptDir?: string
+    port?: number
+    profiles?: { id: string; label: string; description: string }[]
+  }
+}).localLLM ?? {}
+
+const SCRIPT_DIR = localLLM.trtllmScriptDir ?? '(not configured — run node scripts/sync-openclaw-config.js)'
+const SERVER_PORT = localLLM.port ?? 30000
 
 interface Profile {
   id: string
@@ -11,26 +21,12 @@ interface Profile {
   model: string
 }
 
-const PROFILES: Profile[] = [
-  {
-    id: 'qwen3-1.7b',
-    label: 'Qwen3-1.7B',
-    description: '1.7B params · 163k ctx · RTX 3060 comfortable',
-    model: 'qwen3-1.7b',
-  },
-  {
-    id: 'qwen3-4b',
-    label: 'Qwen3-4B',
-    description: '4B params · larger context · fits on 12 GB',
-    model: 'qwen3-4b',
-  },
-  {
-    id: 'nanbeige4.1-3b',
-    label: 'Nanbeige4.1-3B',
-    description: '3B params · tight on 12 GB',
-    model: 'nanbeige4.1-3b',
-  },
-]
+const PROFILES: Profile[] = (localLLM.profiles ?? []).map((p) => ({
+  id: p.id,
+  label: p.label,
+  description: p.description,
+  model: p.id,
+}))
 
 type Mode = 'thinking' | 'no-think' | 'instruct' | 'coding'
 
@@ -122,7 +118,7 @@ export function TRTLLMPanel() {
   const checkStatus = useCallback(async () => {
     setStatus('checking')
     try {
-      const r = await fetch('http://localhost:30000/v1/models', {
+      const r = await fetch(`http://localhost:${SERVER_PORT}/v1/models`, {
         signal: AbortSignal.timeout(3000),
       })
       if (r.ok) {
@@ -162,7 +158,7 @@ export function TRTLLMPanel() {
           <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">
             TensorRT-LLM Local
           </h2>
-          <p className="text-[11px] text-gray-600 mt-0.5">RTX 3060 · GPU 1 · port 30000</p>
+          <p className="text-[11px] text-gray-600 mt-0.5">RTX 3060 · GPU 1 · port {SERVER_PORT}</p>
         </div>
         <div className="flex items-center gap-3">
           <StatusBadge status={status} />
@@ -270,7 +266,7 @@ export function TRTLLMPanel() {
         </p>
         <p className="text-[11px] text-gray-600 mt-1.5 leading-relaxed">
           <span className="text-gray-500 font-bold">Direct API: </span>
-          <span className="font-mono text-gray-400">http://localhost:30000/v1/chat/completions</span> (OpenAI-compatible)
+          <span className="font-mono text-gray-400">http://localhost:{SERVER_PORT}/v1/chat/completions</span> (OpenAI-compatible)
         </p>
       </div>
     </div>

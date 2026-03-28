@@ -3,6 +3,10 @@
 .env.*
 !.env.example
 
+# Per-instance generated files (never commit)
+public/memory-index.json
+src/config/mission-control.json
+
 # Logs
 logs
 *.log
