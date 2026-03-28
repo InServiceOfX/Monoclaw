@@ -210,3 +210,16 @@ __marimo__/
 node_modules/
 dist/
 *.tsbuildinfo
+.vite/
+
+# LaTeX intermediary files (Python/Cadabra2 and elsewhere)
+# Only .tex source and final .pdf should ever be committed
+Python/Cadabra2/**/*.aux
+Python/Cadabra2/**/*.fdb_latexmk
+Python/Cadabra2/**/*.fls
+Python/Cadabra2/**/*.out
+Python/Cadabra2/**/*.toc
+Python/Cadabra2/**/*.log
+Python/Cadabra2/**/*.synctex.gz
+Python/Cadabra2/**/*.bbl
+Python/Cadabra2/**/*.blg
