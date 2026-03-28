@@ -1,2 +1,5 @@
 # Instance-specific config (has local paths, GPU IDs)
 config.yml
+
+profiles/qwen35-9b-distilled.yml
+profiles/qwen35-9b-distilled-q5.yml

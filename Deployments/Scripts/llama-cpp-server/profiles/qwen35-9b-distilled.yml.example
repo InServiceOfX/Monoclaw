@@ -13,7 +13,7 @@
 model_path: /models/Jackrong/Qwen3.5-9B-Claude-4.6-Opus-Reasoning-Distilled-v2-GGUF/Qwen3.5-9B.Q4_K_M.gguf
 
 # Host-side absolute path (reference only, not used by launch.sh)
-host_model_path: /media/propdev/9dc1a908-7eff-4e1c-8231-ext4/home/propdev/Data/Models/LLM/Jackrong/Qwen3.5-9B-Claude-4.6-Opus-Reasoning-Distilled-v2-GGUF/Qwen3.5-9B.Q4_K_M.gguf
+host_model_path: /media/ernest/Samsung980ProPCI/Data/Models/LLM/Jackrong/Qwen3.5-9B-Claude-4.6-Opus-Reasoning-Distilled-v2-GGUF/Qwen3.5-9B.Q4_K_M.gguf
 
 # ─── Server ───────────────────────────────────────────────────────────────────
 server:
