@@ -1,0 +1,20 @@
+# llama.cpp CUDA Server — Global Config
+# Copy to config.yml and edit for your instance.
+#
+# Docker image: lightweight CUDA server from ghcr.io
+# Full server docs: https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md
+
+docker:
+  image: ghcr.io/ggml-org/llama.cpp:server-cuda
+  container_name: llama-cpp-server
+
+  # GPU device ID passed to --gpus device=N
+  # Use 0 for single-GPU systems, or the specific GPU index for multi-GPU.
+  gpu_id: 1
+
+  # Host directories to mount as /models inside the container (read-only).
+  # Add all paths where your GGUF files live.
+  volumes:
+    - host: /media/propdev/9dc1a908-7eff-4e1c-8231-ext4/home/propdev/Data/Models/LLM
+      container: /models
+      readonly: true
