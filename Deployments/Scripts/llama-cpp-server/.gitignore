@@ -1,0 +1,2 @@
+# Instance-specific config (has local paths, GPU IDs)
+config.yml
