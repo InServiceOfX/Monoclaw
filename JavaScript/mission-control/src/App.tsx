@@ -7,8 +7,30 @@ import { HealthGrid } from './components/HealthGrid'
 import { ApiUsagePanel } from './components/ApiUsagePanel'
 import { ModelUsageBreakdown } from './components/ModelUsageBreakdown'
 import { MemoryScreen } from './components/MemoryScreen'
+import { TRTLLMPanel } from './components/TRTLLMPanel'
 
-type ViewMode = 'operations' | 'memory'
+type ViewMode = 'operations' | 'local-llm' | 'memory'
+
+const TABS: { id: ViewMode; label: string; color: string; activeClass: string }[] = [
+  {
+    id: 'operations',
+    label: 'Operations',
+    color: 'accent-blue',
+    activeClass: 'bg-accent-blue/20 text-accent-blue border border-accent-blue/40',
+  },
+  {
+    id: 'local-llm',
+    label: 'Local LLM',
+    color: 'accent-green',
+    activeClass: 'bg-accent-green/20 text-accent-green border border-accent-green/40',
+  },
+  {
+    id: 'memory',
+    label: 'Memory',
+    color: 'accent-purple',
+    activeClass: 'bg-accent-purple/20 text-accent-purple border border-accent-purple/40',
+  },
+]
 
 export default function App() {
   const [view, setView] = useState<ViewMode>('operations')
@@ -29,32 +51,23 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2 bg-surface-2 border border-border rounded-lg p-1">
-            <button
-              onClick={() => setView('operations')}
-              className={`px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition-colors ${
-                view === 'operations'
-                  ? 'bg-accent-blue/20 text-accent-blue border border-accent-blue/40'
-                  : 'text-gray-400 hover:text-gray-200'
-              }`}
-            >
-              Operations
-            </button>
-            <button
-              onClick={() => setView('memory')}
-              className={`px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition-colors ${
-                view === 'memory'
-                  ? 'bg-accent-purple/20 text-accent-purple border border-accent-purple/40'
-                  : 'text-gray-400 hover:text-gray-200'
-              }`}
-            >
-              Memory
-            </button>
+            {TABS.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setView(tab.id)}
+                className={`px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition-colors ${
+                  view === tab.id ? tab.activeClass : 'text-gray-400 hover:text-gray-200'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-6">
-        {view === 'operations' ? (
+        {view === 'operations' && (
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
             <div className="space-y-4 xl:col-span-1">
               <ModelSelector />
@@ -72,9 +85,18 @@ export default function App() {
               <ModelUsageBreakdown />
             </div>
           </div>
-        ) : (
-          <MemoryScreen />
         )}
+
+        {view === 'local-llm' && (
+          <div className="grid gap-4 grid-cols-1 xl:grid-cols-2">
+            <TRTLLMPanel />
+            <div className="space-y-4">
+              <HealthGrid />
+            </div>
+          </div>
+        )}
+
+        {view === 'memory' && <MemoryScreen />}
       </main>
     </div>
   )
