@@ -1,0 +1,41 @@
+{
+  "_comment": "Copy to mission-control.json (gitignored). Run: node scripts/sync-openclaw-config.js to auto-populate from ~/.openclaw/openclaw.json",
+  "openclaw": {
+    "workspaceDir": "~/.openclaw/workspace"
+  },
+  "models": [
+    {
+      "id": "anthropic/claude-sonnet-4-6",
+      "displayName": "Claude Sonnet 4.6",
+      "provider": "Anthropic",
+      "baseUrl": "https://api.anthropic.com/v1",
+      "apiKeyEnv": "VITE_ANTHROPIC_API_KEY",
+      "contextWindow": 200000,
+      "maxTokens": 8192,
+      "costPer1kInput": 0.003,
+      "costPer1kOutput": 0.015
+    },
+    {
+      "id": "xai/grok-4-1-fast",
+      "displayName": "Grok 4.1 Fast",
+      "provider": "xAI",
+      "baseUrl": "https://api.x.ai/v1",
+      "apiKeyEnv": "VITE_XAI_API_KEY",
+      "contextWindow": 2000000,
+      "maxTokens": 65536,
+      "costPer1kInput": 0,
+      "costPer1kOutput": 0
+    }
+  ],
+  "localLLM": {
+    "trtllmScriptDir": "/path/to/TensorRTLLMFixed",
+    "port": 30000,
+    "profiles": [
+      {
+        "id": "qwen3-1.7b",
+        "label": "Qwen3-1.7B",
+        "description": "1.7B params · 163k ctx · default"
+      }
+    ]
+  }
+}
