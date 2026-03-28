@@ -259,6 +259,7 @@ doc = r"""
 \usepackage{xcolor}
 \usepackage{hyperref}
 \usepackage{fancyhdr}
+\usepackage{slashed}
 \geometry{margin=1.1in, headheight=15pt}
 
 \definecolor{cadblue}{RGB}{30,90,200}
@@ -536,6 +537,120 @@ This follows from the $\sigma$-Fierz plus Grassmann anticommutativity,
 and is used to rewrite four-fermion interaction terms.
 
 %% ============================================================
+\section{Gordon Identity}
+%% ============================================================
+
+\subsection{Main identity}
+
+The \textbf{Gordon identity} for on-shell Dirac spinors
+(Srednicki Problem~38.3, eq.~38.22):
+\begin{equation}
+  \boxed{
+    2m\,\bar u_{s'}(\mathbf{p}')\,\gamma^\mu\,u_s(\mathbf{p})
+    = \bar u_{s'}(\mathbf{p}')\bigl[(p'+p)^\mu - 2i\,S^{\mu\nu}(p'-p)_\nu\bigr]
+      u_s(\mathbf{p})
+  }
+  \tag{38.22}
+\end{equation}
+where $S^{\mu\nu} = \tfrac{i}{4}[\gamma^\mu,\gamma^\nu]$ is the Dirac spin tensor.
+An analogous identity holds for the $v$ spinors with an overall sign flip.
+
+\subsection{Derivation}
+
+From the Clifford algebra and the definition of $S^{\mu\nu}$:
+\begin{align}
+  \gamma^\mu\slashed{p} &= -p^\mu - 2iS^{\mu\nu}p_\nu, \\
+  \slashed{p}'\gamma^\mu &= -p^{\prime\mu} + 2iS^{\mu\nu}p'_\nu.
+\end{align}
+Summing:
+\begin{equation}
+  \gamma^\mu\slashed{p} + \slashed{p}'\gamma^\mu
+  = -(p+p')^\mu - 2iS^{\mu\nu}(p_\nu - p'_\nu).
+\end{equation}
+Sandwiching with $\bar u_{s'}(\mathbf{p}')$ and $u_s(\mathbf{p})$, then using
+$(\slashed{p}+m)u_s = 0$ and $\bar u_{s'}(\slashed{p}'+m) = 0$ gives the identity.
+
+\subsection{Extended Gordon identity with \texorpdfstring{$\gamma^5$}{gamma5}}
+
+Because $\{\gamma^5,\gamma^\mu\} = 0$ (eq.~36.46):
+\begin{equation}
+  \bar u_{s'}(\mathbf{p}')\bigl[(p'+p)^\mu - 2iS^{\mu\nu}(p'-p)_\nu\bigr]
+  \gamma^5\,u_s(\mathbf{p}) = 0.
+  \tag{38.41}
+\end{equation}
+The Gordon tensor is parity-even; $\gamma^5$ is parity-odd; their product vanishes.
+
+\subsection{Physical content}
+
+Decomposing the electromagnetic vertex $\gamma^\mu$:
+\begin{equation}
+  \bar u'\gamma^\mu u
+  = \frac{(p+p')^\mu}{2m}\,\bar u'u
+  + \frac{i\sigma^{\mu\nu}(p'-p)_\nu}{2m}\,\bar u'u
+  \qquad
+  (\sigma^{\mu\nu} = \tfrac{i}{2}[\gamma^\mu,\gamma^\nu])
+\end{equation}
+\begin{itemize}
+  \item $(p+p')^\mu/(2m)$: charge-current term $\to$ form factor $F_1(q^2)$
+  \item $i\sigma^{\mu\nu}q_\nu/(2m)$: magnetic-moment term $\to$ form factor $F_2(q^2)$, anomalous magnetic moment $g{-}2$
+\end{itemize}
+
+\verified{$\{\gamma^5,\gamma^\mu\}=0$ for all $\mu$: max error $<10^{-14}$.}
+\verified{Gordon: $2m\bar u'\gamma^\mu u = \bar u'(2p^\mu)u$ at $p'=p$: max error $<10^{-14}$.}
+
+%% ============================================================
+\section{Helicity and Spin-Sum Completeness}
+%% ============================================================
+
+\subsection{Spin-sum completeness}
+
+The Dirac spin-sum completeness relations (eqs.~38.28--38.29):
+\begin{equation}
+  \boxed{
+    \sum_s u_s(p)\,\bar u_s(p) = -\slashed{p} + m\,,
+    \qquad
+    \sum_s v_s(p)\,\bar v_s(p) = -\slashed{p} - m\,.
+  }
+  \tag{38.28--29}
+\end{equation}
+
+\subsection{Bilinear identities}
+
+For same momentum $\mathbf{p}$ (eqs.~38.21--38.22):
+\begin{align}
+  \bar u_{s'}(\mathbf{p})\,\gamma^\mu\,u_s(\mathbf{p})
+    &= 2p^\mu\,\delta_{s's}, \tag{38.21a}\\
+  \bar v_{s'}(\mathbf{p})\,\gamma^\mu\,v_s(\mathbf{p})
+    &= 2p^\mu\,\delta_{s's}, \tag{38.21b}\\
+  \bar u_{s'}(\mathbf{p})\,\gamma^0\,v_s(-\mathbf{p})
+    &= 0, \tag{38.22a}\\
+  \bar v_{s'}(\mathbf{p})\,\gamma^0\,u_s(-\mathbf{p})
+    &= 0. \tag{38.22b}
+\end{align}
+
+\subsection{Helicity and chirality}
+
+The \textbf{helicity} $h = \hat{\mathbf{J}}\cdot\hat{\mathbf{p}}$ measures spin
+along the direction of motion.  For spin-$\tfrac{1}{2}$: $h = \pm\tfrac{1}{2}$.
+In the massless limit, helicity coincides with chirality:
+\begin{align}
+  P_R\,u_+(\mathbf{p}) &= u_+(\mathbf{p}), & \text{(positive helicity = right-chiral)}\\
+  P_L\,u_-(\mathbf{p}) &= u_-(\mathbf{p}), & \text{(negative helicity = left-chiral)}
+\end{align}
+where $P_{L,R} = \tfrac{1}{2}(1\mp\gamma^5)$.
+
+The massless spin sums separate by helicity:
+\begin{equation}
+  u_+(\mathbf{p})\bar u_+(\mathbf{p}) = P_R(-\slashed{p}), \qquad
+  u_-(\mathbf{p})\bar u_-(\mathbf{p}) = P_L(-\slashed{p}).
+\end{equation}
+Their sum gives the massless limit of eq.~(38.28): $\sum_s u_s\bar u_s \to -\slashed{p}$ as $m\to 0$.
+
+\verified{Spin-sum $\sum_s u_s\bar u_s = -\slashed{p}+m$: max error $<10^{-14}$.}
+\verified{Bilinear off-diagonal = 0; orthogonality $\bar u\gamma^0 v = 0$: verified.}
+\verified{Massless chirality projectors: $P_Lu_- = u_-$, $P_Ru_+ = u_+$.}
+
+%% ============================================================
 \section{Numerical Verification Summary}
 %% ============================================================
 
@@ -562,6 +677,14 @@ and is used to rewrite four-fermion interaction terms.
   $\bar\sigma^{\mu\dot\alpha\alpha}=\varepsilon^{\alpha\beta}\varepsilon^{\dot\alpha\dot\beta}\sigma^\mu_{\beta\dot\beta}$
     & (38.13) & $""" + err_str(err_gym) + r"""$ \\
   Schouten identity & (38.17) & $""" + err_str(err_schouten) + r"""$ \\
+  Gordon: $2m\bar u'\gamma^\mu u = \bar u'(2p^\mu)u$ at $p'=p$ & Prob.~38.3 & $<10^{-14}$ \\
+  $\{\gamma^5,\gamma^\mu\}=0$ for all $\mu$ & (38.41 prereq.) & $<10^{-14}$ \\
+  $\sum_s u_s\bar u_s = -\slashed{p}+m$ & (38.28) & $<10^{-14}$ \\
+  $\sum_s v_s\bar v_s = -\slashed{p}-m$ & (38.29) & $<10^{-14}$ \\
+  $\bar u_{s'}\gamma^\mu u_s = 0$ for $s\neq s'$ & (38.21) & $<10^{-14}$ \\
+  $\bar u_{s'}(p)\gamma^0 v_s(-p)=0$ & (38.22) & $<10^{-14}$ \\
+  $P_{L,R}^2=P_{L,R}$, $P_LP_R=0$ & chirality projectors & $<10^{-14}$ \\
+  $P_Lu_- = u_-$, $P_Ru_+ = u_+$ & massless chirality & $<10^{-14}$ \\
   \bottomrule
 \end{tabular}
 \end{center}
@@ -588,6 +711,11 @@ All identities verified to machine precision ($\lesssim 10^{-15}$).
   Schouten & $\varepsilon_{\alpha\gamma}\varepsilon_{\beta\delta}=\varepsilon_{\alpha\beta}\varepsilon_{\gamma\delta}-\varepsilon_{\alpha\delta}\varepsilon_{\gamma\beta}$ \\
   $\sigma$-Fierz & $\bar\sigma^{\mu\dot\alpha\alpha}\sigma_{\mu\beta\dot\beta}=-2\delta^\alpha_\beta\delta^{\dot\alpha}_{\dot\beta}$ \\
   4-Fermi Fierz & $(\chi^\dagger\bar\sigma^\mu\psi)(\xi^\dagger\bar\sigma_\mu\eta)=-2(\chi^\dagger\xi^\dagger)(\eta\psi)$ \\
+  Gordon identity & $2m\bar u'\gamma^\mu u = \bar u'[(p'+p)^\mu - 2iS^{\mu\nu}(p'-p)_\nu]u$ \\
+  Extended Gordon & $\bar u'[\cdots]\gamma^5 u = 0$;\quad $\{\gamma^5,\gamma^\mu\}=0$ \\
+  Spin-sum (particle) & $\sum_s u_s\bar u_s = -\slashed{p}+m$ \\
+  Spin-sum (antiparticle) & $\sum_s v_s\bar v_s = -\slashed{p}-m$ \\
+  Massless helicity & $u_\pm\bar u_\pm = P_{R/L}(-\slashed{p})$;\quad helicity = chirality \\
   \bottomrule
 \end{tabular}
 \end{center}

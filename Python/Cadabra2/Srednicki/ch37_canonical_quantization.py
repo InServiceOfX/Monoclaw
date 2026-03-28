@@ -583,6 +583,160 @@ print("  ε_{αβ} = ε^{αβ}: metric for raising/lowering undotted indices")
 print("  ε_{α̇β̇} = ε^{α̇β̇}: metric for raising/lowering dotted indices")
 
 # =============================================================================
+# §37.H  LORENTZ-INVARIANT MEASURE AND FEYNMAN SLASH
+# =============================================================================
+# The mode expansion uses the Lorentz-invariant phase-space measure:
+#
+#   d̃p ≡ d³p / [(2π)³ 2ω_p]     where ω_p = √(p⃗² + m²)       [eq. 3.21]
+#
+# Why Lorentz-invariant?
+#   d̃p = d⁴p δ(p² + m²) θ(p⁰) / (2π)³   (mass-shell restriction)
+# d⁴p is invariant, δ(p²+m²) is Lorentz scalar, θ(p⁰) preserved by
+# orthochronous boosts.
+#
+# THE FEYNMAN SLASH:
+#   /p ≡ p_μ γ^μ   (4×4 matrix in Dirac space)         [eq. 36.14]
+#   LaTeX: \not{p}  or  \slashed{p}  (with 'slashed' package)
+#
+# Key property (mostly-plus metric):
+#   /p /p = p_μ p_ν γ^μ γ^ν = ½ p_μ p_ν {γ^μ,γ^ν} = -p² = m²  (on-shell)
+#
+# Weyl-rep block form:
+#   /p = [[0, p_{αα̇}], [p̄^{α̇α}, 0]]
+#
+# Dirac equation for plane-wave spinors:
+#   (/p + m) u_s(p) = 0     [particle]
+#   (-/p + m) v_s(p) = 0    [antiparticle]
+#   ū_s(p)(/p + m) = 0
+#   v̄_s(p)(-/p + m) = 0
+
+sec("§37.H  Lorentz-Invariant Measure and Feynman Slash  [eq. 3.21, 36.14]")
+
+print("LORENTZ-INVARIANT MEASURE:")
+print()
+print("  d̃p ≡ d³p / [(2π)³ · 2ω_p]    where ω_p = √(p⃗² + m²)  [eq. 3.21]")
+print()
+print("  Manifestly Lorentz-invariant because:")
+print("    d̃p = d⁴p · δ(p² + m²) · θ(p⁰) / (2π)³")
+print("  d⁴p: invariant; δ(p²+m²): scalar; θ(p⁰): preserved by orthochronous boosts.")
+print()
+print("  In the mode expansion:")
+print("    ψ_α(x) = Σ_s ∫ d̃p [b_s(p) u^s_α(p) e^{ip·x} + d†_s(p) v^s_α(p) e^{-ip·x}]")
+print()
+
+# Numerical illustration: ω_p for a sample momentum
+p_h_test = np.array([1.0, 0.5, 0.3])
+m_h_test = m_val  # 1.0 from §37.C
+omega_h_test = np.sqrt(np.dot(p_h_test, p_h_test) + m_h_test**2)
+print(f"  Example: p⃗ = {p_h_test}, m = {m_h_test}")
+print(f"    ω_p = √(|p⃗|² + m²) = {omega_h_test:.6f}")
+print(f"    Lorentz-invariant weight 1/(2ω_p) = {1/(2*omega_h_test):.6f}")
+print()
+
+print("FEYNMAN SLASH NOTATION:")
+print()
+print("  /p ≡ p_μ γ^μ   (LaTeX: \\not{p} or \\slashed{p})")
+print()
+print("  Key identity (mostly-plus metric g = diag(-1,+1,+1,+1)):")
+print("    /p² = p_μ p_ν γ^μ γ^ν = ½ p_μ p_ν {γ^μ,γ^ν}")
+print("        = p_μ p_ν (-g^{μν}) = -p_μ p^μ = m²  (on-shell)")
+print()
+
+# Numerical check: /p² = m²·I₄
+Z2h = np.zeros((2,2), dtype=complex)
+gamma_h = {}
+for mu_h in range(4):
+    gamma_h[mu_h] = np.block([[Z2h, sigma_vec[mu_h]], [sigmabar_vec[mu_h], Z2h]])
+
+g4h = np.diag([-1., 1., 1., 1.])
+p4h = np.array([omega_h_test, p_h_test[0], p_h_test[1], p_h_test[2]])
+p4h_lower = g4h @ p4h
+pslash_h = sum(p4h_lower[mu_h] * gamma_h[mu_h] for mu_h in range(4))
+pslash_sq_h = pslash_h @ pslash_h
+err_slash = np.max(np.abs(pslash_sq_h - m_h_test**2 * np.eye(4, dtype=complex)))
+print(f"  Numerical check /p² = m²·I₄:")
+print(f"    p^μ = {p4h}")
+print(f"    p_μ p^μ = {(p4h_lower @ p4h):.6f}  (= -{m_h_test**2:.1f} for mostly-plus)")
+print(f"    /p² = m²·I₄?  max error = {err_slash:.2e}",
+      "  ✓" if err_slash < 1e-12 else "  ✗")
+print()
+print("  Dirac equation in 4-component form (Weyl rep):")
+print("    (/p + m) u_s(p) = 0       [particle, eq. 36.11]")
+print("    (-/p + m) v_s(p) = 0      [antiparticle]")
+print("    In block form: [[m·I₂, p_{αα̇}], [p̄^{α̇α}, m·I₂]] (u_L, u_R)^T = 0")
+
+# =============================================================================
+# §37.I  SPIN-SUM COMPLETENESS RELATIONS (4-COMPONENT DIRAC)
+# =============================================================================
+# The Dirac spin-sum completeness relations (eqs. 38.28-38.29):
+#
+#   Σ_s u_s(p) ū_s(p) = -/p + m·I₄     [particle sum]
+#   Σ_s v_s(p) v̄_s(p) = -/p - m·I₄     [antiparticle sum]
+#
+# These are the 4-component version of the 2-component completeness
+# Σ_s u^s_α ũ^{β̇s} = -p_{αβ̇} + m δ_{αβ̇}  [eq. 37.10]
+#
+# Physical use: unpolarized cross sections replace u_s ū_s → (-/p+m)
+# and reduce squared amplitudes to traces over γ matrices.
+
+sec("§37.I  Spin-Sum Completeness (4-component)  [eq. 38.28-38.29]")
+
+print("4-component Dirac spin-sum completeness:")
+print()
+print("  Σ_s u_s(p) ū_s(p) = -/p + m·I₄    [eq. 38.28]")
+print("  Σ_s v_s(p) v̄_s(p) = -/p - m·I₄    [eq. 38.29]")
+print()
+print("  Dirac conjugate: ū = u† γ^0  (γ^0 = β in Weyl rep)")
+print()
+
+# Build rest-frame Dirac spinors
+# At rest: (/p+m)|rest = m(-γ^0+I) → kernel = eigvecs of γ^0 with eigenvalue +1
+# γ^0 = [[0,I],[I,0]] → eigenvalue +1: (1,0,1,0)^T/√2, (0,1,0,1)^T/√2
+# γ^0 eigenvalue -1 → v spinors: (1,0,-1,0)^T/√2, (0,1,0,-1)^T/√2
+
+m_i = m_val   # 1.0
+u_i = [
+    np.array([1., 0., 1., 0.], dtype=complex) / np.sqrt(2),
+    np.array([0., 1., 0., 1.], dtype=complex) / np.sqrt(2),
+]
+v_i = [
+    np.array([1., 0., -1., 0.], dtype=complex) / np.sqrt(2),
+    np.array([0., 1., 0., -1.], dtype=complex) / np.sqrt(2),
+]
+beta_i = gamma_h[0]
+
+def dbar_i(s): return s.conj() @ beta_i
+
+p4i = np.array([m_i, 0., 0., 0.])
+p4i_lower = g4h @ p4i
+pslash_i = sum(p4i_lower[mu_h] * gamma_h[mu_h] for mu_h in range(4))
+
+# Verify Dirac equation
+err_dirac_u = max(np.max(np.abs((pslash_i + m_i*np.eye(4,dtype=complex)) @ u)) for u in u_i)
+err_dirac_v = max(np.max(np.abs((-pslash_i + m_i*np.eye(4,dtype=complex)) @ v)) for v in v_i)
+print(f"  Dirac eq (/p+m)u=0 at rest:  max error = {err_dirac_u:.2e}",
+      "  ✓" if err_dirac_u < 1e-12 else "  ✗")
+print(f"  Dirac eq (-/p+m)v=0 at rest: max error = {err_dirac_v:.2e}",
+      "  ✓" if err_dirac_v < 1e-12 else "  ✗")
+
+# Spin sums (normalization: spinors normalized to 1, so factor 2m absorbed)
+spin_sum_u_i = sum(2*m_i * np.outer(u, dbar_i(u)) for u in u_i)
+spin_sum_v_i = sum(2*m_i * np.outer(v, dbar_i(v)) for v in v_i)
+rhs_u_i = -pslash_i + m_i * np.eye(4, dtype=complex)
+rhs_v_i = -pslash_i - m_i * np.eye(4, dtype=complex)
+err_su = np.max(np.abs(spin_sum_u_i - rhs_u_i))
+err_sv = np.max(np.abs(spin_sum_v_i - rhs_v_i))
+
+print(f"  Σ_s u_s ū_s = -/p+m?   max error = {err_su:.2e}",
+      "  ✓" if err_su < 1e-12 else "  ✗")
+print(f"  Σ_s v_s v̄_s = -/p-m?   max error = {err_sv:.2e}",
+      "  ✓" if err_sv < 1e-12 else "  ✗")
+print()
+print("  Application — unpolarized cross sections:")
+print("    Σ_{s,s'} |ū_{s'}(p') Γ u_s(p)|² = Tr[(-/p'+m) Γ̄ (-/p+m) Γ]")
+print("  This converts spin-summed amplitudes into γ-matrix traces.")
+
+# =============================================================================
 # §37  SUMMARY
 # =============================================================================
 
@@ -623,6 +777,25 @@ print("""
     Spin-½ MUST be anticommuting: commutator quantization violates microcausality
     {ψ_α(x), ψ†^β̇(y)}|_{spacelike} = 0  ← consistent with causality
     [ψ_α(x), ψ†^β̇(y)]|_{spacelike} ≠ 0  ← violation (wrong quantization)
+
+  LORENTZ-INVARIANT MEASURE  [eq. 3.21]
+  ─────────────────────────────────────────
+    d̃p ≡ d³p / [(2π)³ 2ω_p]    ω_p = √(p⃗²+m²)
+    Invariant: d̃p = d⁴p δ(p²+m²) θ(p⁰) / (2π)³  (mass-shell)
+    Mode expansion: ψ_α(x) = Σ_s ∫ d̃p [b_s u^s_α e^{ip·x} + d†_s v^s_α e^{-ip·x}]
+
+  FEYNMAN SLASH  [eq. 36.14]
+  ────────────────────────────
+    /p ≡ p_μ γ^μ    LaTeX: \\not{p}  or  \\slashed{p}
+    /p² = m²  on-shell (mostly-plus: p_μp^μ = -m²)
+    Dirac eq: (/p+m) u_s = 0,  (-/p+m) v_s = 0
+    Weyl-rep: /p = [[0, p_{αα̇}], [p̄^{α̇α}, 0]]
+
+  SPIN-SUM COMPLETENESS (4-component)  [eq. 38.28-38.29]
+  ─────────────────────────────────────────────────────────
+    Σ_s u_s(p) ū_s(p) = -/p + m     (particle spin sum)
+    Σ_s v_s(p) v̄_s(p) = -/p - m     (antiparticle spin sum)
+    Σ_{s,s'} |ū_{s'} Γ u_s|² = Tr[(-/p'+m) Γ̄ (-/p+m) Γ]
 """)
 
 print("Done: ch37_canonical_quantization.py")

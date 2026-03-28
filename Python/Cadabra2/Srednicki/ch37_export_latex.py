@@ -115,6 +115,42 @@ bilinear_minus = np.array([u_minus.conj() @ sigmabar_vec[mu] @ u_minus for mu in
 # Eigenvalues of massless p matrix
 eigvals_ml, _ = np.linalg.eig(p_ml)
 
+# ── new §37.H and §37.I quantities ──────────────────────────────────────────
+
+# Feynman slash check: /p² = m²·I₄
+p_h_test = np.array([1.0, 0.5, 0.3])
+m_h_test = m_val
+omega_h_test = np.sqrt(np.dot(p_h_test, p_h_test) + m_h_test**2)
+Z2h = np.zeros((2,2), dtype=complex)
+gamma_h = {}
+for mu_h in range(4):
+    gamma_h[mu_h] = np.block([[Z2h, sigma_vec[mu_h]], [sigmabar_vec[mu_h], Z2h]])
+g4h = np.diag([-1., 1., 1., 1.])
+p4h = np.array([omega_h_test, p_h_test[0], p_h_test[1], p_h_test[2]])
+p4h_lower = g4h @ p4h
+pslash_h = sum(p4h_lower[mu_h] * gamma_h[mu_h] for mu_h in range(4))
+err_slash = np.max(np.abs(pslash_h @ pslash_h - m_h_test**2 * np.eye(4, dtype=complex)))
+
+# Spin-sum completeness check at rest
+m_i = m_val
+u_i = [
+    np.array([1., 0., 1., 0.], dtype=complex) / np.sqrt(2),
+    np.array([0., 1., 0., 1.], dtype=complex) / np.sqrt(2),
+]
+v_i = [
+    np.array([1., 0., -1., 0.], dtype=complex) / np.sqrt(2),
+    np.array([0., 1., 0., -1.], dtype=complex) / np.sqrt(2),
+]
+beta_i = gamma_h[0]
+def dbar_i(s): return s.conj() @ beta_i
+p4i = np.array([m_i, 0., 0., 0.])
+p4i_lower = g4h @ p4i
+pslash_i = sum(p4i_lower[mu_h] * gamma_h[mu_h] for mu_h in range(4))
+spin_sum_u_i = sum(2*m_i * np.outer(u, dbar_i(u)) for u in u_i)
+spin_sum_v_i = sum(2*m_i * np.outer(v, dbar_i(v)) for v in v_i)
+err_su = np.max(np.abs(spin_sum_u_i - (-pslash_i + m_i * np.eye(4, dtype=complex))))
+err_sv = np.max(np.abs(spin_sum_v_i - (-pslash_i - m_i * np.eye(4, dtype=complex))))
+
 # ── cadabra2 expressions ─────────────────────────────────────────────────────
 cdb_exprs = {
     "car_lhs":        cdb(r"\psi_{\alpha} \psidag^{\dal} + \psidag^{\dal} \psi_{\alpha}"),
@@ -139,6 +175,7 @@ doc = r"""
 \usepackage{xcolor}
 \usepackage{hyperref}
 \usepackage{fancyhdr}
+\usepackage{slashed}
 \geometry{margin=1.1in, headheight=15pt}
 
 \definecolor{cadblue}{RGB}{30,90,200}
@@ -421,6 +458,93 @@ If a spin-$\frac{1}{2}$ field were quantized with \emph{commutators}:
 vanishes outside the light cone, as required.
 
 %% ============================================================
+\section{Lorentz-Invariant Measure and Feynman Slash}
+%% ============================================================
+
+\subsection{The measure \texorpdfstring{$\widetilde{dp}$}{dp-tilde}}
+
+The mode expansion uses the \textbf{Lorentz-invariant phase-space measure}
+(Srednicki eq.~3.21):
+\begin{equation}
+  \widetilde{dp} \equiv \frac{d^3p}{(2\pi)^3\,2\omega_{\mathbf{p}}},
+  \qquad \omega_{\mathbf{p}} = \sqrt{|\mathbf{p}|^2 + m^2}.
+  \tag{3.21}
+\end{equation}
+It is manifestly Lorentz-invariant because it equals
+$d^4p\,\delta(p^2+m^2)\,\theta(p^0)/(2\pi)^3$:
+the 4-volume $d^4p$ is invariant, $\delta(p^2+m^2)$ restricts to the mass shell
+(Lorentz scalar condition), and $\theta(p^0)$ selects the forward light-cone
+(preserved by orthochronous boosts).
+
+The mode expansion is then:
+\begin{equation}
+  \psi_\alpha(x) = \sum_s \int\!\widetilde{dp}\;
+  \bigl[b_s(\mathbf{p})\,u^s_\alpha(\mathbf{p})\,e^{ip\cdot x}
+       + d^\dagger_s(\mathbf{p})\,v^s_\alpha(\mathbf{p})\,e^{-ip\cdot x}\bigr].
+\end{equation}
+
+\subsection{Feynman slash notation}
+
+The \textbf{Feynman slash} is defined by (Srednicki eq.~36.14):
+\begin{equation}
+  \slashed{p} \equiv p_\mu\gamma^\mu\,.
+  \tag{36.14}
+\end{equation}
+(LaTeX: \verb|\slashed{p}| with \texttt{slashed} package, or \verb|\not{p}| built-in.)
+
+\medskip
+\textbf{Key property} (mostly-plus metric $g=\mathrm{diag}(-1,+1,+1,+1)$):
+\begin{equation}
+  \slashed{p}^2 = p_\mu p_\nu \gamma^\mu\gamma^\nu
+  = \tfrac{1}{2}p_\mu p_\nu\{\gamma^\mu,\gamma^\nu\}
+  = -p_\mu p^\mu = m^2 \quad(\text{on-shell})
+  \tag{36.15}
+\end{equation}
+
+In the Weyl representation $\gamma^\mu = \bigl[\begin{smallmatrix}0&\sigma^\mu\\\bar\sigma^\mu&0\end{smallmatrix}\bigr]$,
+the slash takes the block form:
+\begin{equation}
+  \slashed{p} = \begin{pmatrix}0 & p_{\alpha\dot\alpha} \\ \bar p^{\dot\alpha\alpha} & 0\end{pmatrix}
+\end{equation}
+The Dirac equation for plane-wave spinors (eq.~36.11 analog):
+\begin{align}
+  (\slashed{p} + m)\,u_s(p) &= 0, & (-\slashed{p}+m)\,v_s(p) &= 0, \tag{36.11}\\
+  \bar u_s(p)\,(\slashed{p}+m) &= 0, & \bar v_s(p)\,(-\slashed{p}+m) &= 0.
+\end{align}
+
+\verified{$\slashed{p}^2 = m^2 I_4$ for on-shell $p$: max error $""" + f"{err_slash:.1e}" + r"""$.}
+
+%% ============================================================
+\section{Spin-Sum Completeness (4-component)}
+%% ============================================================
+
+The Dirac spin-sum completeness relations (Srednicki eqs.~38.28--38.29):
+\begin{equation}
+  \boxed{
+    \sum_s u_s(p)\,\bar u_s(p) = -\slashed{p} + m\,,
+    \qquad
+    \sum_s v_s(p)\,\bar v_s(p) = -\slashed{p} - m\,.
+  }
+  \tag{38.28--29}
+\end{equation}
+where $\bar u = u^\dagger\gamma^0$ is the Dirac conjugate.
+
+These are the 4-component version of the 2-component Weyl completeness relations
+(eqs.~37.10--37.11).
+
+\textbf{Physical use --- unpolarized cross sections:}  summing over unknown spins
+replaces the outer product $u_s\bar u_{s'}$ with the spin-sum matrix, reducing
+squared amplitudes to $\gamma$-matrix traces:
+\begin{equation}
+  \sum_{s,s'}|\bar u_{s'}(p')\,\Gamma\,u_s(p)|^2
+  = \mathrm{Tr}\bigl[(-\slashed{p}'+m)\,\bar\Gamma\,(-\slashed{p}+m)\,\Gamma\bigr]
+\end{equation}
+where $\bar\Gamma = \gamma^0\Gamma^\dagger\gamma^0$.
+
+\verified{$\sum_s u_s\bar u_s = -\slashed{p}+m$ at rest: max error $""" + f"{err_su:.1e}" + r"""$.}
+\verified{$\sum_s v_s\bar v_s = -\slashed{p}-m$ at rest: max error $""" + f"{err_sv:.1e}" + r"""$.}
+
+%% ============================================================
 \section{Summary}
 %% ============================================================
 
@@ -442,6 +566,10 @@ vanishes outside the light cone, as required.
   Completeness & $\sum_s u^s_\alpha\tilde u^{\dot\beta s} = -p_\alpha{}^{\dot\beta} + m\delta_\alpha{}^{\dot\beta}$ \\
   Normal-ordered $H$ & $:H: = \int\frac{d^3p}{(2\pi)^3}\omegap[b^\dagger b + d^\dagger d]$ \\
   Spin-statistics & Spin-$\frac{1}{2}$ requires anticommuting fields (microcausality) \\
+  Lorentz-invariant measure & $\widetilde{dp} = d^3p/[(2\pi)^3 2\omega_{\mathbf{p}}]$ \\
+  Feynman slash & $\slashed{p}=p_\mu\gamma^\mu$;\quad $\slashed{p}^2=m^2$ on-shell \\
+  Spin-sum (particle) & $\sum_s u_s\bar u_s = -\slashed{p}+m$ \\
+  Spin-sum (antiparticle) & $\sum_s v_s\bar v_s = -\slashed{p}-m$ \\
   \bottomrule
 \end{tabular}
 \end{center}

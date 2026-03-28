@@ -688,6 +688,206 @@ print()
 print(f"Cadabra2 Schouten: {fierz_cadabra} = {fierz_rhs}")
 
 # =============================================================================
+# §38.F2  GORDON IDENTITY
+# =============================================================================
+# Gordon identity (Srednicki Problem 38.3, eq. 38.22):
+#
+#   2m ū_{s'}(p') γ^μ u_s(p)
+#     = ū_{s'}(p') [(p'+p)^μ - 2i S^{μν}(p'-p)_ν] u_s(p)
+#
+# where S^{μν} = (i/4)[γ^μ,γ^ν] is the Dirac spin tensor.
+#
+# Derivation key:
+#   γ^μ /p  = -(p)^μ - 2iS^{μν}p_ν        (from Clifford + S^{μν} def)
+#   /p'γ^μ  = -(p')^μ + 2iS^{μν}p'_ν
+#   Sum: γ^μ/p + /p'γ^μ = -(p+p')^μ - 2iS^{μν}(p-p')_ν
+#   Sandwich with ū_{s'}(p'), u_s(p) + use (/p+m)u=0, ū(/p'+m)=0
+#   → 2m ū'γ^μu = ū'[(p+p')^μ - 2iS^{μν}(p'-p)_ν]u  ✓
+#
+# Extended with γ^5 (eq. 38.41):
+#   ū_{s'}(p') [(p'+p)^μ - 2iS^{μν}(p'-p)_ν] γ^5 u_s(p) = 0
+# (vanishes: {γ^5, γ^μ}=0 makes the tensor P-odd, while ū'...u is P-even)
+#
+# Physical meaning: decomposes γ^μ vertex into:
+#   (1) charge-current (p+p')^μ/(2m) → form factor F_1(q²)
+#   (2) magnetic-moment iσ^{μν}q_ν/(2m) → form factor F_2(q²), g-2
+
+sec("§38.F2  Gordon Identity  [Problem 38.3 / eq. 38.22]")
+
+print("Gordon identity for on-shell Dirac spinors:")
+print()
+print("  2m ū_{s'}(p') γ^μ u_s(p)")
+print("    = ū_{s'}(p') [(p'+p)^μ - 2i S^{μν}(p'-p)_ν] u_s(p)")
+print()
+print("  S^{μν} = (i/4)[γ^μ,γ^ν]  (Dirac spin tensor)")
+print()
+print("  Derivation:")
+print("    γ^μ/p + /p'γ^μ = -(p+p')^μ - 2iS^{μν}(p_ν - p'_ν)")
+print("    Use (/p+m)u=0 and ū'(/p'+m)=0:")
+print("    → 2m ū'γ^μu = ū'[(p+p')^μ - 2iS^{μν}(p'-p)_ν]u  ✓")
+print()
+
+# Numerical check at p'=p (elastic, rest frame)
+# Gordon: 2m ū'γ^μu = ū'(2p^μ)u  since (p'-p)=0
+Z2g = np.zeros((2,2), dtype=complex)
+gamma_g = {}
+for mug in range(4):
+    gamma_g[mug] = np.block([[Z2g, sigma_vec[mug]], [sigmabar_vec[mug], Z2g]])
+
+beta_g = gamma_g[0]
+def dbar_g(s): return s.conj() @ beta_g
+
+m_g = 1.0
+g4g = np.diag([-1.,1.,1.,1.])
+u_g = [
+    np.array([1.,0.,1.,0.], dtype=complex)/np.sqrt(2),
+    np.array([0.,1.,0.,1.], dtype=complex)/np.sqrt(2),
+]
+p4g_upper = np.array([m_g, 0., 0., 0.])
+
+max_gordon_err = 0.
+for s1 in range(2):
+    for s2 in range(2):
+        for mug in range(4):
+            lhs = 2*m_g * (dbar_g(u_g[s1]) @ gamma_g[mug] @ u_g[s2])
+            rhs_val = dbar_g(u_g[s1]) @ (2*p4g_upper[mug]*np.eye(4,dtype=complex)) @ u_g[s2]
+            max_gordon_err = max(max_gordon_err, abs(lhs - rhs_val))
+
+print(f"  Numerical check at p'=p (elastic, rest frame):")
+print(f"    2m ū'γ^μu = ū'(2p^μ)u?  max error = {max_gordon_err:.2e}",
+      "  ✓" if max_gordon_err < 1e-12 else "  ✗")
+print()
+
+# γ^5 check: {γ^5,γ^μ}=0
+gamma5_g = 1j * gamma_g[0]@gamma_g[1]@gamma_g[2]@gamma_g[3]
+max_g5_anticomm = max(
+    np.max(np.abs(gamma5_g@gamma_g[mug] + gamma_g[mug]@gamma5_g))
+    for mug in range(4))
+print(f"  Check {{γ^5, γ^μ}} = 0 for all μ:  max error = {max_g5_anticomm:.2e}",
+      "  ✓" if max_g5_anticomm < 1e-12 else "  ✗")
+print()
+print("  Physical decomposition:")
+print("    ū'γ^μu = ū'[(p+p')^μ/(2m) + iσ^{μν}(p'-p)_ν/(2m)]u")
+print("    → (p+p')^μ term: charge-current → form factor F_1(q²)")
+print("    → iσ^{μν}q_ν term: magnetic moment → form factor F_2(q²), g-2")
+print()
+print("  Extended Gordon with γ^5 [eq. 38.41]:")
+print("    ū_{s'}(p') [(p'+p)^μ - 2iS^{μν}(p'-p)_ν] γ^5 u_s(p) = 0")
+print("    (vanishes by {{γ^5,γ^μ}}=0: Gordon tensor is P-even, γ^5 is P-odd)")
+
+# =============================================================================
+# §38.G2  HELICITY AND SPIN-SUM COMPLETENESS
+# =============================================================================
+# Spin-sum completeness (eqs. 38.28-38.29):
+#
+#   Σ_s u_s(p) ū_s(p) = -/p + m     [particle sum]
+#   Σ_s v_s(p) v̄_s(p) = -/p - m     [antiparticle sum]
+#
+# Bilinear identities (eq. 38.21-38.22):
+#   ū_s'(p) γ^μ u_s(p) = 2p^μ δ_{s's}
+#   v̄_s'(p) γ^μ v_s(p) = 2p^μ δ_{s's}
+#   ū_s'(p) γ^0 v_s(-p) = 0
+#   v̄_s'(p) γ^0 u_s(-p) = 0
+#
+# HELICITY:
+#   h = Ĵ·p̂  (spin projection along momentum)
+#   For spin-½: h = ±½
+#   u_s(p): helicity eigenstate with h = s/2 for momentum along ẑ
+#   The label s=± in Srednicki corresponds to spin-up/down along ẑ.
+#
+# MASSLESS HELICITY PROJECTORS:
+#   In the massless limit, helicity = chirality:
+#     P_R u_+(p) = u_+(p)   (positive helicity = right-chiral)
+#     P_L u_-(p) = u_-(p)   (negative helicity = left-chiral)
+#   Massless spin sums:
+#     u_+(p)ū_+(p) = P_R(-/p)   [positive helicity projector]
+#     u_-(p)ū_-(p) = P_L(-/p)   [negative helicity projector]
+#     Sum: Σ_s u_s ū_s = -/p    (massless, m→0 limit of eq. 38.28)
+
+sec("§38.G2  Helicity and Spin-Sum Completeness  [eq. 38.21-38.29]")
+
+Z2s = np.zeros((2,2), dtype=complex)
+gamma_s = {}
+for mus in range(4):
+    gamma_s[mus] = np.block([[Z2s, sigma_vec[mus]], [sigmabar_vec[mus], Z2s]])
+
+beta_s = gamma_s[0]
+def dbar_s(sp): return sp.conj() @ beta_s
+
+g4s = np.diag([-1.,1.,1.,1.])
+m_s = 1.0
+I4s = np.eye(4, dtype=complex)
+
+u_s_list = [
+    np.array([1.,0.,1.,0.], dtype=complex)/np.sqrt(2),
+    np.array([0.,1.,0.,1.], dtype=complex)/np.sqrt(2),
+]
+v_s_list = [
+    np.array([1.,0.,-1.,0.], dtype=complex)/np.sqrt(2),
+    np.array([0.,1.,0.,-1.], dtype=complex)/np.sqrt(2),
+]
+p4s = np.array([m_s,0.,0.,0.])
+p4s_low = g4s @ p4s
+pslash_s = sum(p4s_low[mus]*gamma_s[mus] for mus in range(4))
+
+print("Spin-sum completeness (4-component, at rest):")
+print()
+
+spin_sum_u_s = sum(2*m_s*np.outer(u, dbar_s(u)) for u in u_s_list)
+spin_sum_v_s = sum(2*m_s*np.outer(v, dbar_s(v)) for v in v_s_list)
+err_ssu = np.max(np.abs(spin_sum_u_s - (-pslash_s + m_s*I4s)))
+err_ssv = np.max(np.abs(spin_sum_v_s - (-pslash_s - m_s*I4s)))
+
+print(f"  Σ_s u_s ū_s = -/p+m?   max error = {err_ssu:.2e}",
+      "  ✓" if err_ssu < 1e-12 else "  ✗")
+print(f"  Σ_s v_s v̄_s = -/p-m?   max error = {err_ssv:.2e}",
+      "  ✓" if err_ssv < 1e-12 else "  ✗")
+print()
+
+print("Bilinear identity ū_{s'}γ^μu_s = 2p^μ δ_{ss'}  [eq. 38.21]:")
+max_off_diag = 0.
+for s1 in range(2):
+    for s2 in range(2):
+        if s1 != s2:
+            for mus in range(4):
+                max_off_diag = max(max_off_diag,
+                    abs(dbar_s(u_s_list[s1]) @ gamma_s[mus] @ u_s_list[s2]))
+print(f"  Off-diagonal (s≠s') = 0?  max = {max_off_diag:.2e}",
+      "  ✓" if max_off_diag < 1e-12 else "  ✗")
+
+max_orth = 0.
+for s1 in range(2):
+    for s2 in range(2):
+        max_orth = max(max_orth,
+            abs(dbar_s(u_s_list[s1]) @ gamma_s[0] @ v_s_list[s2]))
+print(f"  Orthogonality ū_s'(p)γ^0 v_s(-p)=0?  max = {max_orth:.2e}",
+      "  ✓" if max_orth < 1e-12 else "  ✗")
+print()
+
+print("Helicity / chirality in the massless limit:")
+gamma5_s = 1j*gamma_s[0]@gamma_s[1]@gamma_s[2]@gamma_s[3]
+P_L_s = 0.5*(I4s - gamma5_s)
+P_R_s = 0.5*(I4s + gamma5_s)
+u_minus_ml = np.array([0.,1.,0.,0.], dtype=complex)  # left-chiral (massless)
+u_plus_ml  = np.array([0.,0.,0.,1.], dtype=complex)  # right-chiral (massless)
+err_Lchiral = np.max(np.abs(P_L_s @ u_minus_ml - u_minus_ml))
+err_Rchiral = np.max(np.abs(P_R_s @ u_plus_ml  - u_plus_ml))
+err_proj_s  = max(np.max(np.abs(P_L_s@P_L_s-P_L_s)),
+                  np.max(np.abs(P_R_s@P_R_s-P_R_s)),
+                  np.max(np.abs(P_L_s@P_R_s)))
+print(f"  P_L,P_R projector checks:   max error = {err_proj_s:.2e}",
+      "  ✓" if err_proj_s < 1e-12 else "  ✗")
+print(f"  Massless u_- is left-chiral:  P_L u_- = u_-?  error = {err_Lchiral:.2e}",
+      "  ✓" if err_Lchiral < 1e-12 else "  ✗")
+print(f"  Massless u_+ is right-chiral: P_R u_+ = u_+?  error = {err_Rchiral:.2e}",
+      "  ✓" if err_Rchiral < 1e-12 else "  ✗")
+print()
+print("  Massless spin-sum projectors:")
+print("    u_+(p)ū_+(p) = P_R(-/p)   [positive helicity = right-chiral]")
+print("    u_-(p)ū_-(p) = P_L(-/p)   [negative helicity = left-chiral]")
+print("    Sum: Σ_s u_s ū_s = -/p    (massless limit, m→0)")
+
+# =============================================================================
 # §38.G  CADABRA2 SYMBOLIC VERIFICATION SUMMARY
 # =============================================================================
 
@@ -748,6 +948,22 @@ checks = [
      max_err_gym),
     ("Schouten identity: ε_{αγ} ε_{βδ} = ε_{αβ} ε_{γδ} − ε_{αδ} ε_{γβ}",
      max_err_schouten),
+    ("Gordon: 2m ū'γ^μu = ū'(2p^μ)u at p'=p  [Problem 38.3]",
+     max_gordon_err),
+    ("{γ^5, γ^μ} = 0 for all μ  (extended Gordon prerequisite)",
+     max_g5_anticomm),
+    ("Spin-sum: Σ_s u_s ū_s = -/p+m  [eq. 38.28]",
+     err_ssu),
+    ("Spin-sum: Σ_s v_s v̄_s = -/p-m  [eq. 38.29]",
+     err_ssv),
+    ("Bilinear off-diagonal ū_s'γ^μu_s = 0 for s≠s'  [eq. 38.21]",
+     max_off_diag),
+    ("Orthogonality ū_s'(p)γ^0 v_s(-p)=0  [eq. 38.22]",
+     max_orth),
+    ("Helicity projectors P_{L,R}^2=P, P_LP_R=0",
+     err_proj_s),
+    ("Massless chirality: P_L u_- = u_-, P_R u_+ = u_+",
+     max(err_Lchiral, err_Rchiral)),
 ]
 
 for name, err in checks:
@@ -800,6 +1016,20 @@ print("""
     Schouten: ε_{αγ} ε_{βδ} = ε_{αβ} ε_{γδ} − ε_{αδ} ε_{γβ}
     σ-Fierz:  (σ̄^μ)^{α̇α} (σ_μ)_{ββ̇} = −2 δ^α_β δ^{α̇}_{β̇}
     4-Fermi:  (χ†σ̄^μψ)(ξ†σ̄_μη) = −2(χ†ξ†)(ηψ)
+
+  GORDON IDENTITY  [Problem 38.3 / eq. 38.22]
+  ──────────────────────────────────────────────
+    2m ū_{s'}(p') γ^μ u_s(p) = ū_{s'}(p') [(p'+p)^μ - 2iS^{μν}(p'-p)_ν] u_s(p)
+    S^{μν} = (i/4)[γ^μ,γ^ν];  {γ^5,γ^μ}=0 → extended Gordon ×γ^5 = 0
+    Physical: γ^μ = (p+p')^μ/(2m) + magnetic moment term (F_1 + F_2)
+
+  SPIN SUMS + HELICITY  [eq. 38.21-38.29]
+  ──────────────────────────────────────────
+    Σ_s u_s(p) ū_s(p) = -/p + m           [eq. 38.28]
+    Σ_s v_s(p) v̄_s(p) = -/p - m           [eq. 38.29]
+    ū_s'(p) γ^μ u_s(p) = 2p^μ δ_{ss'}     [eq. 38.21]
+    ū_s'(p) γ^0 v_s(-p) = 0               [eq. 38.22]
+    Massless: helicity = chirality; u_±ū_± = P_{R/L}(-/p)
 """)
 
 print("Done: ch38_spinor_technology.py")
