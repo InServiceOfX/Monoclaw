@@ -1,0 +1,58 @@
+{
+  "_comment": "Copy this file to mission-control.json and customize for your instance. DO NOT commit mission-control.json - it contains instance-specific paths.",
+  "openclaw": {
+    "workspaceDir": "/path/to/your/.openclaw/workspace"
+  },
+  "memory": {
+    "memoryDir": "/path/to/your/.openclaw/workspace/memory",
+    "memoryFile": "/path/to/your/.openclaw/workspace/MEMORY.md",
+    "indexRefreshIntervalMinutes": 5
+  },
+  "models": [
+    {
+      "id": "anthropic/claude-sonnet-4-6",
+      "displayName": "Claude Sonnet 4.6",
+      "provider": "Anthropic",
+      "baseUrl": "https://api.anthropic.com/v1",
+      "apiKeyEnv": "VITE_ANTHROPIC_API_KEY",
+      "contextWindow": 200000,
+      "maxTokens": 8192,
+      "costPer1kInput": 0.003,
+      "costPer1kOutput": 0.015
+    },
+    {
+      "id": "nvidia-nim/moonshotai/kimi-k2.5",
+      "displayName": "Kimi K2.5 (NIM)",
+      "provider": "NVIDIA NIM",
+      "baseUrl": "https://integrate.api.nvidia.com/v1",
+      "apiKeyEnv": "VITE_NVIDIA_NIM_API_KEY",
+      "contextWindow": 262144,
+      "maxTokens": 16384,
+      "costPer1kInput": 0,
+      "costPer1kOutput": 0
+    },
+    {
+      "id": "xai/grok-4-1-fast",
+      "displayName": "Grok 4.1 Fast",
+      "provider": "xAI",
+      "baseUrl": "https://api.x.ai/v1",
+      "apiKeyEnv": "VITE_XAI_API_KEY",
+      "contextWindow": 2000000,
+      "maxTokens": 65536,
+      "costPer1kInput": 0,
+      "costPer1kOutput": 0
+    }
+  ],
+  "localLLM": {
+    "enabled": false,
+    "trtllmScriptDir": "/path/to/TensorRTLLMFixed",
+    "port": 30000,
+    "profiles": [
+      {
+        "id": "qwen3-1.7b",
+        "label": "Qwen3-1.7B",
+        "description": "1.7B params · 163k ctx · fits on 8GB+ GPU"
+      }
+    ]
+  }
+}
