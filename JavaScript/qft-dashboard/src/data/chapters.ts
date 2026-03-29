@@ -66,7 +66,7 @@ export const chapters: Chapter[] = [
     number: 35,
     title: "Majorana and Dirac Spinors",
     status: "done",
-    scriptFile: "ch35_majorana_dirac.py",
+    scriptFile: "ch35_sigma_algebra.py",
     description:
       "Combines two Weyl spinors into a four-component Dirac spinor and derives the Dirac equation from the Weyl formalism. Introduces the Majorana condition (self-conjugate spinor) and the 4×4 gamma matrices in the Weyl representation. Shows the equivalence between Dirac and Weyl descriptions.",
     equations: [
@@ -214,7 +214,7 @@ export const chapters: Chapter[] = [
     number: 60,
     title: "MHV Amplitudes (Parke-Taylor)",
     status: "done",
-    scriptFile: "ch60_mhv_amplitudes.py",
+    scriptFile: "ch60_spinor_helicity.py",
     description:
       "Derives the famous Parke-Taylor formula for Maximally Helicity Violating (MHV) gluon scattering amplitudes. These are the simplest non-zero tree-level amplitudes with exactly two negative-helicity gluons. The remarkably compact formula encodes all colour-ordered partial amplitudes.",
     equations: [
@@ -300,8 +300,207 @@ export const chapters: Chapter[] = [
     ],
     dockerCmd: dockerCmd("adscft_intro.py"),
   },
+  {
+    id: "ch39",
+    number: 39,
+    title: "Feynman Rules for Dirac Fields",
+    status: "not-started",
+    scriptFile: "ch39_feynman_rules_dirac.py",
+    description:
+      "Dirac propagator, external fermion wave functions u(p,s) and v(p,s), QED Feynman rules, spin sums, and trace theorems. Foundation for spinor amplitude calculations.",
+    equations: [
+      {
+        label: "Dirac propagator",
+        latex: "S_F(k) = \\frac{i(k\\!\!\!/ + m)}{k^2 - m^2 + i\\varepsilon}",
+      },
+      {
+        label: "Spin sum",
+        latex: "\\sum_s u_s(p) \\bar{u}_s(p) = k\\!\!\!/ + m",
+      },
+      {
+        label: "QED vertex",
+        latex: "V_\\mu = -ie \\gamma_\\mu",
+      },
+    ],
+    dockerCmd: dockerCmd("ch39_feynman_rules_dirac.py"),
+  },
+  {
+    id: "ch40",
+    number: 40,
+    title: "Spin Sums",
+    status: "not-started",
+    scriptFile: "ch40_spin_sums.py",
+    description:
+      "Spin-averaging factors for unpolarized scattering, trace theorems for gamma matrices, helicity amplitudes vs. trace-based approaches.",
+    equations: [
+      {
+        label: "Trace theorems",
+        latex: "\\text{Tr}[\\gamma^\\mu\\gamma^\\nu] = 4\\eta^{\\mu\\nu},\\quad \\text{Tr}[\\gamma^\\mu\\gamma^\\nu\\gamma^\\rho\\gamma^\\sigma] = 4(\\eta^{\\mu\\nu}\\eta^{\\rho\\sigma}-\\eta^{\\mu\\rho}\\eta^{\\nu\\sigma}+\\eta^{\\mu\\sigma}\\eta^{\\nu\\rho})",
+      },
+      {
+        label: "Spin sum",
+        latex: "\\frac{1}{4}\\sum_s |M|^2 = \\text{Tr}[(p_1\\!\!\!/+m)\\gamma^\\mu(p_2\\!\!\!/+m)\\gamma^\\nu] \\times \\cdots",
+      },
+    ],
+    dockerCmd: dockerCmd("ch40_spin_sums.py"),
+  },
+  {
+    id: "ch41",
+    number: 41,
+    title: "Gamma Matrix Technology",
+    status: "not-started",
+    scriptFile: "ch41_gamma_technology.py",
+    description:
+      "Weyl (chiral) representation, Clifford algebra, completeness relations, chiral projectors, Fierz identities for fermion bilinears.",
+    equations: [
+      {
+        label: "Clifford algebra",
+        latex: "\\{\\gamma^\\mu,\\gamma^\\nu\\} = 2\\eta^{\\mu\\nu}I_4",
+      },
+      {
+        label: "Chiral projectors",
+        latex: "P_L = \\frac{1-\\gamma^5}{2},\\quad P_R = \\frac{1+\\gamma^5}{2}",
+      },
+      {
+        label: "Fierz identity",
+        latex: "(\\psi\\bar\\psi)(\\chi\\bar\\chi) = -(\\psi\\gamma^5\\chi)(\\chi\\gamma^5\\psi) + \\frac{1}{2}\\sum_{\\mu\\nu}(\\psi\\sigma^{\\mu\\nu}\\chi)(\\chi\\sigma_{\\mu\\nu}\\psi)",
+      },
+    ],
+    dockerCmd: dockerCmd("ch41_gamma_technology.py"),
+  },
+  {
+    id: "ch42",
+    number: 42,
+    title: "Spinor-Helicity (Core of MHV)",
+    status: "not-started",
+    scriptFile: "ch42_spinor_helicity.py",
+    description:
+      "THE foundational chapter for MHV research. Massless momentum as spinor outer product p_{alpha alpha-dot} = lambda_alpha lambda-tilde_{alpha-dot}, angle/square brackets, little group scaling, helicity spinors, polarization vectors, Parke-Taylor formula.",
+    equations: [
+      {
+        label: "Massless momentum",
+        latex: "p_{\\alpha\\dot\\alpha} = \\lambda_\\alpha\\tilde\\lambda_{\\dot\\alpha},\\quad p^2=0",
+      },
+      {
+        label: "Angle bracket",
+        latex: "\\langle ij\\rangle = \\varepsilon^{\\alpha\\beta}\\lambda_\\alpha^i\\lambda_\\beta^j",
+      },
+      {
+        label: "Square bracket",
+        latex: "[ij] = \\varepsilon^{\\dot\\alpha\\dot\\beta}\\tilde\\lambda_{\\dot\\alpha}^i\\tilde\\lambda_{\\dot\\beta}^j",
+      },
+      {
+        label: "Dot product identity",
+        latex: "2p_i\\cdot p_j = \\langle ij\\rangle [ji]",
+      },
+      {
+        label: "Polarization (axial)",
+        latex: "\\varepsilon^+_{\\mu}(k;q) = \\frac{\\langle q|\\gamma_\\mu|k]}{\\sqrt{2}\\langle qk\\rangle}",
+      },
+    ],
+    dockerCmd: dockerCmd("ch42_spinor_helicity.py"),
+  },
+  {
+    id: "ch43",
+    number: 43,
+    title: "Feynman Rules for Majorana Fields",
+    status: "not-started",
+    scriptFile: "ch43_feynman_rules_majorana.py",
+    description:
+      "Majorana condition, propagator with 1/2 Wick-contraction factor, four-fermion contact interactions, connection to Weyl theory and SUSY.",
+    equations: [
+      {
+        label: "Majorana condition",
+        latex: "\\psi = \\psi^c = C\\bar{\\psi}^T",
+      },
+      {
+        label: "Majorana propagator",
+        latex: "\\langle0|T\\{\\psi(x)\\bar{\\psi}(y)\\}|0\\rangle = \\frac{1}{2}S_F(x-y)",
+      },
+    ],
+    dockerCmd: dockerCmd("ch43_feynman_rules_majorana.py"),
+  },
+  {
+    id: "ch76",
+    number: 76,
+    title: "Nonabelian Gauge Theory (SU(N))",
+    status: "not-started",
+    scriptFile: "ch76_nonabelian_gauge.py",
+    description:
+      "SU(N) gauge fields, covariant derivative D_mu = partial_mu + ig A_mu, nonabelian field strength F^a_{mu nu}, gauge-invariant Yang-Mills Lagrangian, QCD Lagrangian with quark-gluon vertices.",
+    equations: [
+      {
+        label: "Gauge generator algebra",
+        latex: "[T^a,T^b] = if^{abc}T^c,\\quad \\text{Tr}[T^aT^b] = \\frac{1}{2}\\delta^{ab}",
+      },
+      {
+        label: "Nonabelian field strength",
+        latex: "F^a_{\\mu\\nu} = \\partial_\\mu A^a_\\nu - \\partial_\\nu A^a_\\mu - gf^{abc}A^b_\\mu A^c_\\nu",
+      },
+      {
+        label: "Yang-Mills Lagrangian",
+        latex: "\\mathcal{L}_{YM} = -\\frac{1}{4}F^a_{\\mu\\nu}F^{a\\mu\\nu}",
+      },
+    ],
+    dockerCmd: dockerCmd("ch76_nonabelian_gauge.py"),
+  },
+  {
+    id: "ch77",
+    number: 77,
+    title: "Group Representations (SU(N))",
+    status: "not-started",
+    scriptFile: "ch77_group_representations.py",
+    description:
+      "SU(N) fundamental and adjoint representations, Casimir operators, color factor algebra for QCD amplitudes, Fierz identities for SU(N) generators, representation products.",
+    equations: [
+      {
+        label: "Fierz identity for SU(N)",
+        latex: "(T^a)_ij(T^a)_kl = \\frac{1}{2}(\\delta_i^l\\delta_j^k - \\frac{1}{N}\\delta_i^k\\delta_j^l)",
+      },
+      {
+        label: "Casimir values",
+        latex: "C_2(F) = \\frac{N^2-1}{2N},\\quad C_2(A) = N_c",
+      },
+      {
+        label: "Color identity",
+        latex: "f^{abc}f^{abd} = N_c\\delta^{cd}",
+      },
+    ],
+    dockerCmd: dockerCmd("ch77_group_representations.py"),
+  },
+  {
+    id: "ch80",
+    number: 80,
+    title: "Feynman Rules for Nonabelian Gauge Theory",
+    status: "not-started",
+    scriptFile: "ch80_feynman_rules_nonabelian.py",
+    description:
+      "Gluon propagator in covariant gauges, ghost propagator and ghost-gluon vertex, three-gluon and four-gluon vertices, quark-gluon vertex with color factors T^a, color-ordered subamplitudes, ggg and qqb-to-gg sample calculations.",
+    equations: [
+      {
+        label: "Gluon propagator (Feynman)",
+        latex: "D^{ab}_{\\mu\\nu}(k) = -i\\delta^{ab}\\frac{\\eta_{\\mu\\nu}}{k^2}",
+      },
+      {
+        label: "Three-gluon vertex",
+        latex: "V^{abc}_{\\mu\\nu\\rho} = gf^{abc}[(k_1-k_2)_\\rho\\eta_{\\mu\\nu}+\\text{cyclic}]",
+      },
+      {
+        label: "Four-gluon vertex",
+        latex: "-ig^2[f^{abe}f^{cde}(\\eta_{\\mu\\rho}\\eta_{\\nu\\sigma}-\\eta_{\\mu\\sigma}\\eta_{\\nu\\rho})+\\text{cyclic}]",
+      },
+      {
+        label: "Color-ordered 3-gluon MHV",
+        latex: "A_3(1^-,2^-,3^+) = \\frac{i\\langle12\\rangle^3}{\\langle23\\rangle\\langle31\\rangle}",
+      },
+    ],
+    dockerCmd: dockerCmd("ch80_feynman_rules_nonabelian.py"),
+  },
 ];
 
 export const roadmap: string[] = [
-  "ch34", "ch35", "ch36", "ch37", "ch38", "ch48", "ch60", "bcfw", "adscft",
+  "ch34", "ch35", "ch36", "ch37", "ch38",
+  "ch39", "ch40", "ch41", "ch42", "ch43",
+  "ch48", "ch60", "bcfw", "adscft",
+  "ch76", "ch77", "ch80",
 ];

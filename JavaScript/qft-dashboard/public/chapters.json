@@ -1,14 +1,22 @@
 {
   "_generated": "export_dashboard_json.py",
-  "_source": "/home/propdev/.openclaw/workspace/repos/Monoclaw/Python/Cadabra2/Srednicki",
+  "_source": "/Monoclaw/Python/Cadabra2/Srednicki",
   "roadmap": [
     "ch34",
     "ch35",
     "ch36",
     "ch37",
     "ch38",
+    "ch39",
+    "ch40",
+    "ch41",
+    "ch42",
+    "ch43",
     "ch48",
     "ch60",
+    "ch76",
+    "ch77",
+    "ch80",
     "bcfw",
     "adscft"
   ],
@@ -887,12 +895,62 @@
       "dockerCmd": "docker run --rm -v /home/propdev/.openclaw/workspace/repos/Monoclaw:/Monoclaw cadabra2-ubuntu:24.04 python3 /Monoclaw/Python/Cadabra2/Srednicki/ch38_spinor_technology.py"
     },
     {
+      "id": "ch39",
+      "number": "39",
+      "title": "Feynman Rules for Dirac Fields",
+      "status": "not-started",
+      "scriptFile": "ch39_feynman_rules_dirac.py",
+      "description": "Dirac propagator, QED Feynman rules, spin sums, trace theorems.",
+      "equations": [],
+      "sections": []
+    },
+    {
+      "id": "ch40",
+      "number": "40",
+      "title": "Spin Sums",
+      "status": "not-started",
+      "scriptFile": "ch40_spin_sums.py",
+      "description": "Spin-averaging, trace theorems, helicity vs trace approach.",
+      "equations": [],
+      "sections": []
+    },
+    {
+      "id": "ch41",
+      "number": "41",
+      "title": "Gamma Matrix Technology",
+      "status": "not-started",
+      "scriptFile": "ch41_gamma_technology.py",
+      "description": "Weyl representation, Clifford algebra, chiral projectors, Fierz identities.",
+      "equations": [],
+      "sections": []
+    },
+    {
+      "id": "ch42",
+      "number": "42",
+      "title": "Spinor-Helicity (Core of MHV)",
+      "status": "not-started",
+      "scriptFile": "ch42_spinor_helicity.py",
+      "description": "THE foundational chapter: massless momentum as spinor outer product, angle/square brackets, little group scaling.",
+      "equations": [],
+      "sections": []
+    },
+    {
+      "id": "ch43",
+      "number": "43",
+      "title": "Feynman Rules for Majorana Fields",
+      "status": "not-started",
+      "scriptFile": "ch43_feynman_rules_majorana.py",
+      "description": "Majorana condition, propagator with 1/2 factor, four-fermion contact terms.",
+      "equations": [],
+      "sections": []
+    },
+    {
       "id": "ch48",
       "number": "48",
       "title": "Massless Particles & Spinor-Helicity",
       "status": "not-started",
       "scriptFile": "ch48_massless_spinor_helicity.py",
-      "description": "Angle and square spinors for massless momenta, polarization vectors.",
+      "description": "Angle and square spinors for massless momenta, polarization vectors, Schouten identity.",
       "equations": [],
       "sections": []
     },
@@ -903,6 +961,36 @@
       "status": "done",
       "scriptFile": "ch60_spinor_helicity.py",
       "description": "Parke-Taylor formula for MHV gluon scattering amplitudes.",
+      "equations": [],
+      "sections": []
+    },
+    {
+      "id": "ch76",
+      "number": "76",
+      "title": "Nonabelian Gauge Theory (SU(N))",
+      "status": "not-started",
+      "scriptFile": "ch76_nonabelian_gauge.py",
+      "description": "SU(N) gauge fields, covariant derivative, field strength, QCD Lagrangian.",
+      "equations": [],
+      "sections": []
+    },
+    {
+      "id": "ch77",
+      "number": "77",
+      "title": "Group Representations (SU(N))",
+      "status": "not-started",
+      "scriptFile": "ch77_group_representations.py",
+      "description": "SU(N) reps, Casimir operators, color factor algebra, Fierz identities.",
+      "equations": [],
+      "sections": []
+    },
+    {
+      "id": "ch80",
+      "number": "80",
+      "title": "Feynman Rules for Nonabelian Gauge Theory",
+      "status": "not-started",
+      "scriptFile": "ch80_feynman_rules_nonabelian.py",
+      "description": "Gluon propagator, ghost-gluon vertex, three/four-gluon vertices, color-ordered rules.",
       "equations": [],
       "sections": []
     },

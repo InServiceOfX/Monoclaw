@@ -8,7 +8,7 @@ export function Header() {
       <div className="header-right">
         <span className="convention-badge">
           <span className="convention-label">metric</span>
-          <span className="convention-value">(+,−,−,−)</span>
+          <span className="convention-value">(−,+,+,+)</span>
         </span>
         <a
           href="#"
