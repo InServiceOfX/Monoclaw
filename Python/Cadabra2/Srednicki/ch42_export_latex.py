@@ -313,7 +313,6 @@ Closure of the spinor algebra; replacement for $\delta^{(4)}$ \\
 
 \vfill
 \bibliographystyle{plain}
-\bibliography{refs}
 \end{document}
 """)
 

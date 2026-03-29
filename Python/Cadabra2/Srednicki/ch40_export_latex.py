@@ -126,7 +126,6 @@ tree-level MHV program (Ch.42, 48, 60, BCFW), the helicity method replaces
 the trace theorems with Schouten identities.  Understanding both gives you
 the full picture of how amplitudes are built.
 
-\vfill\bibliographystyle{plain}\bibliography{refs}
 \end{document}
 """
 import numpy as np
@@ -249,7 +248,6 @@ methods.  The trace theorems here are replaced by Schouten identities in the
 helicity formalism: the same algebraic structure, but packaged in spinor
 brackets that make helicity selection rules transparent.
 
-\vfill\bibliographystyle{plain}\bibliography{refs}
 \end{document}
 """
 

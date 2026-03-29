@@ -126,7 +126,6 @@ The BCFW recursion for SUSY theories (N=4 SYM) uses the fact that all
 particles in the theory can be represented as massless states with definite
 helicity, making the Majorana property not an obstacle but a feature.
 
-\vfill\bibliographystyle{plain}\bibliography{refs}
 \end{document}
 """
 with open("/work/ch43_feynman_rules_majorana.tex", "w") as f:

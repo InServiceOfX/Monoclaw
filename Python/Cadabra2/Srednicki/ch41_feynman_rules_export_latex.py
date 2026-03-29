@@ -497,7 +497,7 @@ Ch.39 is foundational because:
 \end{document}
 """
 
-outpath = "/work/ch39_feynman_rules_dirac.tex"
+outpath = "/work/ch41_feynman_rules_dirac.tex"
 with open(outpath, "w") as f:
     f.write(OUT)
 print(f"Wrote {outpath}  ({len(OUT)} chars)")

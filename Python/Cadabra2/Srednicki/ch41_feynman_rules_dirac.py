@@ -1,7 +1,7 @@
 """
-ch39_feynman_rules_dirac.py
+ch41_feynman_rules_dirac.py
 ===========================
-Srednicki QFT — Chapter 39: The Feynman Rules for Dirac Fields
+Srednicki QFT — Chapter 41: The Feynman Rules for Dirac Fields
 
 What this file covers:
   §39.A  Dirac propagator S_F(x-y) — position and momentum space
@@ -11,7 +11,7 @@ What this file covers:
   §39.E  Feynman rules summary for spinor QED
 
 Run with:
-    python3 ch39_feynman_rules_dirac.py
+    python3 ch41_feynman_rules_dirac.py
 """
 
 import cadabra2
@@ -135,5 +135,5 @@ for name, rule in rules:
     print(f"  {name:35s} : {rule}")
 
 print(f"\n{SEP}")
-print("  ch39 — Feynman Rules for Dirac Fields — COMPLETE")
+print("  ch41 — Feynman Rules for Dirac Fields — COMPLETE")
 print(f"{SEP}")
