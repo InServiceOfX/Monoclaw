@@ -212,14 +212,16 @@ dist/
 *.tsbuildinfo
 .vite/
 
-# LaTeX intermediary files (Python/Cadabra2 and elsewhere)
-# Only .tex source and final .pdf should ever be committed
-Python/Cadabra2/**/*.aux
-Python/Cadabra2/**/*.fdb_latexmk
-Python/Cadabra2/**/*.fls
-Python/Cadabra2/**/*.out
-Python/Cadabra2/**/*.toc
-Python/Cadabra2/**/*.log
-Python/Cadabra2/**/*.synctex.gz
-Python/Cadabra2/**/*.bbl
-Python/Cadabra2/**/*.blg
+
+# LaTeX intermediary files — global (any directory, any depth)
+# .tex source and .pdf are fine; intermediates are not
+**/*.aux
+**/*.fdb_latexmk
+**/*.fls
+**/*.log
+**/*.out
+**/*.synctex.gz
+**/*.toc
+**/*.bbl
+**/*.blg
+
