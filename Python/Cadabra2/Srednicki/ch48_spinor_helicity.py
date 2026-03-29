@@ -1,21 +1,21 @@
 """
-ch42_spinor_helicity.py
+ch48_spinor_helicity.py
 ========================
-Srednicki QFT — Chapter 42: Massless Particles & Spinor-Helicity
+Srednicki QFT — Chapter 48: Massless Particles & Spinor-Helicity
 
 THIS IS THE HEART OF MHV RESEARCH.
 
 What this file covers:
-  §42.A  Massless momentum as spinor outer product p_{αα̇} = λ_α λ̃_{α̇}
-  §42.B  Little group and helicity
-  §42.C  Angle brackets ⟨ij⟩ and square brackets [ij]
-  §42.D  Spinor products and dot products: p_i · p_j = ½ ⟨ij⟩[ji]
-  §42.E  Helicity spinors u_±(k), v_±(k)
-  §42.F  Polarization vectors ε^μ_±(k;q)
-  §42.G  Gauge invariance and little group scaling
+  §48.A  Massless momentum as spinor outer product p_{αα̇} = λ_α λ̃_{α̇}
+  §48.B  Little group and helicity
+  §48.C  Angle brackets ⟨ij⟩ and square brackets [ij]
+  §48.D  Spinor products and dot products: p_i · p_j = ½ ⟨ij⟩[ji]
+  §48.E  Helicity spinors u_±(k), v_±(k)
+  §48.F  Polarization vectors ε^μ_±(k;q)
+  §48.G  Gauge invariance and little group scaling
 
 Run with:
-    python3 ch42_spinor_helicity.py
+    python3 ch48_spinor_helicity.py
 """
 
 import cadabra2

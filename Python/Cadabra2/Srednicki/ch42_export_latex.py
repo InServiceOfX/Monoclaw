@@ -1,322 +1,55 @@
 """
 ch42_export_latex.py
 =====================
-Generates LaTeX for Srednicki Ch. 42: Massless Particles & Spinor-Helicity.
+Export script for ch42_coulomb_gauge.tex
+Srednicki QFT — Chapter 42: Electrodynamics in Coulomb Gauge
 
-Run:
-    docker run --rm -v $(pwd):/work cadabra2-ubuntu:24.04 \
-        python3 /work/ch42_export_latex.py
+This file contains the LaTeX source exported from the Cadabra2/Python analysis.
+Run pdflatex on the output: pdflatex ch42_coulomb_gauge.tex
+
+Usage:
+    python3 ch42_export_latex.py > ch42_coulomb_gauge_exported.tex
+    # or just use ch42_coulomb_gauge.tex directly
 """
 
-import cadabra2
-from cadabra2 import Ex, __cdbkernel__
-import numpy as np
+import subprocess
+import os
+import sys
 
-__cdbkernel__ = cadabra2.create_scope()
+TEX_FILE = os.path.join(os.path.dirname(__file__), "ch42_coulomb_gauge.tex")
 
-# ── Cadabra2 setup ─────────────────────────────────────────────────────────
-cadabra2.Indices(Ex(r"{\alpha, \beta, \gamma, \delta}"), Ex(r"position=fixed"))
-cadabra2.Indices(Ex(r"{\dal, \dbe, \dga, \dde}"),       Ex(r"position=fixed"))
-cadabra2.Indices(Ex(r"{\mu, \nu, \rho, \sigma}"),        Ex(r"position=free"))
-cadabra2.AntiSymmetric(Ex(r"\epsilon_{\alpha\beta}"))
-cadabra2.AntiSymmetric(Ex(r"\epsilon^{\alpha\beta}"))
-cadabra2.AntiSymmetric(Ex(r"\epsilon_{\dal\dbe}"))
-cadabra2.AntiSymmetric(Ex(r"\epsilon^{\dal\dbe}"))
-cadabra2.AntiSymmetric(Ex(r"\abra{k}{p}"))
-cadabra2.AntiSymmetric(Ex(r"\sbra{k}{p}"))
 
-# ── numpy setup ────────────────────────────────────────────────────────────
-eta = np.diag([-1, 1, 1, 1])   # mostly-plus metric
+def compile_latex():
+    """Compile the tex file with pdflatex."""
+    if not os.path.exists(TEX_FILE):
+        print(f"ERROR: {TEX_FILE} not found", file=sys.stderr)
+        return False
 
-def bracket_numpy(a, b):
-    """<ab> = eps(ij) a_i b_j for 2-vectors."""
-    return (a[0]*b[1] - a[1]*b[0])
+    result = subprocess.run(
+        ["pdflatex", "-interaction=nonstopmode", os.path.basename(TEX_FILE)],
+        capture_output=True,
+        text=True,
+        cwd=os.path.dirname(TEX_FILE),
+    )
 
-# Schouten identity test
-schouten_ex = Ex(r"\abra{i}{j} \abra{k}{l} + \abra{j}{k} \abra{i}{l} + \abra{k}{i} \abra{j}{l}")
-schouten_result = str(str(schouten_ex))
+    if result.returncode == 0:
+        print("pdflatex: ch42_coulomb_gauge.tex compiled successfully")
+        return True
+    else:
+        print("pdflatex ERROR:")
+        print(result.stdout[-2000:] if len(result.stdout) > 2000 else result.stdout)
+        return False
 
-# Numerical checks
-# Massless momentum along z: lambda = (sqrt(2E), 0)
-E0 = 1.0
-lam_z = np.array([np.sqrt(2*E0), 0.0])
-ltilde_z = np.array([np.sqrt(2*E0), 0.0])
-p_z = np.outer(lam_z, ltilde_z)
-det_z = np.linalg.det(p_z)
 
-# Affine coordinates: theta=60deg
-theta = np.pi/3
-z2 = -1.0/np.tan(theta/2)
-z1 = 0.0
-bracket_12 = z2 - z1
-s_mandelstam = 2 * bracket_12**2
+def print_tex_content():
+    """Print the tex file content."""
+    with open(TEX_FILE, "r") as f:
+        print(f.read())
 
-# Helicity spinors
-E_test = 1.0
-pz_test = 0.5
-phi_test = np.pi/4
-if pz_test >= 0:
-    u_plus = np.array([np.sqrt(E_test+pz_test), np.sqrt(E_test-pz_test)*np.exp(1j*phi_test)], dtype=complex)
-    u_minus = np.array([-np.sqrt(E_test-pz_test)*np.exp(-1j*phi_test), np.sqrt(E_test+pz_test)], dtype=complex)
-else:
-    u_plus = np.array([np.sqrt(E_test+pz_test)*np.exp(-1j*phi_test), np.sqrt(E_test-pz_test)], dtype=complex)
-    u_minus = np.array([-np.sqrt(E_test-pz_test), np.sqrt(E_test+pz_test)*np.exp(1j*phi_test)], dtype=complex)
 
-norm_plus = np.vdot(u_plus, u_plus).real
-norm_minus = np.vdot(u_minus, u_minus).real
-ortho = np.vdot(u_plus, u_minus)
-
-# ── Write LaTeX ──────────────────────────────────────────────────────────
-# Use explicit string escaping to avoid raw-string f-string conflicts
-tex = []
-def T(s):
-    tex.append(s)
-
-T(r"""\documentclass[12pt]{article}
-\usepackage[margin=1in,a4paper]{geometry}
-\usepackage{amsmath,amssymb,fullpage,xcolor,mhchem,mdframed}
-\usepackage{hyperref}
-\DeclareMathOperator\Tr{Tr}
-\begin{document}
-\title{Chapter 42: Massless Particles and Spinor-Helicity}
-\subtitle{\large The Foundational Formalism of Maximally Helicity Violating Amplitudes}
-\date{\today}
-\maketitle
-
-\begin{mdframed}[backgroundcolor=blue!5]
-\textbf{Chapter 42 is the intellectual core of the entire MHV research program.}
-Every result in Chapters 43, 48, 60, and beyond builds on the identities
-introduced here. \emph{Read carefully.}
-\end{mdframed}
-
-\tableofcontents
-\newpage
-
-\section{Introduction: Why Spinor-Helicity?}
-
-In Chapter 20 we wrote a massless momentum as $p^\mu=(E,\mathbf{p})$ with
-$p^2=0$.  In the two-component Weyl formalism this is encoded in a
-$2\times2$ matrix
-\begin{equation}
-p_{\alpha\dot\alpha}
-= \begin{pmatrix} p^0+p^3 & p^1+ip^2 \\ p^1-ip^2 & p^0-p^3 \end{pmatrix},
-\qquad p^2 = \det(p_{\alpha\dot\alpha}) = 0 .
-\end{equation}
-The vanishing of the determinant is the \emph{massless} condition; for $p^2=0$
-the matrix has rank 1, which means it \emph{factorizes}:
-
-\begin{mdframed}[backgroundcolor=green!5]
-\begin{equation}
-\boxed{p_{\alpha\dot\alpha}
-= \lambda_\alpha\,\tilde\lambda_{\dot\alpha}}
-\qquad\Longleftrightarrow\qquad
-p^\mu \;\xleftrightarrow{\;\mathrm{Weyl\;map}\;}\;
-\lambda\otimes\tilde\lambda .
-\tag{42.1}
-\end{equation}
-\end{mdframed}
-
-The objects $\lambda_\alpha$ (undotted) and $\tilde\lambda_{\dot\alpha}$
-(dotted) are commuting (bosonic) Weyl spinors.  They are constrained only by the
-little-group scaling
-\begin{equation}
-\lambda_\alpha\to t\,\lambda_\alpha,\qquad
-\tilde\lambda_{\dot\alpha}\to t^{-1}\,\tilde\lambda_{\dot\alpha},
-\qquad t\in\mathbb{C}^* .
-\tag{42.2}
-\end{equation}
-Since $p_{\alpha\dot\alpha}$ is invariant, the individual spinors carry
-conformal weight.  This is crucial for helicity.
-
-\section{Angle and Square Brackets}\label{sec:brackets}
-
-The fundamental Lorentz-invariant contractions are:
-
-\begin{mdframed}
-\begin{align}
-\langle ij\rangle &\equiv \varepsilon^{\alpha\beta}\,
-\lambda_{i\alpha}\,\lambda_{j\beta} , \tag{42.16} \\[2mm]
-[ij] &\equiv \varepsilon^{\dot\alpha\dot\beta}\,
-\tilde\lambda_{i\dot\alpha}\,\tilde\lambda_{j\dot\beta} . \tag{42.17}
-\end{align}
-\end{mdframed}
-
-Both are antisymmetric: $\langle ij\rangle=-\langle ji\rangle$,
-$[ij]=-[ji]$, and $\langle ii\rangle=[ii]=0$ (null-spinor property).
-
-In Cadabra2:
-\begin{verbatim}
-cadabra2.AntiSymmetric(r"\abra{k}{p}")   # angle <kp>
-cadabra2.AntiSymmetric(r"\sbra{k}{p}")   # square [kp]
-cadabra2.AntiSymmetric(r"\epsilon_{\alpha\beta}")
-cadabra2.AntiSymmetric(r"\epsilon^{\alpha\beta}")
-\end{verbatim}
-
-Cadabra2 symbolic result for the angle bracket:
-\begin{equation}
-\agra{k}{p}\quad\text{(undotted spinors, antisymmetric)} .
-\end{equation}
-Cadabra2 symbolic result for the square bracket:
-\begin{equation}
-\sbra{k}{p}\quad\text{(dotted spinors, antisymmetric)} .
-\end{equation}
-
-\section{Schouten Identity}\label{sec:schouten}
-
-For any three spinors $\lambda_i,\lambda_j,\lambda_k$:
-
-\begin{mdframed}[backgroundcolor=yellow!5]
-\begin{equation}
-\agra{i}{j}\,\agra{k}{l}
-+ \agra{j}{k}\,\agra{i}{l}
-+ \agra{k}{i}\,\agra{j}{l} = 0 .
-\tag{42.21}
-\end{equation}
-\end{mdframed}
-
-This is the spinor analogue of the vector triple-product identity.
-Cadabra2 verification:
-\begin{equation}
-\mathrm{Schouten} = """ + schouten_result + r""" = 0 \quad\checkmark .
-\end{equation}
-
-\section{Dot Products from Spinors:
-$2p_i\cdot p_j = \langle ij\rangle[ji]$}\label{sec:dot_products}
-
-The key computational identity:
-
-\begin{mdframed}[backgroundcolor=green!5]
-\begin{equation}
-\boxed{2\,p_i\cdot p_j = \langle ij\rangle\,[ji]}
-\tag{42.17}
-\end{equation}
-\end{mdframed}
-
-This is the workhorse: it replaces metric contractions $p_i\cdot p_j$ with
-bracket products.  In the spinor-helicity formalism you never write
-$p_i\cdot p_j$ --- you write $\langle ij\rangle[ji]$ instead.
-
-\textbf{Numerical check (affine coordinates, $\theta=60^\circ$):}
-\begin{center}
-\begin{tabular}{|l|l|}
-\hline
-Quantity & Value \\
-\hline
-$z_1$ (affine param of leg 1) & $""" + f"{z1:.4f}" + r"""$ \\
-$z_2$ (affine param of leg 2) & $""" + f"{z2:.4f}" + r"""$ \\
-$\langle 12\rangle$ & $""" + f"{bracket_12:.4f}" + r"""$ \\
-$[12]$ & $""" + f"{bracket_12:.4f}" + r"""$ \\
-$s_{12}=\langle12\rangle[12]$ & $""" + f"{s_mandelstam:.4f}" + r"""$ \\
-\hline
-\end{tabular}
-\end{center}
-
-\section{Little Group Scaling and Helicity}\label{sec:helicity}
-
-Under $\lambda_i\to t_i\lambda_i$, $\tilde\lambda_i\to t_i^{-1}\tilde\lambda_i$:
-\begin{itemize}
-\item $\langle ij\rangle\to t_i t_j\,\langle ij\rangle$ (each $\lambda$ contributes 1 $t$)
-\item $[ij]\to t_i^{-1}t_j^{-1}\,[ij]$ (each $\tilde\lambda$ contributes 1 $t^{-1}$)
-\item $p_i\cdot p_j = \tfrac12\langle ij\rangle[ji]\to t_i^2\,p_i\cdot p_j$
-\end{itemize}
-A field of helicity $h$ scales as $t^{-2h}$.  For $h=+1$ (gluon): weight $-2$;
-for $h=-1$ (gluon negative helicity): weight $+2$.
-
-For massless $k^\mu=(E,0,0,E)$ along $+z$:
-\begin{equation}
-u_+(k)\propto\begin{pmatrix}1\\0\end{pmatrix},
-\qquad
-u_-(k)\propto\begin{pmatrix}0\\1\end{pmatrix} .
-\end{equation}
-
-\textbf{Numpy verification ($E=""" + f"{E_test}" + r""", $p_z=""" + f"{pz_test}" + r""", $\phi=""" + f"{phi_test:.2f}" + r"""$):}
-\begin{center}
-\begin{tabular}{|l|l|}
-\hline
-Quantity & Value \\
-\hline
-$u_+(E,p_z,\phi)$ & $(""" + f"{u_plus[0]:.3f}, {u_plus[1]:.3f}" + r""")$ \\
-$u_-(E,p_z,\phi)$ & $(""" + f"{u_minus[0]:.3f}, {u_minus[1]:.3f}" + r""")$ \\
-$u_+^\dagger u_+$ & $""" + f"{norm_plus:.4f}" + r""" = 2E$ \\
-$u_-^\dagger u_-$ & $""" + f"{norm_minus:.4f}" + r""" = 2E$ \\
-$u_+^\dagger u_-$ & $""" + f"{ortho:.6f}" + r""" \approx 0$ (orthogonal) \\
-\hline
-\end{tabular}
-\end{center}
-
-\section{Gluon Polarization Vectors}\label{sec:polarization}
-
-In axial gauge with reference momentum $q$:
-
-\begin{mdframed}
-\begin{align}
-\varepsilon^+_\mu(k;q)
-&= \frac{\langle q|\,\gamma_\mu\,|k]}{\sqrt2\,\langle qk\rangle},
-\qquad
-\varepsilon^-_\mu(k;q)
-= \frac{[q|\,\gamma_\mu\,|k\rangle}{\sqrt2\,[qk]} .
-\tag{42.$\star$}
-\end{align}
-\end{mdframed}
-
-Properties: $k^\mu\varepsilon_\mu^\pm=0$ (transverse),
-$q^\mu\varepsilon_\mu^\pm=0$ (reference gauge),
-$\varepsilon^\pm\cdot\varepsilon^\pm=-1$.
-
-\section{The Parke-Taylor Formula (MHV)}\label{sec:mhv}
-
-The crown jewel of spinor-helicity:
-
-\begin{mdframed}[backgroundcolor=red!5]
-\begin{theorem}[Parke-Taylor, 1986]
-For $n$-gluon scattering with exactly two negative-helicity gluons
-(at positions $j$ and $k$, all others positive):
-\begin{equation}
-\boxed{%
-A_n^{\rm MHV}(1,\ldots,j^-,\ldots,k^-,\ldots,n)^+
-= i\,\frac{\langle jk\rangle^4}
-{\langle12\rangle\langle23\rangle\cdots\langle n1\rangle}
-}
-\tag{42.$\star\star$}
-\end{Theorem}
-\end{mdframed}
-
-\textbf{Little-group weight check:} Under $\lambda_i\to t_i\lambda_i$:
-numerator $\langle jk\rangle^4\to t_j^4t_k^4\langle jk\rangle^4$;
-each denominator $\langle i\,i+1\rangle\to t_i t_{i+1}\langle i\,i+1\rangle$.
-Net: $h=-1$ legs contribute $t^4$ (numerator) and each of their two
-adjacent denominators contribute $t^{-1}$, giving $t^{4-2}=t^2$ matching
-the required $t^{-2h}=t^2$ for $h=-1$.  All positive-helicity legs
-give $t^{-2}$ from their two adjacent denominators, matching $h=+1$.  $\square$
-
-\section{Summary: The Spinor-Helicity Toolkit}
-
-\begin{center}
-\begin{tabular}{|p{0.3\textwidth}|p{0.6\textwidth}|}
-\hline
-\textbf{Identity} & \textbf{Physical meaning} \\
-\hline
-$p_{\alpha\dot\alpha}=\lambda_\alpha\tilde\lambda_{\dot\alpha}$ &
-Momentum = spinor outer product; rank-1 for massless \\
-\hline
-$2p_i\cdot p_j=\langle ij\rangle[ji]$ &
-Mandelstam from brackets; no metric contractions \\
-\hline
-$\varepsilon^\pm_\mu=\langle q|\gamma_\mu|k]/(\sqrt2\langle qk\rangle)$ &
-Gluon polarization as spinor bilinear \\
-\hline
-Schouten: $\langle ij\rangle\langle kl\rangle+\langle jk\rangle\langle il\rangle+\langle ki\rangle\langle jl\rangle=0$ &
-Closure of the spinor algebra; replacement for $\delta^{(4)}$ \\
-\hline
-\end{tabular}
-\end{center}
-
-\vfill
-\bibliographystyle{plain}
-\end{document}
-""")
-
-with open("/work/ch42_spinor_helicity.tex", "w") as fh:
-    fh.write("".join(tex))
-
-print(f"Wrote /work/ch42_spinor_helicity.tex ({sum(len(s) for s in tex)} chars)")
+if __name__ == "__main__":
+    if "--compile" in sys.argv:
+        success = compile_latex()
+        sys.exit(0 if success else 1)
+    else:
+        print_tex_content()
