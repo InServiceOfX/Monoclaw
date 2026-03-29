@@ -1,0 +1,70 @@
+\documentclass[12pt]{article}
+\usepackage[margin=1in,a4paper]{geometry}
+\usepackage{amsmath,amssymb,fullpage,xcolor,mhchem,mdframed}
+\usepackage{hyperref}
+\DeclareMathOperator\Tr{Tr}
+\begin{document}
+\title{Chapter 43: Majorana Fields}
+\date{\today}
+\maketitle
+
+\begin{mdframed}[backgroundcolor=blue!5]
+\textbf{Ch.43 covers a special spinor: the Majorana field,}
+where the particle is its own antiparticle.  Appears in SUSY (gauginos,
+higgsinos) and neutralino dark matter.
+\end{mdframed}
+
+\section{Majorana Condition}
+\begin{mdframed}
+$\displaystyle\psi(x) = \psi^c(x) \equiv C\,\bar\psi^T(x)$ ,
+\quad $C=i\gamma^2\gamma^0$, $C^2=-\mathbf{1}$, $C\gamma^\mu C^{-1}=-(\gamma^\mu)^T$ .
+\end{mdframed}
+This halves the DOF: 2 (like Weyl) not 4 (like Dirac).
+
+\section{Comparison}
+\begin{center}
+\begin{tabular}{|l|c|c|c|}
+\hline
+Property & Weyl & Majorana & Dirac \\
+\hline
+DOF & 2 & 2 & 4 \\
+EM charge & 0 & 0 & $\pm e$ \\
+Lorentz rep & $(\tfrac12,0)$ & Singlet & $(\tfrac12,0)\oplus(0,\tfrac12)$ \\
+SUSY partner & $\tilde\psi$ & Gaugino & $\tilde f_L+\tilde f_R$ \\
+\hline
+\end{tabular}
+\end{center}
+
+\section{Majorana Propagator}
+\begin{mdframed}
+$S_F(k) = i/(k\!\!\!/+m)$.  But Wick contraction gives $\tfrac12 S_F$ (extra $\tfrac12$ factor).
+\end{mdframed}
+This $\tfrac12$ is the statistical origin of Majorana statistics.
+
+\section{Feynman Rules}
+\begin{center}
+\begin{tabular}{|l|c|}
+\hline
+Object & Rule \\
+\hline
+Majorana propagator & $i/(k\!\!\!/+m)$ \\
+Majorana Yukawa vertex & $-iy\,\gamma^\mu$ \\
+Closed Majorana loop & $\frac12\Tr[S_F]$ \\
+4-Majorana contact & $-iy^2$ \\
+\hline
+\end{tabular}
+\end{center}
+
+\section{Majorana Mass}
+$\mathcal{L}\supset -\tfrac12 m_M\,\psi^TC\psi + \text{h.c.}$
+The $\tfrac12$ reflects: only half the DOF (particle=antiparticle).
+
+MSSM examples: $\tfrac12 M_1\tilde\lambda\tilde\lambda$ (gaugino Majorana mass).
+
+\section{Why Majorana Matters for MHV}
+In SUSY extensions of QCD, gluinos are Majorana fermions.
+They enable double-pole signatures at the LHC.
+The BCFW recursion generalizes to SUSY theories using massless
+helicity states: the Majorana property is not an obstacle but a feature.
+
+\vfill\bibliographystyle{plain}\end{document}

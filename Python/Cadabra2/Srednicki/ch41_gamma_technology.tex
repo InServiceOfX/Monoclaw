@@ -1,0 +1,63 @@
+\documentclass[12pt]{article}
+\usepackage[margin=1in,a4paper]{geometry}
+\usepackage{amsmath,amssymb,fullpage,xcolor,mhchem,mdframed}
+\usepackage{hyperref}
+\DeclareMathOperator\Tr{Tr}
+\begin{document}
+\title{Chapter 41: Gamma Matrix Technology}
+\date{\today}
+\maketitle
+
+\begin{mdframed}[backgroundcolor=blue!5]
+\textbf{Ch.41 is the reference manual for all $\gamma$-matrix algebra.}
+Every equation in Ch.39, 40, and 43 uses these identities.
+\end{mdframed}
+
+\section{Weyl (Chiral) Basis}\label{sec:chiral}
+In the chiral (Weyl) basis:
+\begin{align}
+\gamma^0 &= \begin{pmatrix}0&I\\I&0\end{pmatrix}, &
+\gamma^i &= \begin{pmatrix}0&-\sigma^i\\+\sigma^i&0\end{pmatrix}, \\
+\gamma^5 = i\gamma^0\gamma^1\gamma^2\gamma^3
+         &= \begin{pmatrix}-I&0\\0&+I\end{pmatrix} .
+\end{align}
+Chiral projectors: $P_L=(1-\gamma^5)/2$, $P_R=(1+\gamma^5)/2$.
+
+\section{Clifford Algebra}
+$\{\gamma^\mu,\gamma^\nu\}=2\eta^{\mu\nu}\mathbf{1}_4$.
+Consequences: $(\gamma^0)^2=+\mathbf{1}$, $(\gamma^i)^2=-\mathbf{1}$.
+
+\section{Trace Theorems (Complete Set)}
+\begin{align}
+\Tr[\mathbf{1}] &= 4, &
+\Tr[\gamma^\mu\gamma^\nu] &= 4\eta^{\mu\nu}, \\
+\Tr[\gamma^\mu\gamma^\nu\gamma^\rho\gamma^\sigma]
+&= 4(\eta^{\mu\nu}\eta^{\rho\sigma}
+   -\eta^{\mu\rho}\eta^{\nu\sigma}
+   +\eta^{\mu\sigma}\eta^{\nu\rho}) .
+\end{align}
+
+\section{Chiral Anomaly (Adler-Bell-Jackiw)}
+\begin{mdframed}
+$\displaystyle\partial_\mu j^{5\mu}
+= \frac{e^2}{16\pi^2}\Tr[\gamma^5 F_{\mu\nu}F^{\mu\nu}]
+= \frac{e^2}{8\pi^2}F_{\mu\nu}\tilde F^{\mu\nu}$ .
+\end{mdframed}
+This is an exact quantum anomaly --- not a symmetry of the Lagrangian
+but a consequence of regularization.
+
+\section{Fierz Identities}
+\begin{mdframed}
+$[\bar\psi_A\gamma^\mu(1\pm\gamma^5)\psi_B][\bar\psi_C\gamma_\mu(1\mp\gamma^5)\psi_D]
+=[\bar\psi_A\gamma^\mu(1\pm\gamma^5)\psi_D][\bar\psi_C\gamma_\mu(1\mp\gamma^5)\psi_B]$ .
+\end{mdframed}
+Used in: Fermi theory, CKM matrix elements, SUSY superpotential matching.
+
+\section{$\gamma^5$ and the Chiral Basis}
+In the chiral basis, the 4-component notation splits cleanly:
+$\gamma^\mu=(0,\sigma^\mu;\bar\sigma^\mu,0)$.
+The connection to 2-component Weyl spinors is:
+$u_+(k)\to\lambda_\alpha$, $u_-(k)\to\tilde\lambda_{\dot\alpha}$.
+This is the bridge to the spinor-helicity formalism of Ch.42.
+
+\vfill\bibliographystyle{plain}\end{document}
