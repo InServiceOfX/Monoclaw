@@ -502,18 +502,20 @@ def pol_vector_plus(lam_q, lamtil_q, lam_k, lamtil_k):
 
 def pol_vector_minus(lam_q, lamtil_q, lam_k, lamtil_k):
     """
-    Compute ε_-^μ(k; q) = [q|σ̄^μ|k⟩ / (√2 [qk]) using 2-component spinors.
-    
-    Per Srednicki eq. 60.14: ε_-^μ = [q|σ̄^μ|k⟩ / (√2 [qk])
-    where σ̄^μ = (I, -σ_x, -σ_y, -σ_z)
+    Compute ε_-^μ(k; q) = [k|σ^μ|q⟩ / (√2 ⟨kq⟩) using 2-component spinors.
+
+    In the (+,-,-,-) spinor convention (code convention):
+      ε_-^μ(k;q) = [k|σ^μ|q⟩ / (√2 ⟨kq⟩)
+      where [k| = λ_k†  and  |q⟩ = λ̃_q  and  σ^μ = (I, σ_x, σ_y, σ_z)
+    This is transverse: k_μ ε_-^μ = 0.
     """
-    sq_qk = square_bracket(lamtil_q, lamtil_k)
-    denom = np.sqrt(2) * sq_qk
+    ang_kq = angle_bracket(lam_k, lam_q)
+    denom = np.sqrt(2) * ang_kq
     eps_minus = np.zeros(4, dtype=complex)
-    sigmabar_list = [I2, -sigma[1], -sigma[2], -sigma[3]]
+    sigma_list = [I2, sigma[1], sigma[2], sigma[3]]
     for mu in range(4):
-        # [q|σ̄^μ|k⟩ = lam_q.conj() · σ̄^μ · lamtil_k
-        val = lam_q.conj() @ sigmabar_list[mu] @ lamtil_k
+        # [k|σ^μ|q⟩ = lam_k.conj() · σ^μ · lamtil_q
+        val = lam_k.conj() @ sigma_list[mu] @ lamtil_q
         eps_minus[mu] = val / denom
     return eps_minus
 
@@ -579,8 +581,10 @@ def massless_spinors_general(E, theta, phi):
     # Standard choice: |p⟩ = [0, 0, ct2, st2 e^{iφ}]^T * sq
     # For k (θ=0): |k⟩ = sq * [0, 0, 1, 0] ← matches eq. 60.10! ✓
 
+    # |p] = u_-(p): upper components from λ̃_ȧ (via ε^{ab} λ_b) = [-λ_2, λ_1]
     ket_sq_g = sq * np.array([-st2*em, ct2, 0., 0.], dtype=complex)
-    ket_an_g = sq * np.array([0., 0., ct2, st2*ep],  dtype=complex)
+    # |p⟩ = u_+(p): lower components from λ_a  = [-st2 e^{-iφ}, ct2]
+    ket_an_g = sq * np.array([0., 0., -st2*em, ct2], dtype=complex)
     bra_sq_g = ket_sq_g.conj() @ gam[0]
     bra_an_g = ket_an_g.conj() @ gam[0]
     return ket_sq_g, ket_an_g, bra_sq_g, bra_an_g
@@ -600,21 +604,17 @@ assert np.allclose(slash_q @ ket_an_q, 0, atol=1e-12), "q/ |q⟩ ≠ 0!"
 print("  ✓ Reference spinors q satisfy q/ |q] = q/ |q⟩ = 0")
 
 # Compute polarization vectors
-eps_p = pol_vector_plus(ket_sq_k2, bra_sq_k2, ket_an_q, bra_an_q,
-                        ket_sq_q, lam_q_d, lamtil_q_d, lam_k_d, lamtil_k_d)
-eps_m = pol_vector_minus(ket_an_k2, bra_an_k2, bra_sq_q, ket_sq_q,
-                          lam_q_d, lamtil_q_d, lam_k_d, lamtil_k_d)
+eps_p = pol_vector_plus(lam_q_d, lamtil_q_d, lam_k_d, lamtil_k_d)
+eps_m = pol_vector_minus(lam_q_d, lamtil_q_d, lam_k_d, lamtil_k_d)
 
 print(f"\nPolarization vectors for k along +z, q along +x:")
 print(f"  ε_+^μ(k;q) = {eps_p}")
 print(f"  ε_-^μ(k;q) = {eps_m}")
 
-# Verify transversality: k · ε = 0
-# k^μ ε_μ = k^0 ε_0 - k^1 ε_1 - k^2 ε_2 - k^3 ε_3  (lowering k^μ)
-k_vec = np.array([omega_k_d, omega_k_d, 0., 0.])   # NOT this one, k is along z:
-k_vec = np.array([omega_k_d, 0., 0., omega_k_d])
-# Minkowski dot: k · ε = g^{μν} k_μ ε_ν = k^μ ε_μ (careful: need to lower)
-# k_μ = (ω, 0, 0, -ω) for k^μ = (ω, 0, 0, ω)
+# Verify transversality: k_μ ε^μ = 0
+# This code uses (+,-,-,-) metric convention (p_{aa} = p^0 I + p^i sigma_i)
+# Lowering: k_0 = +k^0, k_i = -k^i
+# For k^μ = (ω, 0, 0, ω): k_μ = (ω, 0, 0, -ω)
 k_lower_d = np.array([omega_k_d, 0., 0., -omega_k_d])
 trans_p = sum(k_lower_d[mu] * eps_p[mu] for mu in range(4))
 trans_m = sum(k_lower_d[mu] * eps_m[mu] for mu in range(4))
@@ -628,21 +628,23 @@ print("  ✓ k · ε_± = 0  (transversality verified)")
 # Normalization: ε_+ · ε_-* = -1  (or ε_μ^+ (ε^-)*^μ = -1)
 # In Minkowski: ε_+^μ (ε_-^ν)* g_{μν}
 def mink_dot_vecs(a, b):
-    """Minkowski inner product with Srednicki's mostly-plus metric g=diag(-1,+1,+1,+1):
-       a·b = -a^0 b^0 + a^1 b^1 + a^2 b^2 + a^3 b^3"""
-    return -a[0]*b[0] + a[1]*b[1] + a[2]*b[2] + a[3]*b[3]
+    """Minkowski inner product with metric g=diag(+1,-1,-1,-1) (code convention):
+       a·b = a^0 b^0 - a^1 b^1 - a^2 b^2 - a^3 b^3"""
+    return a[0]*b[0] - a[1]*b[1] - a[2]*b[2] - a[3]*b[3]
 
 norm_pp = mink_dot_vecs(eps_p, eps_p.conj())
 norm_mm = mink_dot_vecs(eps_m, eps_m.conj())
 norm_pm = mink_dot_vecs(eps_p, eps_m.conj())
 norm_mp = mink_dot_vecs(eps_m, eps_p.conj())
 print(f"\nNormalization checks:")
-print(f"  ε_+ · ε_+* = {norm_pp:.6f}  (should be 0 for complex polz.)")
-print(f"  ε_- · ε_-* = {norm_mm:.6f}")
-print(f"  ε_+ · ε_-* = {norm_pm:.6f}  (should be -1)")
-print(f"  ε_- · ε_+* = {norm_mp:.6f}  (should be -1)")
-assert abs(norm_pm + 1) < 1e-10, "ε_+ · ε_-* ≠ -1!"
-assert abs(norm_mp + 1) < 1e-10, "ε_- · ε_+* ≠ -1!"
+print(f"  ε_+ · ε_+* = {norm_pp:.6f}  (should be -1)")
+print(f"  ε_- · ε_-* = {norm_mm:.6f}  (should be -1)")
+print(f"  ε_+ · ε_-* = {norm_pm:.6f}  (should be 0: ε_± are orthogonal)")
+print(f"  ε_- · ε_+* = {norm_mp:.6f}  (should be 0: orthogonal)")
+assert abs(norm_pp + 1) < 1e-10, "ε_+ · ε_+* ≠ -1!"
+assert abs(norm_mm + 1) < 1e-10, "ε_- · ε_-* ≠ -1!"
+assert abs(norm_pm) < 1e-10, "ε_+ · ε_-* ≠ 0!"
+assert abs(norm_mp) < 1e-10, "ε_- · ε_+* ≠ 0!"
 print("  ✓ ε_+ · ε_-* = ε_- · ε_+* = -1  (standard photon normalization)")
 
 # Completeness: Σ_λ (ε_λ^μ)* ε_λ^ν = -g^{μν} + (gauge terms)

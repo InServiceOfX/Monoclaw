@@ -1,17 +1,17 @@
 """
-ch77_group_representations.py
+ch70_group_representations.py
 ==============================
-Srednicki QFT — Chapter 77: Group Representations (SU(N))
+Srednicki QFT — Chapter 70: Group Representations (SU(N))
 
 What this file covers:
-  §77.A  SU(N) fundamental and adjoint representations
-  §77.B  Casimir operators and Dynkin indices
-  §77.C  Color factor algebra for QCD amplitudes
-  §77.D  Fierz identities for SU(N) generators
-  §77.E  Decomposition of products of representations
+  §70.A  SU(N) fundamental and adjoint representations
+  §70.B  Casimir operators and Dynkin indices
+  §70.C  Color factor algebra for QCD amplitudes
+  §70.D  Fierz identities for SU(N) generators
+  §70.E  Decomposition of products of representations
 
 Run with:
-    python3 ch77_group_representations.py
+    python3 ch70_group_representations.py
 """
 
 import cadabra2
@@ -28,9 +28,9 @@ def sec(s):
 
 
 # =============================================================================
-# §77.A  SU(N) fundamental and adjoint representations
+# §70.A  SU(N) fundamental and adjoint representations
 # =============================================================================
-sec("§77.A — SU(N) fundamental and adjoint representations")
+sec("§70.A — SU(N) fundamental and adjoint representations")
 
 print("SU(N) group: N² - 1 generators T^a")
 print()
@@ -45,9 +45,9 @@ print("  Generators: (T^a)_bc = -i f^{abc}  (structure constants)")
 print("  Fierz identity: (T^a)_ij (T^a)_kl = ½(δ_i^l δ_j^k - (1/N) δ_i^k δ_j^l)")
 
 # =============================================================================
-# §77.B  Casimir operators
+# §70.B  Casimir operators
 # =============================================================================
-sec("§77.B — Casimir operators and Dynkin indices")
+sec("§70.B — Casimir operators and Dynkin indices")
 
 print("Quadratic Casimir:")
 print("  C_2(R) T^a T^a = C_2(R) I_R   (proportional to identity in rep R)")
@@ -61,9 +61,9 @@ print("  T(R) δ^{ab} = Tr[T^a T^b]  (normalization: T(F) = ½ for fundamental)"
 print("  T(A) = N_c")
 
 # =============================================================================
-# §77.C  Color factor algebra for QCD amplitudes
+# §70.C  Color factor algebra for QCD amplitudes
 # =============================================================================
-sec("§77.C — Color factor algebra for QCD amplitudes")
+sec("§70.C — Color factor algebra for QCD amplitudes")
 
 print("Color structures in QCD:")
 print()
@@ -80,9 +80,9 @@ print("  - Single-trace (primitive) terms: Tr[T^{a1}...T^{an}]")
 print("  - Multi-trace terms (suppressed at large N_c)")
 
 # =============================================================================
-# §77.D  Fierz identities for SU(N)
+# §70.D  Fierz identities for SU(N)
 # =============================================================================
-sec("§77.D — Fierz identities for SU(N) generators")
+sec("§70.D — Fierz identities for SU(N) generators")
 
 print("SU(N) Fierz rearrangement:")
 print()
@@ -96,9 +96,9 @@ print("qq̄ annihilation color structure:")
 print("  |M_qq̄→gg|² ∝ C_F C_A  (interference between s-channel and t/u-channel)")
 
 # =============================================================================
-# §77.E  Representation products
+# §70.E  Representation products
 # =============================================================================
-sec("§77.E — Decomposition of products of representations")
+sec("§70.E — Decomposition of products of representations")
 
 print("SU(N) representation theory:")
 print()
@@ -112,5 +112,5 @@ print("  - Gluon exchange between quark lines gives color factors C_F, C_A")
 print("  - Four-gluon vertex gives C_A² terms")
 
 print(f"\n{SEP}")
-print("  ch77 — Group Representations — COMPLETE")
+print("  ch70 — Group Representations — COMPLETE")
 print(f"{SEP}")

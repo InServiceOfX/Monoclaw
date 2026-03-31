@@ -1,18 +1,18 @@
 """
-ch76_nonabelian_gauge.py
+ch69_nonabelian_gauge.py
 ==========================
-Srednicki QFT — Chapter 76: Nonabelian Gauge Theory
+Srednicki QFT — Chapter 69: Nonabelian Gauge Theory
 
 What this file covers:
-  §76.A  SU(N) gauge fields and generators T^a
-  §76.B  Covariant derivative D_μ = ∂_μ + ig A_μ
-  §76.C  Field strength F^a_{μν}
-  §76.D  Nonabelian Bianchi identity
-  §76.E  Gauge-invariant Lagrangian L = -¼ F^a_{μν} F^{a μν}
-  §76.F  QCD Lagrangian and quark-gluon vertices
+  §69.A  SU(N) gauge fields and generators T^a
+  §69.B  Covariant derivative D_μ = ∂_μ + ig A_μ
+  §69.C  Field strength F^a_{μν}
+  §69.D  Nonabelian Bianchi identity
+  §69.E  Gauge-invariant Lagrangian L = -¼ F^a_{μν} F^{a μν}
+  §69.F  QCD Lagrangian and quark-gluon vertices
 
 Run with:
-    python3 ch76_nonabelian_gauge.py
+    python3 ch69_nonabelian_gauge.py
 """
 
 import cadabra2
@@ -29,9 +29,9 @@ def sec(s):
 
 
 # =============================================================================
-# §76.A  SU(N) gauge fields and generators
+# §69.A  SU(N) gauge fields and generators
 # =============================================================================
-sec("§76.A — SU(N) gauge fields and generators")
+sec("§69.A — SU(N) gauge fields and generators")
 
 print("Gauge field A_μ = A^a_μ T^a  (a = 1,..., N²-1 for SU(N))")
 print()
@@ -45,9 +45,9 @@ print("  λ¹ = [[0,1,0],[1,0,0],[0,0,0]],  λ² = [[0,-i,0],[i,0,0],[0,0,0]],  
 print("  ... (8 Gell-Mann matrices for SU(3))")
 
 # =============================================================================
-# §76.B  Covariant derivative
+# §69.B  Covariant derivative
 # =============================================================================
-sec("§76.B — Covariant derivative D_μ = ∂_μ + ig A_μ")
+sec("§69.B — Covariant derivative D_μ = ∂_μ + ig A_μ")
 
 print("Gauge covariant derivative:")
 print("  D_μ = ∂_μ + ig A_μ = ∂_μ + ig A^a_μ T^a")
@@ -60,9 +60,9 @@ print("  A_μ → U A_μ U⁻¹ + (i/g) U ∂_μ U⁻¹")
 print("  D_μ → U D_μ U⁻¹   (transforms homogeneously)")
 
 # =============================================================================
-# §76.C  Nonabelian field strength
+# §69.C  Nonabelian field strength
 # =============================================================================
-sec("§76.C — Nonabelian field strength F^a_{μν}")
+sec("§69.C — Nonabelian field strength F^a_{μν}")
 
 print("Nonabelian field strength (curvature):")
 print("  F_μν = ∂_μ A_ν - ∂_ν A_μ + ig[A_μ, A_ν]")
@@ -74,9 +74,9 @@ print("The cubic and quartic gluon terms arise from the commutator [A_μ, A_ν].
 print("This is what makes QCD nonabelian and gives gluon self-interactions.")
 
 # =============================================================================
-# §76.D  Nonabelian Bianchi identity
+# §69.D  Nonabelian Bianchi identity
 # =============================================================================
-sec("§76.D — Nonabelian Bianchi identity")
+sec("§69.D — Nonabelian Bianchi identity")
 
 print("Bianchi identity:")
 print("  D_{[μ} F^a_{νρ]} = 0   (analogous to ∂_{[μ} F_{νρ]} = 0 in U(1))")
@@ -87,9 +87,9 @@ print()
 print("This is a key identity that constrains the gluon vertex tensor.")
 
 # =============================================================================
-# §76.E  Gauge-invariant Lagrangian
+# §69.E  Gauge-invariant Lagrangian
 # =============================================================================
-sec("§76.E — Gauge-invariant Lagrangian L = -¼ F^a_{μν} F^{a μν}")
+sec("§69.E — Gauge-invariant Lagrangian L = -¼ F^a_{μν} F^{a μν}")
 
 print("Yang-Mills Lagrangian:")
 print("  L_YM = -¼ F^a_{μν} F^{a μν}")
@@ -104,9 +104,9 @@ print("      + g f^{abc} (∂_μ A^a_ν) A^b_μ A^c_ν               [3-gluon]")
 print("      - ¼ g² f^{abc} f^{ade} A^b_μ A^c_ν A^d_μ A^e_ν  [4-gluon]")
 
 # =============================================================================
-# §76.F  QCD Lagrangian and quark-gluon vertices
+# §69.F  QCD Lagrangian and quark-gluon vertices
 # =============================================================================
-sec("§76.F — QCD Lagrangian and quark-gluon vertices")
+sec("§69.F — QCD Lagrangian and quark-gluon vertices")
 
 print("QCD Lagrangian (quarks + gluons):")
 print("  L_QCD = ψ̄(i γ^μ D_μ - m)ψ - ¼ F^a_{μν} F^{a μν}")
@@ -122,5 +122,5 @@ print("  Quark lines carry fundamental color i = 1,2,3 (SU(3))")
 print("  Color factor: Tr[T^a T^b] = ½ δ^{ab},  f^{abc} f^{abc} = N_c δ^{ab}")
 
 print(f"\n{SEP}")
-print("  ch76 — Nonabelian Gauge Theory — COMPLETE")
+print("  ch69 — Nonabelian Gauge Theory — COMPLETE")
 print(f"{SEP}")

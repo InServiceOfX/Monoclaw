@@ -1,19 +1,19 @@
 """
-ch80_feynman_rules_nonabelian.py
+ch72_feynman_rules_nonabelian.py
 ================================
-Srednicki QFT — Chapter 80: The Feynman Rules for Nonabelian Gauge Theory
+Srednicki QFT — Chapter 72: The Feynman Rules for Nonabelian Gauge Theory
 
 What this file covers:
-  §80.A  Gluon propagator in covariant gauges
-  §80.B  Ghost propagator and ghost-gluon vertex
-  §80.C  Three-gluon vertex
-  §80.D  Four-gluon vertex
-  §80.E  Quark-gluon vertex and color factors
-  §80.F  Color-ordered Feynman rules
-  §80.G  Sample: ggg and qqb→gg color-ordered subamplitudes
+  §72.A  Gluon propagator in covariant gauges
+  §72.B  Ghost propagator and ghost-gluon vertex
+  §72.C  Three-gluon vertex
+  §72.D  Four-gluon vertex
+  §72.E  Quark-gluon vertex and color factors
+  §72.F  Color-ordered Feynman rules
+  §72.G  Sample: ggg and qqb→gg color-ordered subamplitudes
 
 Run with:
-    python3 ch80_feynman_rules_nonabelian.py
+    python3 ch72_feynman_rules_nonabelian.py
 """
 
 import cadabra2
@@ -30,9 +30,9 @@ def sec(s):
 
 
 # =============================================================================
-# §80.A  Gluon propagator in covariant gauges
+# §72.A  Gluon propagator in covariant gauges
 # =============================================================================
-sec("§80.A — Gluon propagator in covariant gauges")
+sec("§72.A — Gluon propagator in covariant gauges")
 
 print("Gluon propagator (Feynman gauge ξ = 1):")
 print("  D^{ab}_μν(k) = -i δ^{ab} η_μν / k²")
@@ -47,9 +47,9 @@ print("  ξ = 0 : Landau gauge (transverse propagator)")
 print("  ξ → ∞ : axial gauge (no ghosts)")
 
 # =============================================================================
-# §80.B  Ghost propagator and ghost-gluon vertex
+# §72.B  Ghost propagator and ghost-gluon vertex
 # =============================================================================
-sec("§80.B — Ghost propagator and ghost-gluon vertex")
+sec("§72.B — Ghost propagator and ghost-gluon vertex")
 
 print("Fadeev-Popov ghosts c̄^a, c^b (complex Grassmann fields):")
 print()
@@ -63,9 +63,9 @@ print("Important: ghosts are unphysical — they cancel unphysical gluon polariz
 print("In axial gauge (n·A = 0): no ghost diagrams at all.")
 
 # =============================================================================
-# §80.C  Three-gluon vertex
+# §72.C  Three-gluon vertex
 # =============================================================================
-sec("§80.C — Three-gluon vertex")
+sec("§72.C — Three-gluon vertex")
 
 print("Three-gluon vertex (color-stripped tensor structure):")
 print()
@@ -79,9 +79,9 @@ print("  k₁^μ V^{abc}_μνρ = 0   (Ward identity, ghost cancels)")
 print("  Momentum conservation: k₁ + k₂ + k₃ = 0")
 
 # =============================================================================
-# §80.D  Four-gluon vertex
+# §72.D  Four-gluon vertex
 # =============================================================================
-sec("§80.D — Four-gluon vertex")
+sec("§72.D — Four-gluon vertex")
 
 print("Four-gluon vertex (two equivalent forms):")
 print()
@@ -97,9 +97,9 @@ print("Both forms related by renaming (μ,ν,a) ↔ (ρ,σ,d) and Jacobi identit
 print("No momentum factors in the 4-gluon vertex (pure contact interaction).")
 
 # =============================================================================
-# §80.E  Quark-gluon vertex and color factors
+# §72.E  Quark-gluon vertex and color factors
 # =============================================================================
-sec("§80.E — Quark-gluon vertex and color factors")
+sec("§72.E — Quark-gluon vertex and color factors")
 
 print("Quark-gluon vertex (color-stripped):")
 print("  -ig γ_μ   (same as QED, but color matrix T^a acts on quark color)")
@@ -113,9 +113,9 @@ print("  C_A = N_c = 3")
 print("  T_R = ½   (fundamental trace normalization)")
 
 # =============================================================================
-# §80.F  Color-ordered Feynman rules
+# §72.F  Color-ordered Feynman rules
 # =============================================================================
-sec("§80.F — Color-ordered Feynman rules (subamplitudes)")
+sec("§72.F — Color-ordered Feynman rules (subamplitudes)")
 
 print("Color-ordered amplitudes A_n (gluons only):")
 print("  M_n = Σ_{σ∈S_n/Z_n} Tr[T^{a_σ(1)}...T^{a_σ(n)}] A_n(σ(1),...,σ(n))")
@@ -128,9 +128,9 @@ print("Leading-color (Nc → ∞) basis: n!/(n-2)! = n(n-1) traces")
 print("Subleading corrections: 1/N_c² suppressed")
 
 # =============================================================================
-# §80.G  Sample: ggg and qqb→gg subamplitudes
+# §72.G  Sample: ggg and qqb→gg subamplitudes
 # =============================================================================
-sec("§80.G — Sample: ggg and q̄q→gg color-ordered subamplitudes")
+sec("§72.G — Sample: ggg and q̄q→gg color-ordered subamplitudes")
 
 print("Three-gluon amplitude (MHV, all helicities):")
 print("  A_3(1^+, 2^+, 3^+) = 0   (all-plus vanishes at tree)")
@@ -143,5 +143,5 @@ print()
 print("BCFW recursion builds all n-gluon from 3-particle seeds (MHV amplitudes).")
 
 print(f"\n{SEP}")
-print("  ch80 — Feynman Rules for Nonabelian Gauge Theory — COMPLETE")
+print("  ch72 — Feynman Rules for Nonabelian Gauge Theory — COMPLETE")
 print(f"{SEP}")

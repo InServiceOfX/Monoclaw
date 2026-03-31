@@ -1,19 +1,19 @@
 """
-ch48_massless_spinor_helicity.py
+ch50_massless_spinor_helicity.py
 ==================================
-Srednicki QFT — Chapter 48: Massless Particles & Spinor-Helicity
+Srednicki QFT — Chapter 50: Massless Particles & Spinor-Helicity
 
 What this file covers:
-  §48.A  Massless momentum as spinor outer product: p_{αα̇} = λ_α λ̃_{α̇}
-  §48.B  Angle brackets ⟨ij⟩ and square brackets [ij] — definitions & identities
-  §48.C  Mandelstam variables from spinors: s_{ij} = ⟨ij⟩[ji]
-  §48.D  Helicity spinors: u_±(k) in the chiral basis
-  §48.E  Gluon polarization vectors as spinor bilinears
-  §48.F  Little group scaling — helicity as weight
-  §48.G  MHV Parke-Taylor formula (seed for BCFW recursion)
+  §50.A  Massless momentum as spinor outer product: p_{αα̇} = λ_α λ̃_{α̇}
+  §50.B  Angle brackets ⟨ij⟩ and square brackets [ij] — definitions & identities
+  §50.C  Mandelstam variables from spinors: s_{ij} = ⟨ij⟩[ji]
+  §50.D  Helicity spinors: u_±(k) in the chiral basis
+  §50.E  Gluon polarization vectors as spinor bilinears
+  §50.F  Little group scaling — helicity as weight
+  §50.G  MHV Parke-Taylor formula (seed for BCFW recursion)
 
 Run with:
-    python3 ch48_massless_spinor_helicity.py
+    python3 ch50_massless_spinor_helicity.py
 """
 
 import cadabra2
@@ -30,9 +30,9 @@ def sec(s):
 
 
 # =============================================================================
-# §48.A  Massless momentum as spinor outer product
+# §50.A  Massless momentum as spinor outer product
 # =============================================================================
-sec("§48.A — Massless momentum as a spinor outer product")
+sec("§50.A — Massless momentum as a spinor outer product")
 
 # Declare indices (same as ch34 / ch60):
 cadabra2.Indices(Ex(r"{\alpha, \beta, \gamma, \delta}"), Ex(r"position=fixed"))
@@ -56,9 +56,9 @@ print()
 print("Verification: p^2 = (λ·λ)(λ̃·λ̃) = 0  ✓")
 
 # =============================================================================
-# §48.B  Angle and square brackets
+# §50.B  Angle and square brackets
 # =============================================================================
-sec("§48.B — Angle ⟨ij⟩ and square [ij] brackets")
+sec("§50.B — Angle ⟨ij⟩ and square [ij] brackets")
 
 # Cadabra2 representation (following ch60 convention):
 # \abra{i}{j} = ⟨ij⟩  (angle bracket, antisymmetric in i,j)
@@ -89,9 +89,9 @@ print(f"  → {schouten}")
 print()
 
 # =============================================================================
-# §48.C  Mandelstam variables from spinors
+# §50.C  Mandelstam variables from spinors
 # =============================================================================
-sec("§48.C — Mandelstam: s_{ij} = ⟨ij⟩[ji]")
+sec("§50.C — Mandelstam: s_{ij} = ⟨ij⟩[ji]")
 
 # For massless momenta p_i, p_j:
 # s_{ij} = (p_i + p_j)² = 2 p_i·p_j = ⟨ij⟩[ji]
@@ -102,9 +102,9 @@ print("  (Cadabra2 symbolic display: s_{ij} = ⟨ij⟩[ji])")
 print()
 
 # =============================================================================
-# §48.D  Helicity spinors (chiral basis)
+# §50.D  Helicity spinors (chiral basis)
 # =============================================================================
-sec("§48.D — Helicity spinors u_±(k)")
+sec("§50.D — Helicity spinors u_±(k)")
 
 # For massless momentum k = (E, 0, 0, E) along +z axis:
 # u_+(k) ∝ (1, 0)^T   ← positive helicity (spin along +z)
@@ -124,9 +124,9 @@ spinor_prod_str = r"u_+^\dagger(k) u_-(k) = 0"
 print(f"  Orthogonality: {spinor_prod_str}  ✓  (helicity eigenstates)")
 
 # =============================================================================
-# §48.E  Gluon polarization vectors
+# §50.E  Gluon polarization vectors
 # =============================================================================
-sec("§48.E — Gluon polarization vectors as spinor bilinears")
+sec("§50.E — Gluon polarization vectors as spinor bilinears")
 
 # ε^+_μ(k;q) = ⟨q|γ_μ|k] / (√2 ⟨qk⟩)
 # ε^-_μ(k;q) = [q|γ_μ|k⟩ / (√2 [qk])
@@ -145,9 +145,9 @@ ward_str = r"k^{\alpha\dbe} \varepsilon^+_{\alpha\dbe}(k;q) = 0"
 print(f"  Ward: {ward_str}")
 
 # =============================================================================
-# §48.F  Little group scaling
+# §50.F  Little group scaling
 # =============================================================================
-sec("§48.F — Little group helicity weight")
+sec("§50.F — Little group helicity weight")
 
 # Under λ → t λ (and λ̃ → t⁻¹ λ̃ for momentum conservation):
 # ⟨ij⟩ → t_i t_j ⟨ij⟩    (conformal weight = 2)
@@ -160,9 +160,9 @@ print("  [ij]  → t_i⁻¹ t_j⁻¹ [ij]    (square bracket has weight -2)")
 print()
 
 # =============================================================================
-# §48.G  MHV Parke-Taylor formula
+# §50.G  MHV Parke-Taylor formula
 # =============================================================================
-sec("§48.G — MHV Parke-Taylor (seed for BCFW recursion)")
+sec("§50.G — MHV Parke-Taylor (seed for BCFW recursion)")
 
 # n-gluon MHV with two negative helicities (labeled 1,2) and rest positive:
 # A_n(1^-, 2^-, 3^+, ..., n^+) = √2^{n-2} × ⟨12⟩⁴ / ∏⟨a a+1⟩
@@ -176,5 +176,5 @@ print("This is the seed amplitude for BCFW recursion (§BCFW).")
 print("BCFW shifts complexify the spinors and picks up poles at t = t_P.")
 
 print(f"\n{SEP}")
-print("  ch48 — Massless Spinor-Helicity — COMPLETE")
+print("  ch50 — Massless Spinor-Helicity — COMPLETE")
 print(f"{SEP}")

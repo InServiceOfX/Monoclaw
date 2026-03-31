@@ -70,7 +70,7 @@ See `PROGRESS.md` for current completion status.
 
 Logical order:
 ```
-Ch.34 → Ch.35 → Ch.36 → Ch.37 → Ch.38 → Ch.48 (spinor-helicity) → Ch.60 (MHV) → BCFW
+Ch.34 → Ch.35 → Ch.36 → Ch.37 → Ch.38 → Ch.50 (spinor-helicity) → Ch.60 (MHV) → BCFW
 ```
 
 ## Branch Naming

@@ -1,21 +1,21 @@
 """
-ch48_spinor_helicity.py
+ch50_spinor_helicity_core.py
 ========================
-Srednicki QFT — Chapter 48: Massless Particles & Spinor-Helicity
+Srednicki QFT — Chapter 50: Massless Particles & Spinor-Helicity
 
 THIS IS THE HEART OF MHV RESEARCH.
 
 What this file covers:
-  §48.A  Massless momentum as spinor outer product p_{αα̇} = λ_α λ̃_{α̇}
-  §48.B  Little group and helicity
-  §48.C  Angle brackets ⟨ij⟩ and square brackets [ij]
-  §48.D  Spinor products and dot products: p_i · p_j = ½ ⟨ij⟩[ji]
-  §48.E  Helicity spinors u_±(k), v_±(k)
-  §48.F  Polarization vectors ε^μ_±(k;q)
-  §48.G  Gauge invariance and little group scaling
+  §50.A  Massless momentum as spinor outer product p_{αα̇} = λ_α λ̃_{α̇}
+  §50.B  Little group and helicity
+  §50.C  Angle brackets ⟨ij⟩ and square brackets [ij]
+  §50.D  Spinor products and dot products: p_i · p_j = ½ ⟨ij⟩[ji]
+  §50.E  Helicity spinors u_±(k), v_±(k)
+  §50.F  Polarization vectors ε^μ_±(k;q)
+  §50.G  Gauge invariance and little group scaling
 
 Run with:
-    python3 ch48_spinor_helicity.py
+    python3 ch50_spinor_helicity_core.py
 """
 
 import cadabra2
@@ -32,9 +32,9 @@ def sec(s):
 
 
 # =============================================================================
-# §42.A  Massless momentum as spinor outer product
+# §50.A  Massless momentum as spinor outer product
 # =============================================================================
-sec("§42.A — Massless momentum as a spinor outer product")
+sec("§50.A — Massless momentum as a spinor outer product")
 
 cadabra2.Indices(Ex(r"{\alpha, \beta, \gamma, \delta}"), Ex(r"position=fixed"))
 cadabra2.Indices(Ex(r"{\dal, \dbe, \dga, \dde}"), Ex(r"position=fixed"))
@@ -49,7 +49,7 @@ cadabra2.AntiSymmetric(Ex(r"\epsilon^{\dal\dbe}"))
 cadabra2.AntiSymmetric(Ex(r"\abra{k}{p}"))   # angle bracket ⟨kp⟩
 cadabra2.AntiSymmetric(Ex(r"\sbra{k}{p}"))   # square bracket [kp]
 
-print("Key decomposition (Srednicki eq. 42.1):")
+print("Key decomposition (Srednicki eq. 50.1):")
 print("  p_{α α̇} = λ_α λ̃_{α̇}    with  p² = 0  automatically")
 print()
 print("This is the foundational identity of the spinor-helicity formalism.")
@@ -60,9 +60,9 @@ print()
 print("  Symbolic: p_{alpha alphȧ} = λ_α λ̃_{α̇} = angle bracket form")
 
 # =============================================================================
-# §42.B  Little group and helicity
+# §50.B  Little group and helicity
 # =============================================================================
-sec("§42.B — Little group and helicity")
+sec("§50.B — Little group and helicity")
 
 print("Little group for massless particles: U(1) (for real momenta)")
 print()
@@ -78,9 +78,9 @@ print("  Angle bracket: ⟨ij⟩ → t_i t_j ⟨ij⟩     (weight +1 per λ)")
 print("  Square bracket: [ij]  → t_i⁻¹ t_j⁻¹ [ij]   (weight -1 per λ̃)")
 
 # =============================================================================
-# §42.C  Angle and square brackets
+# §50.C  Angle and square brackets
 # =============================================================================
-sec("§42.C — Angle ⟨ij⟩ and square [ij] brackets")
+sec("§50.C — Angle ⟨ij⟩ and square [ij] brackets")
 
 abra = Ex(r"\abra{k}{p}")
 sbra = Ex(r"\sbra{k}{p}")
@@ -88,7 +88,7 @@ print(f"  Cadabra2 angle bracket: {abra}")
 print(f"  Cadabra2 square bracket: {sbra}")
 print()
 
-print("Definitions (Srednicki eq. 42.16):")
+print("Definitions (Srednicki eq. 50.16):")
 print("  ⟨ij⟩ = ε^{αβ} λ_α^i λ_β^j     (undotted spinors)")
 print("  [ij]  = ε^{α̇β̇} λ̃_α̇^i λ̃_β̇^j  (dotted spinors)")
 print()
@@ -103,11 +103,11 @@ schouten = Ex(r"\abra{i}{j} \abra{k}{l} + \abra{j}{k} \abra{i}{l} + \abra{k}{i} 
 print(f"  → {schouten}")
 
 # =============================================================================
-# §42.D  Dot products from spinors
+# §50.D  Dot products from spinors
 # =============================================================================
-sec("§42.D — Dot products: 2 p_i·p_j = ⟨ij⟩[ji]")
+sec("§50.D — Dot products: 2 p_i·p_j = ⟨ij⟩[ji]")
 
-print("Key identity (Srednicki eq. 42.17):")
+print("Key identity (Srednicki eq. 50.17):")
 print("  2 p_i · p_j = ⟨ij⟩ [ji]    (massless momenta)")
 print()
 print("Special cases:")
@@ -121,9 +121,9 @@ print("  t_{ij} = (p_i - p_j)² = -⟨i j̃⟩[j ĩ]  etc.")
 print("  u_{ij} = -⟨i j⟩[i j] - ⟨i j̃⟩[i j̃]  (momentum conservation)")
 
 # =============================================================================
-# §42.E  Helicity spinors
+# §50.E  Helicity spinors
 # =============================================================================
-sec("§42.E — Helicity spinors u_±(k), v_±(k)")
+sec("§50.E — Helicity spinors u_±(k), v_±(k)")
 
 print("Massless helicity spinors (positive-energy solutions):")
 print("  u_+(p)  ∝ ( λ_α , 0 )^T   ← right-handed, h = +½")
@@ -138,9 +138,9 @@ print("  ū_+ u_+ = 2E,   ū_- u_- = 2E,   ū_+ u_- = 0")
 print("  [±|±] = 2E,   [±|∓] = 0   (square bracket inner products)")
 
 # =============================================================================
-# §42.F  Polarization vectors
+# §50.F  Polarization vectors
 # =============================================================================
-sec("§42.F — Gluon polarization vectors ε^μ_±(k;q)")
+sec("§50.F — Gluon polarization vectors ε^μ_±(k;q)")
 
 print("Gauge field polarization vectors (axial gauge, reference q):")
 print()
@@ -155,9 +155,9 @@ print()
 print("Ward identity: Σ_± ε^μ_± ε^ν_± = -η^{μν} + k^μ q^ν/(k·q) + k^ν q^μ/(k·q)")
 
 # =============================================================================
-# §42.G  Gauge invariance and little group
+# §50.G  Gauge invariance and little group
 # =============================================================================
-sec("§42.G — Gauge invariance and little group scaling")
+sec("§50.G — Gauge invariance and little group scaling")
 
 print("Under gauge transformation ε_μ → ε_μ + α k_μ:")
 print("  The spinor form is manifestly gauge-invariant because k/|k⟩ projects out the gauge term.")
@@ -173,5 +173,5 @@ print("  Net: h = +1: ⟨qk⟩⁻¹ → t⁻¹ ⟨qk⟩⁻¹ (weight -1)")
 print("       h = -1: [qk]⁻¹ → t [qk]⁻¹ (weight +1)")
 
 print(f"\n{SEP}")
-print("  ch42 — Spinor-Helicity (CORE) — COMPLETE")
+print("  ch50 — Spinor-Helicity (CORE) — COMPLETE")
 print(f"{SEP}")
