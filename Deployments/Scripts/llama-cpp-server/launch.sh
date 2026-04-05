@@ -23,17 +23,17 @@ fi
 
 # ── handle --stop / --status with no profile ──────────────────────────────────
 case "${1:-}" in
-    --stop)
+    --stop|stop)
         NAME=$(python3 -c "
 import yaml
 cfg = yaml.safe_load(open('$CONFIG_FILE'))
 print(cfg.get('docker',{}).get('container_name','llama-cpp-server'))
 ")
-        docker stop "$NAME" 2>/dev/null && docker rm "$NAME" 2>/dev/null
+        docker stop "$NAME" 2>/dev/null && docker rm "$NAME" 2>/dev/null || true
         echo "🛑 Stopped $NAME"
         exit 0
         ;;
-    --status)
+    --status|status)
         NAME=$(python3 -c "
 import yaml
 cfg = yaml.safe_load(open('$CONFIG_FILE'))
@@ -44,8 +44,8 @@ print(cfg.get('docker',{}).get('container_name','llama-cpp-server'))
         ;;
     "")
         echo "Usage: $0 <profile> [extra llama-server args...]"
-        echo "       $0 --stop"
-        echo "       $0 --status"
+        echo "       $0 --stop | stop"
+        echo "       $0 --status | status"
         echo ""
         echo "Available profiles:"
         ls "$SCRIPT_DIR/profiles/"*.yml 2>/dev/null \
@@ -196,6 +196,10 @@ echo "GPU      : device=${GPU_ID}"
 echo "Port     : ${SERVE_PORT}"
 echo ""
 
+echo "Full docker command:"
+echo "${FULL_CMD}"
+echo ""
+
 # Append any extra args the user passed after the profile name
 if [[ $# -gt 0 ]]; then
     # Strip trailing quote, append extra args, re-quote
@@ -210,7 +214,7 @@ eval "${FULL_CMD}"
 
 # ── wait for ready ─────────────────────────────────────────────────────────────
 echo "Waiting for server on http://${SERVE_HOST}:${SERVE_PORT} ..."
-for i in $(seq 1 120); do
+for i in $(seq 1 180); do   # increased to 6 minutes for larger/slower models
     if curl -sf "http://${SERVE_HOST}:${SERVE_PORT}/v1/models" >/dev/null 2>&1; then
         echo ""
         echo "✅ Server ready at http://${SERVE_HOST}:${SERVE_PORT}"
@@ -225,5 +229,9 @@ for i in $(seq 1 120); do
 done
 
 echo ""
-echo "⚠️  Server did not respond after 4 min."
-echo "   Logs: docker logs ${CONTAINER_NAME}"
+echo "⚠️  Server did not respond after 6 min."
+echo "   Container name : ${CONTAINER_NAME}"
+echo "   Check logs     : docker logs -f ${CONTAINER_NAME}   (or docker logs ${CONTAINER_NAME} for past output)"
+echo "   Live logs      : docker logs -f ${CONTAINER_NAME}"
+echo "   Status         : docker ps -a --filter name=${CONTAINER_NAME}"
+echo "   Stop           : $0 --stop"
