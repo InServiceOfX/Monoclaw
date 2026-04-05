@@ -23,12 +23,19 @@ cd /Users/ernestyeung/.openclaw/workspace/repos/Monoclaw/Deployments/Scripts/mlx
 ./serve.sh
 ```
 
-Then edit `mlx_config.yml` and set your exact model path, e.g.:
+### Profile-based quick switching (new)
 
-```yaml
-paths:
-  model_path: /Users/ernestyeung/.cache/huggingface/hub/models--mlx-community--Qwen3.5-27B-Claude-4.6-Opus-Distilled-MLX-6bit
+```bash
+# Start server with specific model
+./serve.sh --profile qwen35-9b-claude-opus-distilled-6bit
+./serve.sh --profile gemma-4-e4b-it
+
+# Chat mode
+./chat.sh --profile qwen35-9b-claude-opus-distilled-6bit --mode instruct
+./chat.sh --profile gemma-4-e4b-it
 ```
+
+Available profiles live in `profiles/`.
 
 ## Modes
 

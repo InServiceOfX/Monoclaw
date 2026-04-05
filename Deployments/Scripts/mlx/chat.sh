@@ -10,6 +10,25 @@ if [[ ! -f "$SCRIPT_DIR/mlx_config.yml" ]]; then
   echo "   Edit: $SCRIPT_DIR/mlx_config.yml"
 fi
 
+# Support quick profile loading via --profile <name>
+if [[ "$1" == "--profile" || "$1" == "-p" ]]; then
+  PROFILE_NAME="$2"
+  shift 2
+  if [[ -n "$PROFILE_NAME" ]]; then
+    PROFILE_FILE="$SCRIPT_DIR/profiles/${PROFILE_NAME}.yml"
+    if [[ -f "$PROFILE_FILE" ]]; then
+      echo "🔄 Loading profile: $PROFILE_NAME"
+      export MLX_PROFILE="$PROFILE_NAME"
+      CONFIG_OVERRIDE="$PROFILE_FILE"
+    else
+      echo "❌ Profile not found: $PROFILE_FILE" >&2
+      echo "Available profiles:" >&2
+      ls "$SCRIPT_DIR/profiles/"*.yml 2>/dev/null | sed 's|.*/||;s|\.yml$||' >&2
+      exit 1
+    fi
+  fi
+fi
+
 MODE="thinking"
 ARGS=()
 
@@ -29,4 +48,8 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-exec python3 "$RUNNER" --config "$SCRIPT_DIR/mlx_config.yml" chat --mode "$MODE" ${ARGS[@]+"${ARGS[@]}"}
+if [[ -n "${CONFIG_OVERRIDE:-}" ]]; then
+  exec python3 "$RUNNER" --config "$CONFIG_OVERRIDE" chat --mode "$MODE" ${ARGS[@]+"${ARGS[@]}"}
+else
+  exec python3 "$RUNNER" --config "$SCRIPT_DIR/mlx_config.yml" chat --mode "$MODE" ${ARGS[@]+"${ARGS[@]}"}
+fi
