@@ -1,0 +1,25 @@
+# Example config for mlx-vlm deployment wrappers.
+# Default target: mlx-community/gemma-4-e4b-it-4bit
+
+paths:
+  # mlx_vlm_bin_dir = directory containing the mlx_vlm binaries
+  # (mlx_vlm.chat, mlx_vlm.server, etc.)
+  mlx_vlm_bin_dir: /Users/ernestyeung/Prop/openclaw/.venv/bin
+  model_path: /Users/ernestyeung/.cache/huggingface/hub/models--mlx-community--gemma-4-e4b-it-4bit  # REQUIRED  # REQUIRED: local absolute/relative path
+
+chat:
+  max_tokens: 1024
+  temperature: 0.2
+  resize_shape: [896, 896]  # image resize
+  # NOTE: mlx_vlm.chat is interactive only (no --system / --prompt)
+
+serve:
+  host: 0.0.0.0  # matches CLI default
+  port: 8081
+  trust_remote_code: true  # needed for HF cache paths
+  prefill_step_size: 512  # memory friendly
+  max_kv_size: 65536
+  kv_bits: 4.0  # or 3.5 for turboquant
+  port: 8081
+  log_level: INFO
+  extra_args: []

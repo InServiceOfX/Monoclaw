@@ -225,3 +225,7 @@ dist/
 **/*.bbl
 **/*.blg
 
+# macOS Finder noise
+.DS_Store
+**/.DS_Store
+

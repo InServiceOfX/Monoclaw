@@ -1,0 +1,21 @@
+# Local config for mlx-vlm deployment wrappers.
+# Safe to edit locally; derived from mlx_vlm_config.example.yml
+
+paths:
+  # mlx_vlm_bin_dir = directory containing the mlx_vlm binaries
+  # (mlx_vlm.chat, mlx_vlm.server, etc.)
+  mlx_vlm_bin_dir: /Users/ernestyeung/Prop/openclaw/.venv/bin
+  model_path: /Users/ernestyeung/.cache/huggingface/hub/models--mlx-community--gemma-4-e4b-it-4bit  # REQUIRED
+
+chat:
+  default_system_prompt: "You are a helpful multimodal assistant. Use the image when one is provided."
+  max_tokens: 1024
+  temperature: 0.2
+  image: null
+
+serve:
+  host: 127.0.0.1
+  port: 8081
+  log_level: INFO
+  max_kv_size: 65536
+  extra_args: []
