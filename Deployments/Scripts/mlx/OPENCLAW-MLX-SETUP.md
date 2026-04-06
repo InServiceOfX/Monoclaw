@@ -2,152 +2,176 @@
 
 > **Audience:** OpenClaw agents and human operators setting up a locally-served MLX model
 > (via `mlx_lm.server`) and registering it in OpenClaw's config so it can be used as a
-> fallback or primary model — **without triggering a Hugging Face remote lookup**.
+> fallback or primary model.
 
 ---
 
-## The Key Problem: Avoiding HuggingFace Remote Lookups
+## ⚠️ CRITICAL: Always Use the Snapshot Path — Never the HF Slug
 
-When you register a model in `openclaw.json` under `models.providers.<provider>.models`,
-the `id` field is what OpenClaw passes to the upstream API as the `model` parameter in
-each request.
+> **This is the single most important thing in this document.**
 
-`mlx_lm.server` accepts **any** of the following as a valid model ID (you can verify by
-calling `GET /v1/models` on the running server):
+When adding a model to `openclaw.json`, the `id` field **must be the full absolute local
+snapshot path**, NOT the HuggingFace repo slug.
 
-1. The short HF repo slug (e.g. `Jackrong/MLX-Qwen3.5-9B-...`) — **will trigger a HF
-   network lookup** if mlx-lm tries to re-resolve it at inference time.
-2. The full absolute path to the local snapshot directory (e.g.
-   `/Users/you/.cache/huggingface/hub/models--Jackrong--MLX-.../snapshots/<hash>`) —
-   **no network call, always safe**.
+| ❌ WRONG — triggers HF API call | ✅ CORRECT — local only, no network |
+|---|---|
+| `Jackrong/MLX-Qwen3.5-9B-...` | `/Users/you/.cache/.../snapshots/<hash>` |
 
-**Use the full absolute snapshot path as the model `id` in `openclaw.json`.**
+**What goes wrong with the slug:** `mlx_lm.server` will call
+`https://huggingface.co/api/models/<slug>/revision/main` on every request to validate the
+model ID. This causes:
+- Slow first response (network round-trip before inference even starts)
+- 401/404 errors if HF is unreachable or the model is private
+- Unnecessary re-fetching of tokenizer/config files even if already cached locally
 
-### Why the snapshot path?
+**Confirmed in production logs (Ernest's Mac mini, 2026-04-06):**
+```
+# BAD — slug triggered HF lookup:
+INFO - HTTP Request: GET https://huggingface.co/api/models/Jackrong/MLX-Qwen3.5-9B-.../revision/main "HTTP/1.1 200 OK"
+Fetching 6 files: 100%|...| 6/6 [00:00<00:00, 30652.65it/s]  ← unnecessary!
 
-When `mlx_lm.server` loads a model, it resolves the path at startup and registers the
-loaded model under *all* of the IDs listed above. But when a request comes in with a
-short HF slug as `model`, mlx-lm may attempt to call the HF API to validate/resolve
-the repo, causing a 401 or 404 if the network is unavailable or auth is missing.
-
-Using the full local path bypasses this entirely — the server sees a path it already
-has loaded and routes the request directly.
+# GOOD — snapshot path goes directly to inference, no network call
+```
 
 ---
 
-## How to Find the Right Snapshot Path
+## How to Find the Snapshot Path
 
-Models downloaded via `huggingface-cli` or `huggingface_hub` are stored in the HF cache:
+The fastest method is to ask the **running server** — it lists all valid IDs including
+the full local path:
+
+```bash
+curl -s http://127.0.0.1:8080/v1/models | python3 -m json.tool
+```
+
+Look for the entry whose `id` starts with `/` (absolute path). That's the one to use.
+
+Alternatively, HF cache layout on disk:
 
 ```
 ~/.cache/huggingface/hub/
   models--<org>--<model-name>/
     snapshots/
-      <hash>/          ← this is the directory with config.json, weights, tokenizer
+      <hash>/               ← use this full path as the model id
         config.json
-        *.safetensors (or *.npz for MLX)
+        *.safetensors / *.npz
         tokenizer.json
-        ...
     refs/
-      main             ← contains the hash of the "main" branch snapshot
+      main                  ← contains the <hash> string for the active snapshot
 ```
-
-**To find the correct snapshot directory:**
 
 ```bash
-# Option 1: Read the refs/main file to get the active hash
+# Read the active snapshot hash directly
 cat ~/.cache/huggingface/hub/models--<org>--<model>/refs/main
+# → 1b18b447b4d2e67b93ec4c0118b6d322657f455f  (example)
 
-# Option 2: List snapshots and pick the most recent one
-ls -lt ~/.cache/huggingface/hub/models--<org>--<model>/snapshots/
-
-# Option 3: Ask the running mlx_lm.server — it lists all valid IDs including the path
-curl -s http://127.0.0.1:8080/v1/models | python3 -m json.tool
+# Full path would be:
+# ~/.cache/huggingface/hub/models--<org>--<model>/snapshots/<hash>
 ```
 
-The `/v1/models` response will include an entry whose `id` is the full absolute path —
-use that exact string.
+### Ernest's Mac mini — current snapshot paths
 
-### Example (Ernest's Mac mini, Qwen3.5-9B 4-bit)
-
-```
-/Users/ernestyeung/.cache/huggingface/hub/models--Jackrong--MLX-Qwen3.5-9B-Claude-4.6-Opus-Reasoning-Distilled-v2-4bit/snapshots/1b18b447b4d2e67b93ec4c0118b6d322657f455f
-```
-
-This path was obtained by running `curl -s http://127.0.0.1:8080/v1/models` and picking
-the entry whose `id` starts with `/Users/`.
+| Model | Snapshot path |
+|-------|--------------|
+| Qwen3.5-9B Claude Opus Distilled v2 4-bit | `/Users/ernestyeung/.cache/huggingface/hub/models--Jackrong--MLX-Qwen3.5-9B-Claude-4.6-Opus-Reasoning-Distilled-v2-4bit/snapshots/1b18b447b4d2e67b93ec4c0118b6d322657f455f` |
+| Qwen3.5-9B Claude Opus Distilled v2 6-bit | `/Users/ernestyeung/.cache/huggingface/hub/models--Jackrong--MLX-Qwen3.5-9B-Claude-4.6-Opus-Reasoning-Distilled-v2-6bit/snapshots/ef7b7361f75713124828569d66fff516ff2d092f` |
+| Qwen3.5-4B Claude Opus Distilled v2 4-bit | `/Users/ernestyeung/.cache/huggingface/hub/models--Jackrong--MLX-Qwen3.5-4B-Claude-4.6-Opus-Reasoning-Distilled-v2-4bit/snapshots/37404f5862c3f0b715b69204361d6cb9ade08e59` |
 
 ---
 
-## openclaw.json: Where to Add the Model
+## openclaw.json: Three Places to Update
 
-`openclaw.json` is typically at:
-- `~/.openclaw/openclaw.json` (standard install)
-- Or wherever `OPENCLAW_CONFIG` points
+`openclaw.json` is typically at `~/.openclaw/openclaw.json`.
 
-You need to touch **three locations**:
+### 1. `models.providers.mlx-local.models`
 
-### 1. `models.providers.<provider>.models` — register the model
+```json
+"mlx-local": {
+  "baseUrl": "http://127.0.0.1:8080/v1",
+  "api": "openai-completions",
+  "models": [
+    {
+      "id": "/full/absolute/path/to/snapshots/<hash>",
+      "name": "Human-readable name (MLX Local)",
+      "reasoning": true,
+      "contextWindow": 131072,
+      "maxTokens": 8192
+    }
+  ]
+}
+```
+
+### 2. `agents.defaults.model.fallbacks`
+
+```json
+"fallbacks": [
+  "anthropic/claude-opus-4-6",
+  "anthropic/claude-haiku-4-5",
+  "mlx-local//full/absolute/path/to/snapshots/<hash>"
+]
+```
+
+Note the double `//` — that's `mlx-local/` + the absolute path starting with `/`.
+
+### 3. `agents.defaults.models`
 
 ```json
 "models": {
-  "providers": {
-    "mlx-local": {
-      "baseUrl": "http://127.0.0.1:8080/v1",
-      "api": "openai-completions",
-      "models": [
-        {
-          "id": "/full/absolute/path/to/snapshots/<hash>",
-          "name": "Human-readable name (MLX Local)",
-          "reasoning": true,
-          "contextWindow": 131072,
-          "maxTokens": 8192
-        }
-      ]
-    }
-  }
-}
-```
-
-> ⚠️ The `id` **must be the full absolute path** — not the HF slug — to avoid
-> triggering a remote lookup.
-
-### 2. `agents.defaults.model.fallbacks` — add as a fallback
-
-```json
-"agents": {
-  "defaults": {
-    "model": {
-      "primary": "anthropic/claude-sonnet-4-6",
-      "fallbacks": [
-        "anthropic/claude-opus-4-6",
-        "anthropic/claude-haiku-4-5",
-        "mlx-local/<full-snapshot-path>"
-      ]
-    }
-  }
-}
-```
-
-The fallback reference format is `<provider>/<model-id>`. Since the model ID contains
-slashes (it's a path), this becomes `mlx-local//full/absolute/path/...`.
-
-### 3. `agents.defaults.models` — allowlist the model
-
-```json
-"agents": {
-  "defaults": {
-    "models": {
-      "anthropic/claude-sonnet-4-6": {},
-      "mlx-local/<full-snapshot-path>": {}
-    }
-  }
+  "anthropic/claude-sonnet-4-6": {},
+  "mlx-local//full/absolute/path/to/snapshots/<hash>": {}
 }
 ```
 
 ---
 
-## Verifying It Works
+## Performance: Dealing with Long Context
+
+A 9B model processes ~2048 tokens every ~5 seconds during prefill on Apple Silicon.
+If OpenClaw sends a 63k-token session context, that's **~2.5 minutes just reading the
+prompt** before generating a single output token.
+
+**Mitigations (all now set in the profiles):**
+
+| Setting | What it does |
+|---------|-------------|
+| `prefill_step_size: 4096` | Larger chunks per prefill step — faster on Apple Silicon |
+| `prompt_cache_size: 4` | Caches up to 4 KV states; repeated context is free after first hit |
+| `max_tokens: 4096` | Caps output length — don't let thinking models ramble |
+| `--mode instruct` | Disables thinking chain; ~3–5× faster responses for simple queries |
+
+**Use the 4B model for agent fallback** — same architecture, ~2× faster prefill, ~2.5 GB
+vs ~5 GB RAM, good enough for most assistant queries:
+
+```bash
+./serve.sh qwen35-4b-claude-opus-distilled-4bit
+```
+
+---
+
+## Verifying It Works (No HF Lookup)
+
+Start the server and watch the logs. A clean first-inference should look like:
+
+```
+INFO - Starting httpd at 127.0.0.1 on port 8080...
+INFO - Prompt processing progress: 15/18
+INFO - KV Caches: ...
+```
+
+**No** `HTTP Request: GET https://huggingface.co/...` lines. If you see those, the model
+ID in your `openclaw.json` is still a slug — fix it to the snapshot path.
+
+Quick curl test:
+
+```bash
+SNAP="/full/absolute/path/to/snapshots/<hash>"
+curl -s http://127.0.0.1:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d "{\"model\": \"$SNAP\", \"messages\": [{\"role\": \"user\", \"content\": \"Say hello in 5 words.\"}], \"max_tokens\": 64}" \
+  | python3 -m json.tool
+```
+
+A good response has `choices[0].message.content` and no `error` key.
 
 After editing `openclaw.json`, restart the gateway:
 
@@ -155,48 +179,18 @@ After editing `openclaw.json`, restart the gateway:
 openclaw gateway restart
 ```
 
-Then test the model directly against the running `mlx_lm.server`:
-
-```bash
-curl -s http://127.0.0.1:8080/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "/full/absolute/path/to/snapshots/<hash>",
-    "messages": [{"role": "user", "content": "Say hello in exactly 5 words."}],
-    "max_tokens": 64
-  }' | python3 -m json.tool
-```
-
-A successful response will have `choices[0].message.content` populated and no `error` key.
-
 ---
 
-## Serving the Model
-
-Use the profile-based `serve.sh` in this directory:
+## Serving
 
 ```bash
 cd Deployments/Scripts/mlx
-./serve.sh <profile-name>
-# e.g.
-./serve.sh qwen35-9b-claude-opus-distilled-4bit
+./serve.sh <profile-name>          # e.g. qwen35-4b-claude-opus-distilled-4bit
+./serve.sh <profile> --mode instruct   # faster, no thinking chain
 ```
 
-Profiles live in `profiles/<name>.yml` (copy from `profiles/<name>.yml.example`).
-Global settings (host, port, mlx_bin_dir) live in `mlx_config.yml` (copy from
-`mlx_config.yml.example`).
-
-See the `profiles/*.yml.example` files for model-specific sampling defaults with
-comments explaining the rationale.
-
----
-
-## Quick Reference: Model ID Formats
-
-| Format | Example | HF Lookup? | Use for |
-|--------|---------|------------|---------|
-| HF slug | `Jackrong/MLX-Qwen3.5-9B-...` | ✅ Yes (avoid) | Never in openclaw.json |
-| Full snapshot path | `/Users/you/.cache/.../snapshots/<hash>` | ❌ No | openclaw.json `id` field |
+Profiles: `profiles/<name>.yml` (copy from `profiles/<name>.yml.example`).
+Global config (host, port, `mlx_bin_dir`): `mlx_config.yml` (copy from `mlx_config.yml.example`).
 
 ---
 
