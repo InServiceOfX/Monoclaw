@@ -1,0 +1,4 @@
+# User-specific config files (contain local paths). Only commit .yml.example versions.
+mlx_config.yml
+profiles/*.yml
+!profiles/*.yml.example

@@ -1,0 +1,75 @@
+# Profile: Jackrong/MLX-Qwen3.5-9B-Claude-4.6-Opus-Reasoning-Distilled-v2 (4-bit)
+#
+# Model card: https://huggingface.co/Jackrong/MLX-Qwen3.5-9B-Claude-4.6-Opus-Reasoning-Distilled-v2-4bit
+# Upstream:   https://huggingface.co/Jackrong/Qwen3.5-9B-Claude-4.6-Opus-Reasoning-Distilled-v2
+# Base arch:  Qwen3.5-9B (linear + full attention hybrid, 4096 hidden, 12288 intermediate)
+# Quant:      4-bit affine, group_size=64
+#
+# Notes on recommended values:
+# - This is a reasoning-distilled model trained on 14k Claude Opus-style samples.
+#   The distillation emphasizes concise chain-of-thought — avoid overly low temperatures
+#   that collapse the reasoning distribution.
+# - For quantized models, repetition_penalty ~1.15 helps prevent degenerate loops.
+# - max_tokens >= 4096 is important; the model can produce long reasoning chains.
+# - Qwen3.5 family supports enable_thinking toggle via chat_template_args.
+# - 4-bit is lighter on memory (~5-6 GB) — good for Mac mini with other processes.
+#   For higher quality at the cost of ~2 GB more RAM, use the 6-bit variant.
+#
+# Copy this to qwen35-9b-claude-opus-distilled-4bit.yml and edit model_path.
+
+paths:
+  # REQUIRED: Local path to the MLX model weights.
+  # Can be the HF cache repo root (auto-resolves snapshots/) or a direct snapshot dir.
+  model_path: /Users/YOU/.cache/huggingface/hub/models--Jackrong--MLX-Qwen3.5-9B-Claude-4.6-Opus-Reasoning-Distilled-v2-4bit
+
+# Server overrides specific to this model (merged on top of mlx_config.yml serve section).
+serve:
+  trust_remote_code: true
+  # decode_concurrency: 4    # Increase if you want parallel decode on Apple Silicon
+  # prompt_concurrency: 2
+
+# Chat overrides specific to this model.
+chat:
+  max_kv_size: 32768
+  default_system_prompt: "You are a helpful, thoughtful assistant. Think step by step before answering."
+  trust_remote_code: true
+
+# Mode-specific sampling defaults for this model.
+# All fields are optional. If omitted, mlx_lm uses its built-in defaults.
+# Recommended starting points for Qwen3.5-9B reasoning-distilled (4-bit):
+modes:
+  thinking_general:
+    enable_thinking: true
+    temperature: 0.8        # Slightly below 1.0 to compensate for 4-bit quantization noise
+    top_p: 0.95
+    top_k: 20
+    min_p: 0.0
+    max_tokens: 8192
+    system_prompt: "You are a helpful, thoughtful assistant. Think step by step before answering."
+
+  thinking_coding:
+    enable_thinking: true
+    temperature: 0.6        # Lower for precise code generation
+    top_p: 0.95
+    top_k: 20
+    min_p: 0.0
+    max_tokens: 8192
+    system_prompt: "You are an expert programmer. Be precise and correct."
+
+  instruct_general:
+    enable_thinking: false
+    temperature: 0.7
+    top_p: 0.8
+    top_k: 20
+    min_p: 0.05             # Helps avoid low-probability junk tokens in 4-bit
+    max_tokens: 4096
+    system_prompt: "You are a helpful assistant."
+
+  instruct_reasoning:
+    enable_thinking: false
+    temperature: 1.0
+    top_p: 1.0
+    top_k: 40
+    min_p: 0.0
+    max_tokens: 4096
+    system_prompt: "You are a careful reasoning assistant."

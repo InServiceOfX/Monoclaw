@@ -1,0 +1,21 @@
+# mlx_config.yml — Global settings shared by ALL models/profiles.
+# Copy this to mlx_config.yml and edit to match your environment.
+#
+# Per-model settings (model_path, sampling, modes) go in profiles/<name>.yml.
+
+paths:
+  # Directory containing mlx_lm binaries: mlx_lm.server, mlx_lm.chat, etc.
+  # This is the bin/ directory of your Python venv or conda env where mlx-lm is installed.
+  # Example: if you installed mlx-lm in a venv at /path/to/.venv, set this to /path/to/.venv/bin
+  mlx_bin_dir: /Users/YOU/.venv/bin
+
+# Server settings (used by ./serve.sh). All optional — mlx_lm.server defaults apply if omitted.
+serve:
+  host: 127.0.0.1
+  port: 8080
+  log_level: INFO
+
+# Chat settings (used by ./chat.sh). All optional.
+# chat:
+#   max_kv_size: 32768
+#   default_system_prompt: "You are a helpful assistant."

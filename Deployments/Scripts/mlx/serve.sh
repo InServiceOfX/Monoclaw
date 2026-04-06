@@ -3,32 +3,72 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RUNNER="$SCRIPT_DIR/mlx_runner.py"
+PROFILES_DIR="$SCRIPT_DIR/profiles"
 
-if [[ ! -f "$SCRIPT_DIR/mlx_config.yml" ]]; then
-  echo "ℹ️  No mlx_config.yml found. Copying from mlx_config.example.yml ..."
-  cp "$SCRIPT_DIR/mlx_config.example.yml" "$SCRIPT_DIR/mlx_config.yml"
-  echo "   Edit: $SCRIPT_DIR/mlx_config.yml"
-fi
-
-# Support quick profile loading via --profile <name>
-if [[ "$1" == "--profile" || "$1" == "-p" ]]; then
-  PROFILE_NAME="$2"
-  shift 2
-  if [[ -n "$PROFILE_NAME" ]]; then
-    PROFILE_FILE="$SCRIPT_DIR/profiles/${PROFILE_NAME}.yml"
-    if [[ -f "$PROFILE_FILE" ]]; then
-      echo "🔄 Loading profile: $PROFILE_NAME"
-      export MLX_PROFILE="$PROFILE_NAME"
-      CONFIG_OVERRIDE="$PROFILE_FILE"
-    else
-      echo "❌ Profile not found: $PROFILE_FILE" >&2
-      echo "Available profiles:" >&2
-      ls "$SCRIPT_DIR/profiles/"*.yml 2>/dev/null | sed 's|.*/||;s|\.yml$||' >&2
-      exit 1
-    fi
+usage() {
+  echo "Usage: ./serve.sh <profile-name> [options]"
+  echo ""
+  echo "  profile-name   Name of a profile in profiles/ (without .yml extension)"
+  echo "                 e.g. ./serve.sh qwen35-9b-claude-opus-distilled-4bit"
+  echo ""
+  echo "Options:"
+  echo "  --mode <mode>      Mode alias: thinking, coding, instruct, reasoning (default: thinking)"
+  echo "  --no-think         Shortcut for --mode instruct"
+  echo "  --coding           Shortcut for --mode coding"
+  echo "  --reasoning        Shortcut for --mode reasoning"
+  echo "  (any extra flags are forwarded to mlx_runner.py serve)"
+  echo ""
+  echo "Available profiles:"
+  if compgen -G "$PROFILES_DIR/*.yml" > /dev/null 2>&1; then
+    ls "$PROFILES_DIR/"*.yml 2>/dev/null | sed 's|.*/||;s|\.yml$||' | sed 's/^/  /'
+  else
+    echo "  (none — create one from a .yml.example)"
   fi
+}
+
+# ── Require a profile name as first argument ──
+if [[ $# -eq 0 ]]; then
+  usage
+  exit 1
 fi
 
+FIRST_ARG="${1:-}"
+
+# Handle help
+if [[ "$FIRST_ARG" == "-h" || "$FIRST_ARG" == "--help" ]]; then
+  usage
+  exit 0
+fi
+
+# Resolve profile: accept bare name or name.yml, from profiles/ dir or as a path
+PROFILE_FILE=""
+if [[ "$FIRST_ARG" == *.yml && -f "$FIRST_ARG" ]]; then
+  # Direct path to a .yml file
+  PROFILE_FILE="$(realpath "$FIRST_ARG")"
+elif [[ -f "$PROFILES_DIR/${FIRST_ARG}.yml" ]]; then
+  # Bare profile name → look in profiles/
+  PROFILE_FILE="$PROFILES_DIR/${FIRST_ARG}.yml"
+elif [[ -f "$PROFILES_DIR/${FIRST_ARG}" ]]; then
+  # Name with .yml already included
+  PROFILE_FILE="$PROFILES_DIR/${FIRST_ARG}"
+else
+  echo "❌ Profile not found: $FIRST_ARG" >&2
+  echo "" >&2
+  usage >&2
+  exit 1
+fi
+shift
+
+echo "🔄 Profile: $(basename "$PROFILE_FILE" .yml)"
+
+# ── Require global config ──
+GLOBAL_CONFIG="$SCRIPT_DIR/mlx_config.yml"
+if [[ ! -f "$GLOBAL_CONFIG" ]]; then
+  echo "❌ Missing mlx_config.yml. Copy mlx_config.yml.example → mlx_config.yml and edit it." >&2
+  exit 1
+fi
+
+# ── Parse remaining args for mode shortcuts ──
 MODE="thinking"
 ARGS=()
 
@@ -43,13 +83,11 @@ while [[ $# -gt 0 ]]; do
         exit 2
       fi
       MODE="$2"; shift 2 ;;
-
     *) ARGS+=("$1"); shift ;;
   esac
 done
 
-if [[ -n "${CONFIG_OVERRIDE:-}" ]]; then
-  exec python3 "$RUNNER" --config "$CONFIG_OVERRIDE" serve --mode "$MODE" ${ARGS[@]+"${ARGS[@]}"}
-else
-  exec python3 "$RUNNER" --config "$SCRIPT_DIR/mlx_config.yml" serve --mode "$MODE" ${ARGS[@]+"${ARGS[@]}"}
-fi
+exec python3 "$RUNNER" \
+  --config "$GLOBAL_CONFIG" \
+  --profile "$PROFILE_FILE" \
+  serve --mode "$MODE" ${ARGS[@]+"${ARGS[@]}"}
