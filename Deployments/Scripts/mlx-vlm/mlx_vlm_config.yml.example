@@ -1,0 +1,19 @@
+# mlx_vlm_config.yml — Global settings shared by ALL vision models/profiles.
+# Copy this to mlx_vlm_config.yml and edit to match your environment.
+#
+# Per-model settings (model_path, KV cache params, etc.) go in profiles/<name>.yml.
+
+paths:
+  # Directory containing mlx_vlm binaries: mlx_vlm.server, mlx_vlm.chat, etc.
+  # This is the bin/ directory of your Python venv or conda env where mlx-vlm is installed.
+  mlx_bin_dir: /Users/YOU/.venv/bin
+
+# Server settings (used by ./serve.sh). All optional — mlx_vlm.server defaults apply if omitted.
+serve:
+  host: 127.0.0.1
+  port: 8081       # Default 8081 to avoid clashing with mlx_lm on 8080
+
+# Chat settings (used by ./chat.sh). All optional.
+# chat:
+#   max_tokens: 1024
+#   temperature: 0.2

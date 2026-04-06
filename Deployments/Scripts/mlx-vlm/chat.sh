@@ -3,42 +3,63 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RUNNER="$SCRIPT_DIR/mlx_vlm_runner.py"
+PROFILES_DIR="$SCRIPT_DIR/profiles"
 
-if [[ ! -f "$SCRIPT_DIR/mlx_vlm_config.yml" ]]; then
-  echo "ℹ️  No mlx_vlm_config.yml found. Copying from mlx_vlm_config.example.yml ..."
-  cp "$SCRIPT_DIR/mlx_vlm_config.example.yml" "$SCRIPT_DIR/mlx_vlm_config.yml"
-  echo "   Edit: $SCRIPT_DIR/mlx_vlm_config.yml"
-fi
-
-CONFIG_OVERRIDE=""
-if [[ ${1:-} == "--profile" || ${1:-} == "-p" ]]; then
-  if [[ $# -lt 2 || -z "${2:-}" ]]; then
-    echo "❌ --profile requires a value" >&2
-    exit 2
-  fi
-  PROFILE_NAME="$2"
-  shift 2
-  PROFILE_FILE="$SCRIPT_DIR/profiles/${PROFILE_NAME}.yml"
-  if [[ -f "$PROFILE_FILE" ]]; then
-    echo "🔄 Loading profile: $PROFILE_NAME"
-    export MLX_VLM_PROFILE="$PROFILE_NAME"
-    CONFIG_OVERRIDE="$PROFILE_FILE"
+usage() {
+  echo "Usage: ./chat.sh <profile-name> [options]"
+  echo ""
+  echo "  profile-name   Name of a profile in profiles/ (without .yml extension)"
+  echo "                 e.g. ./chat.sh gemma-4-e4b-it-4bit"
+  echo ""
+  echo "Options:"
+  echo "  --temp <float>       Override temperature"
+  echo "  --max-tokens <int>   Override max tokens"
+  echo "  (any extra flags are forwarded to mlx_vlm_runner.py chat)"
+  echo ""
+  echo "Available profiles:"
+  if compgen -G "$PROFILES_DIR/*.yml" > /dev/null 2>&1; then
+    ls "$PROFILES_DIR/"*.yml 2>/dev/null | sed 's|.*/||;s|\.yml$||' | sed 's/^/  /'
   else
-    echo "❌ Profile not found: $PROFILE_FILE" >&2
-    echo "Available profiles:" >&2
-    ls "$SCRIPT_DIR/profiles/"*.yml 2>/dev/null | sed 's|.*/||;s|\.yml$||' >&2 || true
-    exit 1
+    echo "  (none — create one from a .yml.example)"
   fi
+}
+
+if [[ $# -eq 0 ]]; then
+  usage
+  exit 1
 fi
 
-ARGS=()
-while [[ $# -gt 0 ]]; do
-  ARGS+=("$1")
-  shift
-done
+FIRST_ARG="${1:-}"
 
-if [[ -n "$CONFIG_OVERRIDE" ]]; then
-  exec python3 "$RUNNER" --config "$CONFIG_OVERRIDE" chat ${ARGS[@]+"${ARGS[@]}"}
+if [[ "$FIRST_ARG" == "-h" || "$FIRST_ARG" == "--help" ]]; then
+  usage
+  exit 0
+fi
+
+PROFILE_FILE=""
+if [[ "$FIRST_ARG" == *.yml && -f "$FIRST_ARG" ]]; then
+  PROFILE_FILE="$(realpath "$FIRST_ARG")"
+elif [[ -f "$PROFILES_DIR/${FIRST_ARG}.yml" ]]; then
+  PROFILE_FILE="$PROFILES_DIR/${FIRST_ARG}.yml"
+elif [[ -f "$PROFILES_DIR/${FIRST_ARG}" ]]; then
+  PROFILE_FILE="$PROFILES_DIR/${FIRST_ARG}"
 else
-  exec python3 "$RUNNER" --config "$SCRIPT_DIR/mlx_vlm_config.yml" chat ${ARGS[@]+"${ARGS[@]}"}
+  echo "❌ Profile not found: $FIRST_ARG" >&2
+  echo "" >&2
+  usage >&2
+  exit 1
 fi
+shift
+
+echo "🔄 Profile: $(basename "$PROFILE_FILE" .yml)"
+
+GLOBAL_CONFIG="$SCRIPT_DIR/mlx_vlm_config.yml"
+if [[ ! -f "$GLOBAL_CONFIG" ]]; then
+  echo "❌ Missing mlx_vlm_config.yml. Copy mlx_vlm_config.yml.example → mlx_vlm_config.yml and edit it." >&2
+  exit 1
+fi
+
+exec python3 "$RUNNER" \
+  --config "$GLOBAL_CONFIG" \
+  --profile "$PROFILE_FILE" \
+  chat "$@"
