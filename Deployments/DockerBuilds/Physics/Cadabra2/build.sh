@@ -2,18 +2,24 @@
 # build.sh — Build the cadabra2-ubuntu:24.04 Docker image
 #
 # Usage:
-#   ./build.sh              — builds the image (recommended)
-#   ./build.sh --check      — only checks prerequisites, don't build
+#   ./build.sh              — builds the image
+#   ./build.sh --check      — check prerequisites only (does not build)
 #
 # What this does:
-#   1. Finds the docker_builder binary (auto-detected or user-specified)
-#   2. Confirms build_configuration.yml exists in this directory
-#   3. Runs: docker_builder build .
+#   1. Confirms build_configuration.yml exists in this directory
+#   2. Finds the docker_builder binary (auto-detected or user-specified)
+#   3. Confirms Docker daemon is running
+#   4. Runs: docker_builder build .
 #
-# Prerequisites:
-#   - docker_builder binary (Rust binary, part of InServiceOfX/RustLibraries/docker_builder)
+# Requirements:
 #   - Docker daemon running
-#   - build_configuration.yml in the same directory as this script
+#   - build_configuration.yml next to this script
+#   - docker_builder binary (see "Finding docker_builder" below)
+#
+# NOTE ON PATHS: This script lives on a specific machine (Prop-dev/MS-7885)
+# where the InServiceOfX repo happens to be at ${HOME}/Prop/InServiceOfX/.
+# That path is NOT guaranteed on other machines. See BUILD.md for the
+# machine-agnostic setup instructions.
 
 set -e
 
@@ -35,59 +41,43 @@ fi
 success "Found build_configuration.yml"
 
 # ── 2. Find docker_builder binary ─────────────────────────────────────────
-DOCKER_BUILDER=""
+#
+# Search order:
+#   a. $DOCKER_BUILDER env var (user override — always respected)
+#   b. docker_builder / docker_runner on $PATH
+#   c. Give up (prompt user with setup instructions)
+#
+# NOTE on relative-path heuristics:
+#   On Prop-dev/MS-7885 the InServiceOfX repo is at ${HOME}/Prop/InServiceOfX/
+#   and docker_builder is at:
+#     ${HOME}/Prop/InServiceOfX/RustLibraries/docker_builder/target/debug/docker_builder
+#   This path is OUTSIDE the workspace tree and is NOT a reliable relative
+#   path from this script (which lives in the Monoclaw repo inside workspace).
+#   We do NOT assume this path on other machines.
+#   If you have a similar setup, set $DOCKER_BUILDER or put the binary on PATH.
 
-# Candidate paths to check (ordered by priority)
-CANDIDATES=(
-    # InServiceOfX/RustLibraries — standard location
-    "${HOME}/Prop/InServiceOfX/RustLibraries/docker_builder/target/debug/docker_builder"
-    "${HOME}/Prop/InServiceOfX/RustLibraries/docker_builder/target/debug/docker_runner"
-    # Alternative: workspace2 symlink
-    "${HOME}/.openclaw/workspace/workspace2/repos/InServiceOfX/RustLibraries/docker_builder/target/debug/docker_builder"
-    "${HOME}/.openclaw/workspace/workspace2/repos/InServiceOfX/RustLibraries/docker_builder/target/debug/docker_runner"
-    # coding-agent skill location
-    "${HOME}/.openclaw/workspace/repos/Monoclaw/Deployments/Scripts/TensorRTLLMFixed/docker_runner"
-)
+DOCKER_BUILDER="${DOCKER_BUILDER:-}"  # Read from env; empty if not set
 
-# Search PATH too
-if command -v docker_builder &>/dev/null; then
-    DOCKER_BUILDER="$(command -v docker_builder)"
-    info "Found docker_builder on PATH: ${DOCKER_BUILDER}"
-elif command -v docker_runner &>/dev/null; then
-    DOCKER_BUILDER="$(command -v docker_runner)"
-    info "Found docker_runner on PATH: ${DOCKER_BUILDER}"
-else
-    for candidate in "${CANDIDATES[@]}"; do
-        if [ -f "${candidate}" ] && [ -x "${candidate}" ]; then
-            DOCKER_BUILDER="${candidate}"
-            info "Found docker_builder: ${DOCKER_BUILDER}"
+# (a) User override via environment variable (must be set AND executable)
+if [ -n "${DOCKER_BUILDER}" ] && [ -x "${DOCKER_BUILDER}" ]; then
+    info "Using DOCKER_BUILDER from environment: ${DOCKER_BUILDER}"
+elif [ -n "${DOCKER_BUILDER}" ]; then
+    error "DOCKER_BUILDER is set but not executable: ${DOCKER_BUILDER}"
+    exit 1
+fi
+
+# (b) Search PATH
+if [ -z "${DOCKER_BUILDER}" ]; then
+    for bin in docker_builder docker_runner; do
+        if command -v "${bin}" &>/dev/null; then
+            DOCKER_BUILDER="$(command -v "${bin}")"
+            info "Found ${bin} on PATH: ${DOCKER_BUILDER}"
             break
         fi
     done
 fi
 
-# ── 3. Not found — bail with a helpful message ──────────────────────────────
-if [ -z "${DOCKER_BUILDER}" ] || [ ! -x "${DOCKER_BUILDER}" ]; then
-    error "docker_builder binary not found."
-    echo
-    echo "  Expected one of:"
-    for candidate in "${CANDIDATES[@]}"; do
-        echo "    ${candidate}"
-    done
-    echo
-    echo "  Fix: set the path to your docker_builder binary and re-run:"
-    echo "    export DOCKER_BUILDER=/path/to/your/docker_builder"
-    echo "    ./build.sh"
-    echo
-    echo "  Or clone and build it from:"
-    echo "    git@github.com:InServiceOfX/RustLibraries.git"
-    echo "    cd RustLibraries/docker_builder && cargo build --release"
-    exit 1
-fi
-
-success "docker_builder: ${DOCKER_BUILDER}"
-
-# ── 4. Check Docker daemon ───────────────────────────────────────────────────
+# ── 3. Check Docker daemon ─────────────────────────────────────────────────
 if ! docker info &>/dev/null; then
     error "Docker daemon is not running."
     error "Start Docker and re-run this script."
@@ -95,7 +85,38 @@ if ! docker info &>/dev/null; then
 fi
 success "Docker daemon: running"
 
-# ── 5. Check for --check flag (dry run) ─────────────────────────────────────
+# ── 4. docker_builder status ───────────────────────────────────────────────
+if [ -z "${DOCKER_BUILDER}" ] || [ ! -x "${DOCKER_BUILDER}" ]; then
+    warn "docker_builder binary not found."
+    echo
+    echo "  You need the docker_builder Rust binary to build this image."
+    echo
+    echo "  Setup steps:"
+    echo "    1. git clone git@github.com:InServiceOfX/RustLibraries.git"
+    echo "    2. cd RustLibraries/docker_builder"
+    echo "    3. cargo build --release"
+    echo
+    echo "  Then either:"
+    echo "    a) Put the binary on your PATH (docker_builder or docker_runner), OR"
+    echo "    b) Set DOCKER_BUILDER env var and re-run:"
+    echo "         export DOCKER_BUILDER=/path/to/docker_builder"
+    echo "         ./build.sh"
+    echo
+    echo "  See BUILD.md for full details."
+    echo
+
+    if [ "${1:-}" = "--check" ]; then
+        info "--check complete (docker_builder missing — see above)."
+        exit 0
+    else
+        error "Cannot build without docker_builder."
+        exit 1
+    fi
+fi
+
+success "docker_builder: ${DOCKER_BUILDER}"
+
+# ── 5. --check mode: just report status ───────────────────────────────────
 if [ "${1:-}" = "--check" ]; then
     success "All prerequisites satisfied. Run ./build.sh without --check to build."
     exit 0
