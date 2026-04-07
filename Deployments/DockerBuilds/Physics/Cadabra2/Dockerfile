@@ -1,3 +1,7 @@
+# --- Section: Dockerfile ---
+
+# --- Section: Dockerfile ---
+
 FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -102,6 +106,10 @@ RUN pip3 install --break-system-packages cadabra2-jupyter || echo "cadabra2-jupy
 RUN mkdir -p /usr/local/share/jupyter/kernels/cadabra && \
     echo '{"argv": ["/usr/local/bin/cadabra2", "--jupyter-kernel", "{connection_file}"], "display_name": "Cadabra2", "language": "python"}' > /usr/local/share/jupyter/kernels/cadabra/kernel.json || true
 
+# More pip installs.
+RUN pip3 install --break-system-packages \
+    pytest
+
 # Refresh font cache
 RUN fc-cache -f -v
 
@@ -118,3 +126,7 @@ WORKDIR /work
 EXPOSE 8888
 
 CMD ["/bin/bash"]
+
+
+
+
