@@ -26,11 +26,11 @@ MODE="${1:-help}"
 mkdir -p "${NOTEBOOKS_DIR}"
 
 if [ -n "$MATHPHYSICS_DIR" ]; then
-  MOUNT_MATHPHYSICS="-v \"${MATHPHYSICS_DIR}:/mathphysics\""
+  MOUNT_MATHPHYSICS=("-v" "${MATHPHYSICS_DIR}:/mathphysics")
   ECHO_MATHPHYSICS="echo \"    Mathphysics repo mounted at: /mathphysics\""
   HELP_MATHPHYSICS="/mathphysics  → ${MATHPHYSICS_DIR}\n"
 else
-  MOUNT_MATHPHYSICS=""
+  MOUNT_MATHPHYSICS=()
   ECHO_MATHPHYSICS=""
   HELP_MATHPHYSICS=""
 fi
@@ -53,7 +53,7 @@ case "$MODE" in
       -e GDK_RENDERING=image \
       -e LIBGL_ALWAYS_SOFTWARE=1 \
       -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
-      $MOUNT_MATHPHYSICS \
+      "${MOUNT_MATHPHYSICS[@]}" \
       -v "${NOTEBOOKS_DIR}:/work" \
       -w /work \
       "${IMAGE}" \
@@ -73,7 +73,7 @@ case "$MODE" in
     docker run --rm -it \
       -p 8888:8888 \
       -e JUPYTER_ALLOW_INSECURE_WRITES=1 \
-      $MOUNT_MATHPHYSICS \
+      "${MOUNT_MATHPHYSICS[@]}" \
       -v "${NOTEBOOKS_DIR}:/work" \
       -w /work \
       "${IMAGE}" \
@@ -95,7 +95,7 @@ case "$MODE" in
       echo "    Notebooks/work at: /work"
       echo "    Available: cadabra2, cadabra2-cli, python3"
       docker run --rm -it \
-        $MOUNT_MATHPHYSICS \
+        "${MOUNT_MATHPHYSICS[@]}" \
         -v "${NOTEBOOKS_DIR}:/work" \
         -w /work \
         "${IMAGE}" \
@@ -105,14 +105,14 @@ case "$MODE" in
       # Check if stdin is a TTY to decide on -it flags
       if [ -t 0 ]; then
         docker run --rm -it \
-          $MOUNT_MATHPHYSICS \
+          "${MOUNT_MATHPHYSICS[@]}" \
           -v "${NOTEBOOKS_DIR}:/work" \
           -w /work \
           "${IMAGE}" \
           "$@"
       else
         docker run --rm \
-          $MOUNT_MATHPHYSICS \
+          "${MOUNT_MATHPHYSICS[@]}" \
           -v "${NOTEBOOKS_DIR}:/work" \
           -w /work \
           "${IMAGE}" \
