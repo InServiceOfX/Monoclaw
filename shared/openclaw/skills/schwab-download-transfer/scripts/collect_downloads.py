@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import shutil
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Iterable
 
@@ -59,13 +60,20 @@ def ensure_unique_destination(dest: Path) -> Path:
     raise RuntimeError(f"unable to allocate unique destination for {dest}")
 
 
-def collect(downloads_dir: Path, base_dir: Path, dry_run: bool = False) -> int:
+def collect(
+    downloads_dir: Path,
+    base_dir: Path,
+    dry_run: bool = False,
+    modified_after: float | None = None,
+) -> int:
     moved = 0
     seen: set[Path] = set()
     for rule, src in iter_matches(downloads_dir):
         if src in seen:
             continue
         seen.add(src)
+        if modified_after is not None and src.stat().st_mtime < modified_after:
+            continue
         dest_dir = base_dir / rule.destination
         dest_dir.mkdir(parents=True, exist_ok=True)
         dest = ensure_unique_destination(dest_dir / src.name)
@@ -81,6 +89,11 @@ def main() -> int:
     parser.add_argument("--downloads", required=True, type=Path, help="Downloads directory to scan")
     parser.add_argument("--base-dir", required=True, type=Path, help="Base Schwab brokerage directory")
     parser.add_argument("--dry-run", action="store_true", help="Print actions without moving files")
+    parser.add_argument(
+        "--modified-after",
+        type=float,
+        help="Only move files whose mtime is at or after this Unix timestamp",
+    )
     args = parser.parse_args()
 
     downloads_dir = args.downloads.expanduser()
@@ -89,7 +102,12 @@ def main() -> int:
     if not downloads_dir.exists():
         raise SystemExit(f"downloads directory not found: {downloads_dir}")
 
-    moved = collect(downloads_dir, base_dir, dry_run=args.dry_run)
+    moved = collect(
+        downloads_dir,
+        base_dir,
+        dry_run=args.dry_run,
+        modified_after=args.modified_after,
+    )
     print(f"moved_files={moved}")
     return 0
 
