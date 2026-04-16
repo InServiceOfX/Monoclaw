@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import {
+  Group, TextInput, Text, Badge, Table, Loader, Stack,
+} from "@mantine/core";
 import { api } from "../api";
 import type { Position } from "../api";
-import { usd, pct, glColor } from "../fmt";
+import { usd, pct } from "../fmt";
 
 type SortKey = keyof Position;
 
@@ -11,8 +14,6 @@ export default function Positions() {
   const [sortKey, setSortKey] = useState<SortKey>("market_value");
   const [sortAsc, setSortAsc] = useState(false);
   const [filter, setFilter] = useState("");
-
-  if (isLoading) return <p style={{ padding: "1.5rem" }}>Loading…</p>;
 
   const positions = (data?.positions ?? [])
     .filter(p => !filter || p.symbol.includes(filter.toUpperCase()) || p.description.toLowerCase().includes(filter.toLowerCase()))
@@ -23,55 +24,90 @@ export default function Positions() {
       return sortAsc ? cmp : -cmp;
     });
 
-  const cols: { key: SortKey; label: string; fmt: (p: Position) => string; color?: (p: Position) => string }[] = [
+  type Col = { key: SortKey; label: string; fmt: (p: Position) => string; align?: "right"; gl?: boolean };
+  const cols: Col[] = [
     { key: "symbol", label: "Symbol", fmt: p => p.symbol },
-    { key: "description", label: "Name", fmt: p => p.description.slice(0, 28) },
-    { key: "qty", label: "Qty", fmt: p => String(p.qty ?? "—") },
-    { key: "current_price", label: "Price", fmt: p => usd(p.current_price) },
-    { key: "market_value", label: "Mkt Value", fmt: p => usd(p.market_value) },
-    { key: "cost_basis_total", label: "Cost Basis", fmt: p => usd(p.cost_basis_total) },
-    { key: "unrealized_gl_dollars", label: "Unreal G/L $", fmt: p => usd(p.unrealized_gl_dollars), color: p => glColor(p.unrealized_gl_dollars) },
-    { key: "unrealized_gl_pct", label: "Unreal G/L %", fmt: p => pct(p.unrealized_gl_pct), color: p => glColor(p.unrealized_gl_pct) },
-    { key: "day_change_pct", label: "Day %", fmt: p => pct(p.day_change_pct), color: p => glColor(p.day_change_pct) },
-    { key: "pct_of_account", label: "% Acct", fmt: p => pct(p.pct_of_account) },
+    { key: "description", label: "Name", fmt: p => p.description.slice(0, 30) },
+    { key: "qty", label: "Qty", fmt: p => p.qty == null ? "—" : String(p.qty), align: "right" },
+    { key: "current_price", label: "Price", fmt: p => usd(p.current_price), align: "right" },
+    { key: "market_value", label: "Mkt Value", fmt: p => usd(p.market_value), align: "right" },
+    { key: "cost_basis_total", label: "Cost Basis", fmt: p => usd(p.cost_basis_total), align: "right" },
+    { key: "unrealized_gl_dollars", label: "Unreal G/L $", fmt: p => usd(p.unrealized_gl_dollars), align: "right", gl: true },
+    { key: "unrealized_gl_pct", label: "Unreal G/L %", fmt: p => pct(p.unrealized_gl_pct), align: "right", gl: true },
+    { key: "day_change_pct", label: "Day %", fmt: p => pct(p.day_change_pct), align: "right", gl: true },
+    { key: "pct_of_account", label: "% Acct", fmt: p => pct(p.pct_of_account), align: "right" },
   ];
 
-  const th: React.CSSProperties = { padding: "0.5rem 0.75rem", textAlign: "left", fontSize: "0.75rem", color: "#6b7280", cursor: "pointer", whiteSpace: "nowrap", borderBottom: "2px solid #e5e7eb" };
-  const td: React.CSSProperties = { padding: "0.4rem 0.75rem", fontSize: "0.8rem", borderBottom: "1px solid #f3f4f6", whiteSpace: "nowrap" };
+  function glColor(v: number | null | undefined) {
+    return v == null ? undefined : v >= 0 ? "teal.4" : "red.4";
+  }
+
+  function handleSort(key: SortKey) {
+    if (sortKey === key) setSortAsc(!sortAsc);
+    else { setSortKey(key); setSortAsc(false); }
+  }
 
   return (
-    <div style={{ padding: "1.5rem" }}>
-      <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem", alignItems: "center" }}>
-        <h2 style={{ margin: 0 }}>Positions ({positions.length})</h2>
-        <input value={filter} onChange={e => setFilter(e.target.value)} placeholder="Filter symbol / name…" style={{ padding: "0.35rem 0.75rem", borderRadius: "0.375rem", border: "1px solid #d1d5db", fontSize: "0.875rem" }} />
-        <span style={{ fontSize: "0.75rem", color: "#6b7280" }}>as of {data?.snapshot_date}</span>
-      </div>
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
-          <thead>
-            <tr>
+    <Stack gap="md">
+      <Group>
+        <Text fw={600} size="lg">Positions ({positions.length})</Text>
+        <TextInput
+          placeholder="Filter symbol / name…"
+          value={filter}
+          onChange={e => setFilter(e.target.value)}
+          size="xs"
+          w={220}
+        />
+        <Text size="xs" c="dimmed">as of {data?.snapshot_date}</Text>
+        {isLoading && <Loader size="xs" />}
+      </Group>
+
+      <Table.ScrollContainer minWidth={900}>
+        <Table striped highlightOnHover withColumnBorders verticalSpacing="xs" fz="sm">
+          <Table.Thead>
+            <Table.Tr>
               {cols.map(c => (
-                <th key={c.key} style={{ ...th, background: sortKey === c.key ? "#f3f4f6" : undefined }} onClick={() => { sortKey === c.key ? setSortAsc(!sortAsc) : (setSortKey(c.key), setSortAsc(false)); }}>
+                <Table.Th
+                  key={c.key}
+                  style={{ cursor: "pointer", whiteSpace: "nowrap", textAlign: c.align ?? "left" }}
+                  onClick={() => handleSort(c.key)}
+                >
                   {c.label} {sortKey === c.key ? (sortAsc ? "▲" : "▼") : ""}
-                </th>
+                </Table.Th>
               ))}
-              <th style={th}>⚠</th>
-            </tr>
-          </thead>
-          <tbody>
+              <Table.Th style={{ width: 28 }} />
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
             {positions.map(p => (
-              <tr key={p.symbol} style={{ background: "white" }}>
-                {cols.map(c => (
-                  <td key={c.key} style={{ ...td, color: c.color ? c.color(p) : undefined, fontWeight: c.key === "symbol" ? 600 : undefined }}>
-                    {c.fmt(p)}
-                  </td>
-                ))}
-                <td style={td}>{p.price_stale ? "⚠" : ""}</td>
-              </tr>
+              <Table.Tr key={p.symbol}>
+                {cols.map(c => {
+                  const glVal = c.gl ? (p[c.key] as number | null) : null;
+                  return (
+                    <Table.Td
+                      key={c.key}
+                      style={{ textAlign: c.align ?? "left", whiteSpace: "nowrap" }}
+                    >
+                      <Text
+                        size="sm"
+                        fw={c.key === "symbol" ? 700 : undefined}
+                        c={c.gl ? glColor(glVal) : undefined}
+                      >
+                        {c.fmt(p)}
+                      </Text>
+                    </Table.Td>
+                  );
+                })}
+                <Table.Td>
+                  {p.price_stale && (
+                    <Badge size="xs" color="orange" variant="light">stale</Badge>
+                  )}
+                </Table.Td>
+              </Table.Tr>
             ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+          </Table.Tbody>
+        </Table>
+      </Table.ScrollContainer>
+    </Stack>
   );
 }

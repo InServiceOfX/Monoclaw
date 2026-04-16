@@ -1,11 +1,19 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import {
+  Group, TextInput, Text, Table, Stack, SimpleGrid, Paper, Loader,
+} from "@mantine/core";
+import { BarChart, AreaChart } from "@mantine/charts";
 import { api } from "../api";
 import type { RGLSummaryRow } from "../api";
-import { usd, glColor } from "../fmt";
+import { usd } from "../fmt";
 
 function parseNum(s: string): number {
-  return parseFloat(s.replace(/[$,%]/g, "").replace(",", "")) || 0;
+  return parseFloat(s.replace(/[$,%]/g, "").replace(/,/g, "")) || 0;
+}
+
+function glColor(v: number) {
+  return v >= 0 ? "teal.4" : "red.4";
 }
 
 export default function RGL() {
@@ -21,7 +29,7 @@ export default function RGL() {
   const bySymbol: Record<string, { symbol: string; name: string; total: number; lt: number; st: number }> = {};
   for (const r of rows) {
     const sym = r.Symbol;
-    if (!bySymbol[sym]) bySymbol[sym] = { symbol: sym, name: r.Name || r["Name"] || "", total: 0, lt: 0, st: 0 };
+    if (!bySymbol[sym]) bySymbol[sym] = { symbol: sym, name: r.Name ?? "", total: 0, lt: 0, st: 0 };
     bySymbol[sym].total += parseNum(r["Total Gain/Loss ($)"]);
     bySymbol[sym].lt += parseNum(r["Long Term (LT) Gain/Loss ($)"]);
     bySymbol[sym].st += parseNum(r["Short Term (ST) Gain/Loss ($)"]);
@@ -32,59 +40,131 @@ export default function RGL() {
   const totalLT = agg.reduce((s, r) => s + r.lt, 0);
   const totalST = agg.reduce((s, r) => s + r.st, 0);
 
-  const inp: React.CSSProperties = { padding: "0.35rem 0.6rem", borderRadius: "0.375rem", border: "1px solid #d1d5db", fontSize: "0.8rem" };
-  const th: React.CSSProperties = { padding: "0.5rem 0.75rem", textAlign: "left", fontSize: "0.75rem", color: "#6b7280", borderBottom: "2px solid #e5e7eb" };
-  const td: React.CSSProperties = { padding: "0.4rem 0.75rem", fontSize: "0.8rem", borderBottom: "1px solid #f3f4f6" };
+  // Monthly G/L from raw rows (split into gain/loss for diverging bars)
+  const monthly: Record<string, number> = {};
+  for (const r of rows) {
+    const month = r["Closed Date"]?.slice(0, 7);
+    if (!month) continue;
+    monthly[month] = (monthly[month] ?? 0) + parseNum(r["Total Gain/Loss ($)"]);
+  }
+  let cumulative = 0;
+  const monthlyData = Object.entries(monthly)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([month, total]) => {
+      cumulative += total;
+      return {
+        month,
+        gain: total > 0 ? total : 0,
+        loss: total < 0 ? total : 0,
+        cumulative,
+      };
+    });
 
   return (
-    <div style={{ padding: "1.5rem" }}>
-      <h2 style={{ marginBottom: "1rem" }}>Realized Gains & Losses</h2>
+    <Stack gap="md">
+      <Text fw={600} size="lg">Realized Gains & Losses</Text>
 
-      <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
-        <label style={{ display: "flex", gap: "0.4rem", alignItems: "center", fontSize: "0.8rem" }}>
-          From <input type="date" style={inp} value={fromDate} onChange={e => setFromDate(e.target.value)} />
-        </label>
-        <label style={{ display: "flex", gap: "0.4rem", alignItems: "center", fontSize: "0.8rem" }}>
-          To <input type="date" style={inp} value={toDate} onChange={e => setToDate(e.target.value)} />
-        </label>
-        <span style={{ fontSize: "0.75rem", color: "#6b7280", alignSelf: "center" }}>{isLoading ? "…" : `${agg.length} symbols`}</span>
-      </div>
+      <Group gap="sm" align="flex-end">
+        <TextInput
+          type="date"
+          label="From"
+          value={fromDate}
+          onChange={e => setFromDate(e.target.value)}
+          size="xs"
+          w={160}
+        />
+        <TextInput
+          type="date"
+          label="To"
+          value={toDate}
+          onChange={e => setToDate(e.target.value)}
+          size="xs"
+          w={160}
+        />
+        {isLoading
+          ? <Loader size="xs" mb={6} />
+          : <Text size="xs" c="dimmed" mb={6}>{agg.length} symbols</Text>
+        }
+      </Group>
 
       {/* Summary cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1rem", marginBottom: "2rem" }}>
-        <SCard title="Total G/L" value={usd(totalGL)} color={glColor(totalGL)} note="Note: RGL data starts 2024-01-01 (Schwab UI limitation)" />
-        <SCard title="Long-Term G/L" value={usd(totalLT)} color={glColor(totalLT)} />
-        <SCard title="Short-Term G/L" value={usd(totalST)} color={glColor(totalST)} />
-      </div>
+      <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
+        <Paper withBorder p="md" radius="md">
+          <Text size="xs" c="dimmed" tt="uppercase" fw={600} lts={0.5}>Total G/L</Text>
+          <Text size="xl" fw={700} c={glColor(totalGL)}>{usd(totalGL)}</Text>
+          <Text size="xs" c="dimmed" mt={4}>RGL data starts 2024-01-01 (Schwab UI limitation)</Text>
+        </Paper>
+        <Paper withBorder p="md" radius="md">
+          <Text size="xs" c="dimmed" tt="uppercase" fw={600} lts={0.5}>Long-Term G/L</Text>
+          <Text size="xl" fw={700} c={glColor(totalLT)}>{usd(totalLT)}</Text>
+        </Paper>
+        <Paper withBorder p="md" radius="md">
+          <Text size="xs" c="dimmed" tt="uppercase" fw={600} lts={0.5}>Short-Term G/L</Text>
+          <Text size="xl" fw={700} c={glColor(totalST)}>{usd(totalST)}</Text>
+        </Paper>
+      </SimpleGrid>
 
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-        <thead>
-          <tr>
-            {["Symbol","Name","Total G/L","Long-Term G/L","Short-Term G/L"].map(h => <th key={h} style={th}>{h}</th>)}
-          </tr>
-        </thead>
-        <tbody>
-          {agg.map(r => (
-            <tr key={r.symbol}>
-              <td style={{ ...td, fontWeight: 600 }}>{r.symbol}</td>
-              <td style={{ ...td, maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</td>
-              <td style={{ ...td, color: glColor(r.total) }}>{usd(r.total)}</td>
-              <td style={{ ...td, color: glColor(r.lt) }}>{usd(r.lt)}</td>
-              <td style={{ ...td, color: glColor(r.st) }}>{usd(r.st)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
+      {/* Charts */}
+      {monthlyData.length > 0 && (
+        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+          <Paper withBorder p="md" radius="md">
+            <Text fw={600} mb="sm" size="sm">Monthly Realized G/L</Text>
+            <BarChart
+              data={monthlyData}
+              dataKey="month"
+              series={[
+                { name: "gain", color: "teal.5", label: "Gain" },
+                { name: "loss", color: "red.5", label: "Loss" },
+              ]}
+              type="stacked"
+              h={220}
+              withLegend
+              yAxisProps={{ tickFormatter: (v: number) => `$${(v / 1000).toFixed(0)}k`, width: 60 }}
+              tooltipProps={{ formatter: (v: unknown) => usd(v as number) }}
+              xAxisProps={{ tick: { fontSize: 10 } }}
+            />
+          </Paper>
 
-function SCard({ title, value, color, note }: { title: string; value: string; color?: string; note?: string }) {
-  return (
-    <div style={{ background: "#f9fafb", borderRadius: "0.5rem", padding: "1rem", border: "1px solid #e5e7eb" }}>
-      <div style={{ fontSize: "0.75rem", color: "#6b7280", marginBottom: "0.25rem" }}>{title}</div>
-      <div style={{ fontSize: "1.4rem", fontWeight: 700, color: color ?? "#111827" }}>{value}</div>
-      {note && <div style={{ fontSize: "0.65rem", color: "#9ca3af", marginTop: "0.25rem" }}>{note}</div>}
-    </div>
+          <Paper withBorder p="md" radius="md">
+            <Text fw={600} mb="sm" size="sm">Cumulative Realized G/L</Text>
+            <AreaChart
+              data={monthlyData}
+              dataKey="month"
+              series={[{ name: "cumulative", color: totalGL >= 0 ? "teal.5" : "red.5", label: "Cumulative" }]}
+              h={220}
+              curveType="monotone"
+              fillOpacity={0.15}
+              yAxisProps={{ tickFormatter: (v: number) => `$${(v / 1000).toFixed(0)}k`, width: 60 }}
+              tooltipProps={{ formatter: (v: unknown) => usd(v as number) }}
+              xAxisProps={{ tick: { fontSize: 10 } }}
+            />
+          </Paper>
+        </SimpleGrid>
+      )}
+
+      {/* Per-symbol table */}
+      <Table.ScrollContainer minWidth={600}>
+        <Table striped highlightOnHover withColumnBorders verticalSpacing="xs" fz="sm">
+          <Table.Thead>
+            <Table.Tr>
+              {["Symbol","Name","Total G/L","Long-Term G/L","Short-Term G/L"].map(h => (
+                <Table.Th key={h}>{h}</Table.Th>
+              ))}
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {agg.map(r => (
+              <Table.Tr key={r.symbol}>
+                <Table.Td fw={700}>{r.symbol}</Table.Td>
+                <Table.Td style={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</Table.Td>
+                <Table.Td ta="right" c={glColor(r.total)}>{usd(r.total)}</Table.Td>
+                <Table.Td ta="right" c={glColor(r.lt)}>{usd(r.lt)}</Table.Td>
+                <Table.Td ta="right" c={glColor(r.st)}>{usd(r.st)}</Table.Td>
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
+      </Table.ScrollContainer>
+    </Stack>
   );
 }

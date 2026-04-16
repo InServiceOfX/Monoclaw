@@ -223,26 +223,124 @@ def rgl_details(
 
 @app.get("/portfolio/history")
 def portfolio_history():
-    """All position snapshots over time."""
+    """All downloaded position snapshots over time."""
     snapshots = []
     for p in _all_positions_files():
         snapshot_date, _, rows = parse_positions_csv(str(p))
-        total_mv = sum(_parse_float(r.get("Mkt Val (Market Value)", r.get("Mkt Val", ""))) or 0 for r in rows)
-        total_cb = sum(_parse_float(r.get("Cost Basis", "")) or 0 for r in rows)
+        # Exclude summary rows (no cost basis = cash, no symbol = total)
+        sec_rows = [r for r in rows if _parse_float(r.get("Cost Basis", "")) is not None]
+        cash_rows = [r for r in rows if _parse_float(r.get("Cost Basis", "")) is None
+                     and r.get("Symbol", "") not in ("", "Positions Total")]
+        total_mv = (
+            sum(_parse_float(r.get("Mkt Val (Market Value)", "")) or 0 for r in sec_rows)
+            + sum(_parse_float(r.get("Mkt Val (Market Value)", "")) or 0 for r in cash_rows)
+        )
+        total_cb = sum(_parse_float(r.get("Cost Basis", "")) or 0 for r in sec_rows)
+        unrealized_gl = sum(
+            (_parse_float(r.get("Mkt Val (Market Value)", "")) or 0) - (_parse_float(r.get("Cost Basis", "")) or 0)
+            for r in sec_rows
+        )
         snapshots.append({
             "date": snapshot_date,
             "total_market_value": total_mv,
             "total_cost_basis": total_cb,
-            "unrealized_gl": total_mv - total_cb,
-            "position_count": len(rows),
-            "positions": [
-                {
-                    "symbol": r.get("Symbol", ""),
-                    "qty": _parse_float(r.get("Qty (Quantity)", r.get("Qty", ""))),
-                    "market_value": _parse_float(r.get("Mkt Val (Market Value)", r.get("Mkt Val", ""))),
-                    "cost_basis": _parse_float(r.get("Cost Basis", "")),
-                }
-                for r in rows
-            ],
+            "unrealized_gl": unrealized_gl,
+            "position_count": len(sec_rows),
         })
     return {"snapshots": snapshots}
+
+
+@app.get("/portfolio/timeseries")
+def portfolio_timeseries(period: str = Query("1y", description="1m 3m 6m 1y 2y")):
+    """
+    Estimated daily portfolio value using current holdings × Yahoo Finance historical prices.
+
+    NOTE: This uses your CURRENT position quantities applied to historical prices.
+    It is NOT a reconstruction of your actual historical portfolio — positions
+    you have sold are excluded, and positions you bought recently may be included
+    from before you owned them. Think of it as 'how have my current holdings
+    performed over time', not 'what was my account worth on date X'.
+    """
+    try:
+        import yfinance as yf
+    except ImportError:
+        return {"error": "yfinance not installed", "series": []}
+
+    path = _latest_positions_file()
+    if not path:
+        return {"error": "no positions file", "series": []}
+
+    _, _, rows = parse_positions_csv(str(path))
+
+    # Build (yahoo_symbol, qty) pairs for securities with known qty
+    holdings: list[tuple[str, float]] = []
+    cash_value = 0.0
+    for r in rows:
+        sym = r.get("Symbol", "").strip()
+        qty = _parse_float(r.get("Qty (Quantity)", r.get("Qty", "")))
+        if not sym or sym == "Positions Total":
+            continue
+        if qty is None:
+            # Cash row — treat as fixed value
+            mv = _parse_float(r.get("Mkt Val (Market Value)", ""))
+            if mv:
+                cash_value += mv
+            continue
+        yahoo_sym = sym.replace("/", "-")
+        holdings.append((yahoo_sym, qty))
+
+    if not holdings:
+        return {"series": []}
+
+    period_map = {"1m": "1mo", "3m": "3mo", "6m": "6mo", "1y": "1y", "2y": "2y"}
+    yf_period = period_map.get(period, "1y")
+
+    syms = [s for s, _ in holdings]
+    qty_map = {s: q for s, q in holdings}
+
+    try:
+        data = yf.download(syms, period=yf_period, auto_adjust=True, progress=False)
+        if data.empty:
+            return {"series": [], "note": "No price data returned"}
+        close = data["Close"] if "Close" in data.columns else data
+        # If single symbol, wrap in DataFrame
+        if hasattr(close, "squeeze") and len(syms) == 1:
+            close = close.to_frame(syms[0])
+    except Exception as e:
+        return {"error": str(e), "series": []}
+
+    series = []
+    for date, price_row in close.iterrows():
+        daily_mv = cash_value
+        for sym in syms:
+            price = price_row.get(sym) if hasattr(price_row, "get") else getattr(price_row, sym, None)
+            if price is not None and not (isinstance(price, float) and price != price):  # NaN check
+                daily_mv += qty_map[sym] * float(price)
+        series.append({
+            "date": str(date)[:10],
+            "value": round(daily_mv, 2),
+        })
+
+    # Also fetch SPY for benchmark
+    benchmark = []
+    try:
+        spy = yf.download("SPY", period=yf_period, auto_adjust=True, progress=False)
+        if not spy.empty:
+            spy_close = spy["Close"]
+            first_val = float(spy_close.iloc[0])
+            first_portfolio = series[0]["value"] if series else 1.0
+            for date, price in spy_close.items():
+                # Normalize SPY to same starting portfolio value
+                benchmark.append({
+                    "date": str(date)[:10],
+                    "value": round(float(price) / first_val * first_portfolio, 2),
+                })
+    except Exception:
+        pass
+
+    return {
+        "series": series,
+        "benchmark_spy": benchmark,
+        "note": "Current holdings × historical prices. Not actual historical portfolio value.",
+        "period": period,
+    }

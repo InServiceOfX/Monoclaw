@@ -77,5 +77,14 @@ def parse_transactions_csv(path: str) -> tuple[list[str], list[dict]]:
 
 
 def parse_rgl_csv(path: str) -> tuple[list[str], list[dict]]:
-    """Parse an RGL summary or details CSV (has metadata line)."""
-    return _read_raw(Path(path).expanduser(), skip_meta=True)
+    """Parse an RGL summary or details CSV.
+
+    Original Schwab downloads have a free-text metadata line before the header.
+    MASTER CSVs start directly with the header row. Auto-detect by checking
+    whether the first cell is "Symbol".
+    """
+    p = Path(path).expanduser()
+    with p.open("r", encoding="utf-8-sig") as f:
+        first_cell = f.readline().strip().strip('"').split(",")[0].strip().strip('"')
+    skip_meta = first_cell.lower() != "symbol"
+    return _read_raw(p, skip_meta=skip_meta)

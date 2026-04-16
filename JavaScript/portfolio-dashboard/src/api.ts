@@ -83,4 +83,12 @@ export const api = {
     const q = new URLSearchParams(params as Record<string, string>).toString();
     return get<{ count: number; rows: RGLSummaryRow[] }>(`/rgl/summary${q ? "?" + q : ""}`);
   },
+  timeseries: (period = "1y") =>
+    get<{
+      series: { date: string; value: number }[];
+      benchmark_spy: { date: string; value: number }[];
+      note: string;
+      period: string;
+      error?: string;
+    }>(`/portfolio/timeseries?period=${period}`),
 };

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Group, TextInput, Text, Table, Loader, Stack } from "@mantine/core";
 import { api } from "../api";
 
 export default function Transactions() {
@@ -19,49 +20,80 @@ export default function Transactions() {
     queryFn: () => api.transactions(params),
   });
 
-  const inp: React.CSSProperties = { padding: "0.35rem 0.6rem", borderRadius: "0.375rem", border: "1px solid #d1d5db", fontSize: "0.8rem" };
-  const th: React.CSSProperties = { padding: "0.5rem 0.75rem", textAlign: "left", fontSize: "0.75rem", color: "#6b7280", borderBottom: "2px solid #e5e7eb", whiteSpace: "nowrap" };
-  const td: React.CSSProperties = { padding: "0.4rem 0.75rem", fontSize: "0.8rem", borderBottom: "1px solid #f3f4f6", whiteSpace: "nowrap" };
-
   const rows = data?.transactions ?? [];
+  const capped = rows.slice(0, 500);
 
   return (
-    <div style={{ padding: "1.5rem" }}>
-      <h2 style={{ marginBottom: "1rem" }}>Transactions</h2>
-      <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1rem" }}>
-        <label style={{ display: "flex", gap: "0.4rem", alignItems: "center", fontSize: "0.8rem" }}>
-          From <input type="date" style={inp} value={fromDate} onChange={e => setFromDate(e.target.value)} />
-        </label>
-        <label style={{ display: "flex", gap: "0.4rem", alignItems: "center", fontSize: "0.8rem" }}>
-          To <input type="date" style={inp} value={toDate} onChange={e => setToDate(e.target.value)} />
-        </label>
-        <input style={inp} placeholder="Symbol" value={symbol} onChange={e => setSymbol(e.target.value.toUpperCase())} />
-        <input style={inp} placeholder="Action (Buy, Sell, …)" value={action} onChange={e => setAction(e.target.value)} />
-        <span style={{ fontSize: "0.75rem", color: "#6b7280", alignSelf: "center" }}>{isLoading ? "…" : `${data?.count ?? 0} rows`}</span>
-      </div>
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr>
-              {["Date","Action","Symbol","Description","Quantity","Price","Amount"].map(h => <th key={h} style={th}>{h}</th>)}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.slice(0, 500).map((r, i) => (
-              <tr key={i}>
-                <td style={td}>{r.Date}</td>
-                <td style={td}>{r.Action}</td>
-                <td style={{ ...td, fontWeight: 600 }}>{r.Symbol}</td>
-                <td style={{ ...td, maxWidth: "220px", overflow: "hidden", textOverflow: "ellipsis" }}>{r.Description}</td>
-                <td style={td}>{r.Quantity}</td>
-                <td style={td}>{r.Price}</td>
-                <td style={{ ...td, color: r.Amount?.startsWith("-") ? "#dc2626" : "#16a34a" }}>{r.Amount}</td>
-              </tr>
+    <Stack gap="md">
+      <Text fw={600} size="lg">Transactions</Text>
+      <Group gap="sm" wrap="wrap">
+        <TextInput
+          type="date"
+          label="From"
+          value={fromDate}
+          onChange={e => setFromDate(e.target.value)}
+          size="xs"
+          w={160}
+        />
+        <TextInput
+          type="date"
+          label="To"
+          value={toDate}
+          onChange={e => setToDate(e.target.value)}
+          size="xs"
+          w={160}
+        />
+        <TextInput
+          label="Symbol"
+          placeholder="AAPL"
+          value={symbol}
+          onChange={e => setSymbol(e.target.value.toUpperCase())}
+          size="xs"
+          w={120}
+        />
+        <TextInput
+          label="Action"
+          placeholder="Buy, Sell…"
+          value={action}
+          onChange={e => setAction(e.target.value)}
+          size="xs"
+          w={160}
+        />
+        <Text size="xs" c="dimmed" style={{ alignSelf: "flex-end", paddingBottom: 6 }}>
+          {isLoading ? <Loader size="xs" /> : `${data?.count ?? 0} rows`}
+        </Text>
+      </Group>
+
+      <Table.ScrollContainer minWidth={800}>
+        <Table striped highlightOnHover withColumnBorders verticalSpacing="xs" fz="sm">
+          <Table.Thead>
+            <Table.Tr>
+              {["Date","Action","Symbol","Description","Quantity","Price","Amount"].map(h => (
+                <Table.Th key={h} style={{ whiteSpace: "nowrap" }}>{h}</Table.Th>
+              ))}
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {capped.map((r, i) => (
+              <Table.Tr key={i}>
+                <Table.Td style={{ whiteSpace: "nowrap" }}>{r.Date}</Table.Td>
+                <Table.Td style={{ whiteSpace: "nowrap" }}>{r.Action}</Table.Td>
+                <Table.Td fw={700}>{r.Symbol}</Table.Td>
+                <Table.Td style={{ maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.Description}</Table.Td>
+                <Table.Td ta="right">{r.Quantity}</Table.Td>
+                <Table.Td ta="right">{r.Price}</Table.Td>
+                <Table.Td ta="right" c={r.Amount?.startsWith("-") ? "red.4" : "teal.4"}>{r.Amount}</Table.Td>
+              </Table.Tr>
             ))}
-          </tbody>
-        </table>
-        {rows.length > 500 && <p style={{ color: "#6b7280", fontSize: "0.75rem", padding: "0.5rem" }}>Showing 500 of {rows.length} rows. Use filters to narrow down.</p>}
-      </div>
-    </div>
+          </Table.Tbody>
+        </Table>
+      </Table.ScrollContainer>
+
+      {rows.length > 500 && (
+        <Text size="xs" c="dimmed">
+          Showing 500 of {rows.length} rows — use filters to narrow down.
+        </Text>
+      )}
+    </Stack>
   );
 }
