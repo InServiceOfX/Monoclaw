@@ -37,8 +37,9 @@ def _read_raw(path: Path, skip_meta: bool) -> tuple[list[str], list[dict]]:
             if len(row) < len(header):
                 row = row + [""] * (len(header) - len(row))
             d = {header[i]: row[i].strip() for i in range(len(header))}
-            # Skip Schwab "Total" summary rows
-            if d.get("Symbol", "").strip().lower() == "total":
+            # Skip Schwab summary/aggregate rows that are not real positions
+            sym = d.get("Symbol", "").strip().lower()
+            if sym in ("total", "positions total"):
                 continue
             rows.append(d)
     return header, rows
