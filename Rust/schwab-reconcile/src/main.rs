@@ -177,26 +177,65 @@ fn schwab_to_yahoo(s: &str) -> Option<String> {
     Some(s.replace('/', "-"))
 }
 
+fn build_client() -> Result<reqwest::blocking::Client> {
+    Ok(reqwest::blocking::Client::builder()
+        .user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")
+        .cookie_store(true)
+        .timeout(std::time::Duration::from_secs(30))
+        .build()?)
+}
+
+fn fetch_crumb(client: &reqwest::blocking::Client) -> Result<String> {
+    // Step 1: visit Yahoo Finance to set session cookies
+    client.get("https://finance.yahoo.com/")
+        .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+        .header("Accept-Language", "en-US,en;q=0.9")
+        .send()
+        .context("Failed to fetch Yahoo Finance homepage")?;
+
+    // Step 2: fetch crumb token
+    let crumb = client
+        .get("https://query1.finance.yahoo.com/v1/test/getcrumb")
+        .header("Accept", "text/plain")
+        .send()
+        .context("Failed to fetch Yahoo Finance crumb")?
+        .text()
+        .context("Failed to read crumb response")?;
+
+    if crumb.is_empty() || crumb.contains("Unauthorized") {
+        anyhow::bail!("Empty or unauthorized crumb response: {:?}", crumb);
+    }
+    Ok(crumb.trim().to_string())
+}
+
 fn fetch_prices(symbols: &[String]) -> Result<HashMap<String, f64>> {
     let yahoo: Vec<String> = symbols.iter().filter_map(|s| schwab_to_yahoo(s)).collect();
     if yahoo.is_empty() { return Ok(HashMap::new()); }
 
-    let url = format!(
-        "https://query1.finance.yahoo.com/v7/finance/quote?symbols={}&fields=regularMarketPrice",
-        yahoo.join(",")
-    );
-    let client = reqwest::blocking::Client::builder()
-        .user_agent("Mozilla/5.0 (compatible; schwab-reconcile/0.1)")
-        .timeout(std::time::Duration::from_secs(30))
-        .build()?;
-    let body: YfResponse = client.get(&url).send()?.json()?;
+    let client = build_client()?;
+    let crumb = fetch_crumb(&client)?;
+    eprintln!("Got Yahoo crumb (len={})", crumb.len());
 
+    // Batch in chunks of 100 to avoid URL length limits
     let mut map = HashMap::new();
-    for q in body.qr.result {
-        if let Some(p) = q.price {
-            let schwab_sym = q.symbol.replace('-', "/");
-            map.insert(q.symbol.clone(), p);
-            if schwab_sym != q.symbol { map.insert(schwab_sym, p); }
+    for chunk in yahoo.chunks(100) {
+        let url = format!(
+            "https://query1.finance.yahoo.com/v7/finance/quote?symbols={}&crumb={}&fields=regularMarketPrice",
+            chunk.join(","),
+            urlencoding::encode(&crumb),
+        );
+        let body: YfResponse = client.get(&url)
+            .header("Accept", "application/json")
+            .send()
+            .context("Yahoo Finance quote request failed")?
+            .json()
+            .context("Failed to parse Yahoo Finance quote response")?;
+        for q in body.qr.result {
+            if let Some(p) = q.price {
+                let schwab_sym = q.symbol.replace('-', "/");
+                map.insert(q.symbol.clone(), p);
+                if schwab_sym != q.symbol { map.insert(schwab_sym, p); }
+            }
         }
     }
     Ok(map)

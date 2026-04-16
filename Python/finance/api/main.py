@@ -126,7 +126,13 @@ def portfolio_summary():
     positions = pos.get("positions", [])
     total_mv = sum(p["market_value"] for p in positions if p["market_value"] is not None)
     total_cb = sum(p["cost_basis_total"] for p in positions if p["cost_basis_total"] is not None)
-    total_gl = total_mv - total_cb
+    # Compute unrealized G/L only for positions where BOTH market value AND cost basis
+    # are known — this excludes cash (cost_basis=None) which has zero unrealized gain.
+    total_gl = sum(
+        p["market_value"] - p["cost_basis_total"]
+        for p in positions
+        if p["market_value"] is not None and p["cost_basis_total"] is not None
+    )
     total_gl_pct = (total_gl / total_cb * 100) if total_cb else None
     total_day = sum((p["day_change_dollars"] or 0) * (p["qty"] or 0) for p in positions)
     return {
