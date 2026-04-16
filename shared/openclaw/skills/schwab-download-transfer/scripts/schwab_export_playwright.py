@@ -25,7 +25,9 @@ def require_playwright():
         from playwright.sync_api import sync_playwright  # type: ignore
     except Exception as exc:  # pragma: no cover
         raise SystemExit(
-            "Playwright is required. Install with: python3 -m pip install playwright && python3 -m playwright install chromium"
+            "Playwright is required. Install with: python3 -m pip install playwright\n"
+            "For --channel chrome/msedge no extra install needed (uses system browser).\n"
+            "For bundled Chromium: python3 -m playwright install chromium"
         ) from exc
     return sync_playwright
 
@@ -35,13 +37,16 @@ RGL_URL = "https://client.schwab.com/app/accounts/RGL/#/RGL"
 TRANSACTIONS_URL = "https://client.schwab.com/app/accounts/history/#/"
 
 
-def launch_context(sync_playwright, user_data_dir: Path, headed: bool):
+def launch_context(sync_playwright, user_data_dir: Path, headed: bool, channel: str | None = None):
     pw = sync_playwright().start()
-    browser = pw.chromium.launch_persistent_context(
-        user_data_dir=str(user_data_dir),
-        headless=not headed,
-        accept_downloads=True,
-    )
+    kwargs: dict = {
+        "user_data_dir": str(user_data_dir),
+        "headless": not headed,
+        "accept_downloads": True,
+    }
+    if channel:
+        kwargs["channel"] = channel
+    browser = pw.chromium.launch_persistent_context(**kwargs)
     return pw, browser
 
 
@@ -250,13 +255,19 @@ def main() -> int:
     parser.add_argument("task", choices=["positions", "rgl", "transactions"])
     parser.add_argument("--user-data-dir", type=Path, required=True, help="Persistent browser profile dir")
     parser.add_argument("--headed", action="store_true", help="Show browser window")
+    parser.add_argument(
+        "--channel",
+        default=None,
+        help="Browser channel: 'chrome', 'msedge', or omit for bundled Chromium. "
+             "Use 'chrome' to avoid Schwab bot-detection (recommended).",
+    )
     parser.add_argument("--login-timeout", type=int, default=120)
     parser.add_argument("--from-date", help="Date like 03/01/2026")
     parser.add_argument("--to-date", help="Date like 03/20/2026")
     args = parser.parse_args()
 
     sync_playwright = require_playwright()
-    pw, browser = launch_context(sync_playwright, args.user_data_dir.expanduser(), args.headed)
+    pw, browser = launch_context(sync_playwright, args.user_data_dir.expanduser(), args.headed, args.channel)
     try:
         page = browser.new_page()
         page.goto("https://client.schwab.com/", wait_until="domcontentloaded")
