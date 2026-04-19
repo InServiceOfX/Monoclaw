@@ -80,14 +80,54 @@ See `Python/Cadabra2/Srednicki/AGENTS.md` as a reference example.
 - Generated output: CSVs, PNGs, logs produced by running code
 - Python: `__pycache__/`, `*.pyc`, `.venv/`
 
+## Private Data Redaction Rules
+
+This repo is intended to be public. Some projects read local private data from
+outside the repo, especially under:
+
+`/Users/ernestyeung/.openclaw/workspace/Data/Private/`
+
+Agents may use that data locally to run, test, debug, or validate code, but must
+never copy private data into durable or shareable artifacts.
+
+Do not include any of the following in commits, commit messages, PR text,
+markdown docs, screenshots, issue text, changelogs, code comments, test fixtures,
+or chat summaries intended to describe committed work:
+
+- Exact account values, cash balances, realized or unrealized gain/loss amounts,
+  position quantities, cost basis, or portfolio weights derived from private CSVs
+- Account numbers, masked account suffixes, names, addresses, tax lots, or
+  transaction-level details
+- Raw rows, excerpts, screenshots, or copied tables from private brokerage files
+- Any "before/after" summary that quotes exact private financial values
+
+Allowed public phrasing:
+
+- "Added a dashboard page for balances."
+- "Fixed realized gain/loss date normalization."
+- "Validated against local Schwab exports."
+- "The dashboard reads private CSVs at runtime."
+
+Forbidden public phrasing:
+
+- "Portfolio value changed from $X to $Y."
+- "Cash balance is $X."
+- "Ticker ABC is N% of the account."
+- "Realized gain/loss is $X."
+
+When reporting work, describe the code behavior and data flow, not Ernest's
+actual financial numbers. If exact values are needed for local debugging, keep
+them in the terminal only and do not commit, paste, summarize, or push them.
+
 ## Completing a Task
 
 When your work is done:
 1. Verify it runs / builds / tests pass
 2. Update `PROGRESS.md` in the affected directory
-3. Commit only source files (see above)
-4. Push the feature branch
-5. Do NOT merge to master
+3. Review staged diffs and commit messages for private data leakage
+4. Commit only source files (see above)
+5. Push the feature branch only when explicitly appropriate
+6. Do NOT merge to master
 
 ## Active Projects (as of 2026-03-24)
 

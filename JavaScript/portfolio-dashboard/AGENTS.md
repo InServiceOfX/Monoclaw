@@ -97,6 +97,44 @@ Python/finance/api/
 4. **Don't commit to main/master** — use feature branches (`feat/`, `fix/`).
 5. **Test with real data** but never include real data in commits.
 
+## Private Data Reporting Rules
+
+This dashboard intentionally reads Ernest's local Schwab data at runtime from
+`Data/Private`. That is acceptable for local testing and debugging, but exact
+values from those files must never be copied into repo artifacts or public
+workflow text.
+
+Do not quote exact private financial values in:
+
+- Commit messages
+- PR descriptions
+- Markdown documentation
+- Progress notes
+- Code comments
+- Screenshots or captured terminal output
+- Chat summaries that describe committed work
+
+Sensitive values include total portfolio value, cash balances, realized or
+unrealized gain/loss amounts, cost basis, position quantities, portfolio weights,
+transaction rows, tax-lot rows, account identifiers, and any before/after
+comparison derived from private CSVs.
+
+Good commit message examples:
+
+- `feat(portfolio): add balances dashboard`
+- `fix(portfolio): normalize realized gain/loss dates`
+- `feat(portfolio): add Monte Carlo risk bands`
+
+Bad commit message examples:
+
+- Any message that says the portfolio is worth an exact dollar amount
+- Any message that quotes exact cash, gain/loss, position size, or account
+  allocation values
+- Any message that includes a copied row or table from Schwab data
+
+If you need to mention validation, say "validated against local Schwab exports"
+or "validated with local private data" without quoting the values.
+
 ## What Needs Work (Priority Order)
 
 ### High Priority
