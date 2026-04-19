@@ -76,7 +76,7 @@ export default function Transactions() {
           <Table.Tbody>
             {capped.map((r, i) => (
               <Table.Tr key={i}>
-                <Table.Td style={{ whiteSpace: "nowrap" }}>{r.Date}</Table.Td>
+                <Table.Td style={{ whiteSpace: "nowrap" }}>{r.date_iso ?? r.Date}</Table.Td>
                 <Table.Td style={{ whiteSpace: "nowrap" }}>{r.Action}</Table.Td>
                 <Table.Td fw={700}>{r.Symbol}</Table.Td>
                 <Table.Td style={{ maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.Description}</Table.Td>

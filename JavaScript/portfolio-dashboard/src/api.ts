@@ -40,6 +40,7 @@ export interface PortfolioSummary {
 
 export interface Transaction {
   Date: string;
+  date_iso?: string | null;
   Action: string;
   Symbol: string;
   Description: string;
@@ -53,6 +54,7 @@ export interface RGLSummaryRow {
   Symbol: string;
   Name: string;
   "Closed Date": string;
+  closed_date_iso?: string | null;
   Quantity: string;
   "Closing Price": string;
   Proceeds: string;
@@ -60,7 +62,7 @@ export interface RGLSummaryRow {
   "Total Gain/Loss ($)": string;
   "Long Term (LT) Gain/Loss ($)": string;
   "Short Term (ST) Gain/Loss ($)": string;
-  [key: string]: string;
+  [key: string]: string | null | undefined;
 }
 
 export interface HistorySnapshot {
@@ -71,10 +73,127 @@ export interface HistorySnapshot {
   position_count: number;
 }
 
+export interface BalanceRow {
+  SnapshotDate: string;
+  SnapshotTime: string;
+  "Account Value": string;
+  "Day Change": string;
+  "Day Change %": string;
+  "Cash & Cash Investments": string;
+  "Market Value (Securities)": string;
+  "Available to Trade (Cash)": string;
+  "Settled Funds": string;
+  "Available to Withdraw": string;
+  snapshot_date_iso: string | null;
+  account_value: number | null;
+  day_change: number | null;
+  day_change_pct: number | null;
+  cash: number | null;
+  securities_value: number | null;
+  available_to_trade: number | null;
+  settled_funds: number | null;
+  available_to_withdraw: number | null;
+}
+
+export interface PortfolioContext {
+  snapshot_date: string;
+  total_securities_value: number;
+  cash_value: number;
+  cash_pct: number | null;
+  top_holdings: {
+    symbol: string;
+    description: string;
+    market_value: number;
+    weight_pct: number | null;
+    unrealized_gl: number | null;
+    unrealized_gl_pct: number | null;
+    rating: string;
+    asset_type: string;
+  }[];
+  realized_ytd: {
+    total: number;
+    short_term: number;
+    long_term: number;
+    wash_sale_rows: number;
+  };
+  flags: { severity: "info" | "medium" | "high"; label: string; detail: string }[];
+  note: string;
+}
+
+export interface EarningsEvent {
+  symbol: string;
+  description: string;
+  asset_type: string;
+  market_value: number;
+  weight_pct: number | null;
+  next_earnings_date: string | null;
+  previous_earnings_date: string | null;
+  eps_estimate: number | null;
+  reported_eps: number | null;
+  surprise_pct: number | null;
+  status: "upcoming" | "historical" | "not_applicable" | "unavailable" | "error";
+  error?: string;
+}
+
+export interface MonteCarloMetric {
+  initial_value: number | null;
+  expected_final: number | null;
+  p05: number | null;
+  p25: number | null;
+  p50: number | null;
+  p75: number | null;
+  p95: number | null;
+  expected_return_pct: number | null;
+  probability_gain_pct: number | null;
+  probability_loss_pct: number | null;
+  var_5: number | null;
+  cvar_5: number | null;
+  sample_count: number;
+}
+
+export interface MonteCarloResponse {
+  snapshot_date: string;
+  portfolio_position_count: number;
+  watchlist: string[];
+  error?: string;
+  history_rows?: number;
+  history_start?: string;
+  history_end?: string;
+  missing_symbols?: string[];
+  portfolio: (MonteCarloMetric & {
+    days: number;
+    period: string;
+    symbols_used: string[];
+    symbols_missing: string[];
+    bands: { day: number; p05: number | null; p50: number | null; p95: number | null }[];
+    note: string;
+  }) | null;
+  candidates: (MonteCarloMetric & {
+    symbol: string;
+    status: "ok" | "missing_history";
+    last_price: number | null;
+    annual_return_pct: number | null;
+    annual_vol_pct: number | null;
+    sharpe_like: number | null;
+    risk_reward_score: number | null;
+  })[];
+}
+
 export const api = {
   summary: () => get<PortfolioSummary>("/portfolio/summary"),
   positions: () => get<PositionsResponse>("/positions/current"),
   history: () => get<{ snapshots: HistorySnapshot[] }>("/portfolio/history"),
+  balances: () => get<{ count: number; rows: BalanceRow[]; latest: BalanceRow | null }>("/balances"),
+  context: () => get<PortfolioContext>("/portfolio/context"),
+  earnings: (limit = 20) => get<{ snapshot_date: string; events: EarningsEvent[]; note: string; error?: string }>(`/portfolio/earnings?limit=${limit}`),
+  monteCarlo: (params: { symbols?: string; days?: number; simulations?: number; period?: string; max_positions?: number }) => {
+    const q = new URLSearchParams(
+      Object.entries(params)
+        .filter(([, v]) => v !== undefined && v !== "")
+        .map(([k, v]) => [k, String(v)]),
+    ).toString();
+    return get<MonteCarloResponse>(`/portfolio/monte-carlo${q ? "?" + q : ""}`);
+  },
   transactions: (params?: { from_date?: string; to_date?: string; symbol?: string; action?: string }) => {
     const q = new URLSearchParams(params as Record<string, string>).toString();
     return get<{ count: number; transactions: Transaction[] }>(`/transactions${q ? "?" + q : ""}`);

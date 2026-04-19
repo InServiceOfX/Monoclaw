@@ -8,12 +8,25 @@ import { api } from "../api";
 import type { RGLSummaryRow } from "../api";
 import { usd } from "../fmt";
 
-function parseNum(s: string): number {
-  return parseFloat(s.replace(/[$,%]/g, "").replace(/,/g, "")) || 0;
+function parseNum(s: string | null | undefined): number {
+  return parseFloat((s ?? "").replace(/[$,%]/g, "").replace(/,/g, "")) || 0;
 }
 
 function glColor(v: number) {
   return v >= 0 ? "teal.4" : "red.4";
+}
+
+function monthKey(row: RGLSummaryRow): string | null {
+  if (row.closed_date_iso) return row.closed_date_iso.slice(0, 7);
+  const raw = row["Closed Date"];
+  const m = raw?.match(/^(\d{1,2})\/\d{1,2}\/(\d{4})/);
+  if (!m) return null;
+  return `${m[2]}-${m[1].padStart(2, "0")}`;
+}
+
+function monthLabel(month: string): string {
+  const [year, mm] = month.split("-");
+  return `${year}-${mm}`;
 }
 
 export default function RGL() {
@@ -43,22 +56,31 @@ export default function RGL() {
   // Monthly G/L from raw rows (split into gain/loss for diverging bars)
   const monthly: Record<string, number> = {};
   for (const r of rows) {
-    const month = r["Closed Date"]?.slice(0, 7);
+    const month = monthKey(r);
     if (!month) continue;
     monthly[month] = (monthly[month] ?? 0) + parseNum(r["Total Gain/Loss ($)"]);
   }
-  let cumulative = 0;
   const monthlyData = Object.entries(monthly)
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([month, total]) => {
-      cumulative += total;
+    .reduce<{
+      running: number;
+      data: { month: string; label: string; gain: number; loss: number; cumulative: number }[];
+    }>((acc, [month, total]) => {
+      const cumulative = acc.running + total;
       return {
-        month,
-        gain: total > 0 ? total : 0,
-        loss: total < 0 ? total : 0,
-        cumulative,
+        running: cumulative,
+        data: [
+          ...acc.data,
+          {
+            month,
+            label: monthLabel(month),
+            gain: total > 0 ? total : 0,
+            loss: total < 0 ? total : 0,
+            cumulative,
+          },
+        ],
       };
-    });
+    }, { running: 0, data: [] }).data;
 
   return (
     <Stack gap="md">
@@ -108,10 +130,10 @@ export default function RGL() {
       {monthlyData.length > 0 && (
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
           <Paper withBorder p="md" radius="md">
-            <Text fw={600} mb="sm" size="sm">Monthly Realized G/L</Text>
+              <Text fw={600} mb="sm" size="sm">Monthly Realized G/L</Text>
             <BarChart
               data={monthlyData}
-              dataKey="month"
+              dataKey="label"
               series={[
                 { name: "gain", color: "teal.5", label: "Gain" },
                 { name: "loss", color: "red.5", label: "Loss" },
@@ -129,7 +151,7 @@ export default function RGL() {
             <Text fw={600} mb="sm" size="sm">Cumulative Realized G/L</Text>
             <AreaChart
               data={monthlyData}
-              dataKey="month"
+              dataKey="label"
               series={[{ name: "cumulative", color: totalGL >= 0 ? "teal.5" : "red.5", label: "Cumulative" }]}
               h={220}
               curveType="monotone"
