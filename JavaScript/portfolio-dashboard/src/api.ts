@@ -151,6 +151,32 @@ export interface MonteCarloMetric {
   sample_count: number;
 }
 
+export interface SymbolEnhancement {
+  historical_vol: number | null;
+  garch_vol: number | null;
+  implied_vol_annual: number | null;
+  blended_vol: number | null;
+  used_implied_vol: boolean;
+}
+
+export interface Enhancements {
+  student_t_df: number | null;
+  iv_weight: number;
+  garch_model: string;
+  per_symbol: Record<string, SymbolEnhancement>;
+}
+
+export interface PositionDetail extends MonteCarloMetric {
+  symbol: string;
+  description: string;
+  market_value: number | null;
+  last_price: number | null;
+  annual_return_pct: number | null;
+  annual_vol_pct: number | null;
+  sharpe_like: number | null;
+  risk_reward_score: number | null;
+}
+
 export interface MonteCarloResponse {
   snapshot_date: string;
   portfolio_position_count: number;
@@ -160,6 +186,8 @@ export interface MonteCarloResponse {
   history_start?: string;
   history_end?: string;
   missing_symbols?: string[];
+  enhancements?: Enhancements;
+  position_details?: PositionDetail[];
   portfolio: (MonteCarloMetric & {
     days: number;
     period: string;
