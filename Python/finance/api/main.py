@@ -494,6 +494,35 @@ def portfolio_earnings(limit: int = Query(20, ge=1, le=50)):
     }
 
 
+@app.get("/portfolio/earnings-impact")
+def portfolio_earnings_impact(
+    max_positions: int = Query(25, ge=1, le=75),
+):
+    """Analyze historical post-earnings price impact for portfolio positions."""
+    from .earnings_impact import analyze_earnings_impact
+
+    snapshot_date, rows = _current_positions_from_csv()
+    positions = sorted(
+        [r for r in rows if _is_security_position(r)],
+        key=_position_market_value,
+        reverse=True,
+    )[:max_positions]
+
+    symbols = []
+    descriptions = {}
+    for r in positions:
+        sym = (r.get("Symbol") or "").strip().upper()
+        if sym:
+            symbols.append(sym)
+            descriptions[sym] = r.get("Description", "")
+
+    try:
+        result = analyze_earnings_impact(symbols, descriptions)
+        return {"snapshot_date": snapshot_date, **result}
+    except Exception as e:
+        return {"snapshot_date": snapshot_date, "error": str(e), "positions": [], "upcoming_alerts": []}
+
+
 @app.get("/portfolio/monte-carlo")
 def portfolio_monte_carlo(
     symbols: str = Query("", description="Comma-separated optional watchlist symbols"),

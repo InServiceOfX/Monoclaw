@@ -207,6 +207,71 @@ export interface MonteCarloResponse {
   })[];
 }
 
+export interface EarningsHorizonStats {
+  mean: number;
+  median: number;
+  std: number;
+  win_rate_pct: number;
+  best: number;
+  worst: number;
+  count: number;
+}
+
+export interface EarningsHistoricalEvent {
+  date: string;
+  eps_estimate: number | null;
+  reported_eps: number | null;
+  surprise_pct: number | null;
+  "1d_pct": number | null;
+  "5d_pct": number | null;
+  "15d_pct": number | null;
+  "30d_pct": number | null;
+}
+
+export interface EarningsClassification {
+  signal: "strong_buy" | "buy" | "neutral" | "volatile" | "avoid" | "insufficient_data";
+  reason: string;
+}
+
+export interface EarningsPosition {
+  symbol: string;
+  description: string;
+  status: string;
+  next_earnings_date?: string | null;
+  days_until_earnings?: number | null;
+  next_eps_estimate?: number | null;
+  events?: EarningsHistoricalEvent[];
+  stats?: {
+    sufficient_data: boolean;
+    event_count: number;
+    beat_rate_pct?: number | null;
+    avg_surprise_pct?: number | null;
+    "1d"?: EarningsHorizonStats | null;
+    "5d"?: EarningsHorizonStats | null;
+    "15d"?: EarningsHorizonStats | null;
+    "30d"?: EarningsHorizonStats | null;
+  };
+  classification?: EarningsClassification;
+  error?: string;
+}
+
+export interface EarningsUpcomingAlert {
+  symbol: string;
+  description: string;
+  date: string;
+  days_until: number;
+  eps_estimate: number | null;
+}
+
+export interface EarningsImpactResponse {
+  snapshot_date: string;
+  error?: string;
+  positions: EarningsPosition[];
+  upcoming_alerts: EarningsUpcomingAlert[];
+  horizons?: number[];
+  note?: string;
+}
+
 export const api = {
   summary: () => get<PortfolioSummary>("/portfolio/summary"),
   positions: () => get<PositionsResponse>("/positions/current"),
@@ -214,6 +279,7 @@ export const api = {
   balances: () => get<{ count: number; rows: BalanceRow[]; latest: BalanceRow | null }>("/balances"),
   context: () => get<PortfolioContext>("/portfolio/context"),
   earnings: (limit = 20) => get<{ snapshot_date: string; events: EarningsEvent[]; note: string; error?: string }>(`/portfolio/earnings?limit=${limit}`),
+  earningsImpact: (maxPositions = 25) => get<EarningsImpactResponse>(`/portfolio/earnings-impact?max_positions=${maxPositions}`),
   monteCarlo: (params: { symbols?: string; days?: number; simulations?: number; period?: string; max_positions?: number }) => {
     const q = new URLSearchParams(
       Object.entries(params)

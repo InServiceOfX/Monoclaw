@@ -8,6 +8,7 @@ import RGL from "./pages/RGL";
 import Balances from "./pages/Balances";
 import Insights from "./pages/Insights";
 import MonteCarlo from "./pages/MonteCarlo";
+import Earnings from "./pages/Earnings";
 
 const qc = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 30000 } } });
 
@@ -28,6 +29,7 @@ export default function App() {
                 <Tabs.Tab value="rgl">Realized G/L</Tabs.Tab>
                 <Tabs.Tab value="insights">Context</Tabs.Tab>
                 <Tabs.Tab value="mc">Monte Carlo</Tabs.Tab>
+                <Tabs.Tab value="earnings">Earnings</Tabs.Tab>
               </Tabs.List>
             </Tabs>
           </Group>
@@ -40,6 +42,7 @@ export default function App() {
           {tab === "rgl" && <RGL />}
           {tab === "insights" && <Insights />}
           {tab === "mc" && <MonteCarlo />}
+          {tab === "earnings" && <Earnings />}
         </AppShell.Main>
       </AppShell>
     </QueryClientProvider>

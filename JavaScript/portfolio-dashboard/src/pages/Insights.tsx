@@ -1,15 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import {
-  Alert, Badge, Group, Loader, Paper, SimpleGrid, Stack, Table, Text,
+  Alert, Group, Loader, Paper, SimpleGrid, Stack, Table, Text,
 } from "@mantine/core";
 import { api } from "../api";
-import type { EarningsEvent } from "../api";
 import { pct, usd } from "../fmt";
-
-function fmtDate(v: string | null | undefined) {
-  if (!v) return "—";
-  return v;
-}
 
 function severityColor(severity: string) {
   if (severity === "high") return "red";
@@ -17,32 +11,15 @@ function severityColor(severity: string) {
   return "blue";
 }
 
-function statusBadge(e: EarningsEvent) {
-  if (e.status === "upcoming") return <Badge color="teal" variant="light">upcoming</Badge>;
-  if (e.status === "historical") return <Badge color="gray" variant="light">recent only</Badge>;
-  if (e.status === "not_applicable") return <Badge color="gray" variant="outline">n/a</Badge>;
-  if (e.status === "error") return <Badge color="red" variant="light">error</Badge>;
-  return <Badge color="yellow" variant="light">missing</Badge>;
-}
-
-function statusDetail(e: EarningsEvent) {
-  if (e.status === "error" && e.error) return e.error.replace(/^`|`$/g, "");
-  if (e.status === "not_applicable") return "Fund / ETF";
-  if (e.status === "unavailable") return "No Yahoo earnings calendar";
-  return "";
-}
-
 export default function Insights() {
   const context = useQuery({ queryKey: ["portfolio-context"], queryFn: api.context });
-  const earnings = useQuery({ queryKey: ["portfolio-earnings"], queryFn: () => api.earnings(25), staleTime: 6 * 60 * 60 * 1000 });
   const c = context.data;
-  const events = earnings.data?.events ?? [];
 
   return (
     <Stack gap="md">
       <Group gap="sm">
         <Text fw={600} size="lg">Portfolio Context</Text>
-        {(context.isLoading || earnings.isLoading) && <Loader size="xs" />}
+        {context.isLoading && <Loader size="xs" />}
         <Text size="xs" c="dimmed">local analytics; earnings via Yahoo/yfinance</Text>
       </Group>
 
@@ -119,47 +96,6 @@ export default function Insights() {
         </Table.ScrollContainer>
       </Paper>
 
-      <Paper withBorder p="md" radius="md">
-        <Group justify="space-between" mb="sm">
-          <Text fw={600}>Earnings Watch</Text>
-          {earnings.data?.note && <Text size="xs" c="dimmed">{earnings.data.note}</Text>}
-        </Group>
-        {earnings.data?.error ? (
-          <Alert color="red" title="Earnings unavailable" radius="md">{earnings.data.error}</Alert>
-        ) : (
-          <Table.ScrollContainer minWidth={920}>
-            <Table striped highlightOnHover withColumnBorders verticalSpacing="xs" fz="sm">
-              <Table.Thead>
-                <Table.Tr>
-                  {["Symbol", "Name", "Status", "Next", "Previous", "EPS Est.", "Reported EPS", "Surprise", "Weight"].map(h => (
-                    <Table.Th key={h} style={{ whiteSpace: "nowrap" }}>{h}</Table.Th>
-                  ))}
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {events.map(e => (
-                  <Table.Tr key={e.symbol}>
-                    <Table.Td fw={700}>{e.symbol}</Table.Td>
-                    <Table.Td style={{ maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.description}</Table.Td>
-                    <Table.Td>
-                      <Stack gap={2}>
-                        {statusBadge(e)}
-                        {statusDetail(e) && <Text size="xs" c="dimmed">{statusDetail(e)}</Text>}
-                      </Stack>
-                    </Table.Td>
-                    <Table.Td style={{ whiteSpace: "nowrap" }}>{fmtDate(e.next_earnings_date)}</Table.Td>
-                    <Table.Td style={{ whiteSpace: "nowrap" }}>{fmtDate(e.previous_earnings_date)}</Table.Td>
-                    <Table.Td ta="right">{e.eps_estimate ?? "—"}</Table.Td>
-                    <Table.Td ta="right">{e.reported_eps ?? "—"}</Table.Td>
-                    <Table.Td ta="right" c={(e.surprise_pct ?? 0) >= 0 ? "teal.4" : "red.4"}>{pct(e.surprise_pct)}</Table.Td>
-                    <Table.Td ta="right">{pct(e.weight_pct)}</Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
-        )}
-      </Paper>
     </Stack>
   );
 }
