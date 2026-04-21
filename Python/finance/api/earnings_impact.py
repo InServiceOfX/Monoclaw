@@ -251,7 +251,23 @@ def _classify_earnings_play(stats: dict) -> dict:
     }
 
 
-def analyze_earnings_impact(symbols: list[str], descriptions: dict[str, str] | None = None) -> dict:
+_NON_EQUITY_KEYWORDS = {"ETF", "FUND", "INDEX", "TRUST", "BOND", "TREASURY", "PROSHARES", "DIREXION", "ISHARES", "VANGUARD", "SPDR"}
+
+
+def _is_likely_etf(sym: str, description: str, asset_type: str = "") -> bool:
+    """Heuristic to skip ETFs/funds/leveraged products that don't report earnings."""
+    upper_desc = description.upper()
+    upper_type = asset_type.upper()
+    if "ETF" in upper_type or "FUND" in upper_type:
+        return True
+    return any(kw in upper_desc for kw in _NON_EQUITY_KEYWORDS)
+
+
+def analyze_earnings_impact(
+    symbols: list[str],
+    descriptions: dict[str, str] | None = None,
+    asset_types: dict[str, str] | None = None,
+) -> dict:
     """Run earnings impact analysis for a list of symbols.
 
     Parameters
@@ -260,32 +276,49 @@ def analyze_earnings_impact(symbols: list[str], descriptions: dict[str, str] | N
         Ticker symbols to analyze.
     descriptions : dict[str, str] | None
         Optional mapping of symbol -> company description.
+    asset_types : dict[str, str] | None
+        Optional mapping of symbol -> asset type (e.g., "Equity", "ETF").
 
     Returns
     -------
     dict
         JSON-serializable result with per-symbol analysis and upcoming alerts.
     """
+    import time
+
     import pandas as pd
     import yfinance as yf
 
     descriptions = descriptions or {}
+    asset_types = asset_types or {}
     results = []
     upcoming_alerts = []
     today = datetime.date.today()
+    request_count = 0
 
     for sym in symbols:
+        desc = descriptions.get(sym, "")
+        atype = asset_types.get(sym, "")
         entry: dict = {
             "symbol": sym,
-            "description": descriptions.get(sym, ""),
+            "description": desc,
             "status": "ok",
         }
 
+        if _is_likely_etf(sym, desc, atype):
+            entry["status"] = "not_applicable"
+            results.append(entry)
+            continue
+
         try:
+            if request_count > 0 and request_count % 5 == 0:
+                time.sleep(1.5)
+
             ticker = yf.Ticker(_yahoo_symbol(sym))
 
             # Fetch earnings dates (includes future upcoming + past reported).
             earnings_df = ticker.get_earnings_dates(limit=EARNINGS_HISTORY_LIMIT)
+            request_count += 1
             if earnings_df is None or earnings_df.empty:
                 entry["status"] = "no_earnings_data"
                 results.append(entry)

@@ -510,14 +510,16 @@ def portfolio_earnings_impact(
 
     symbols = []
     descriptions = {}
+    asset_types = {}
     for r in positions:
         sym = (r.get("Symbol") or "").strip().upper()
         if sym:
             symbols.append(sym)
             descriptions[sym] = r.get("Description", "")
+            asset_types[sym] = r.get("Asset Type", "")
 
     try:
-        result = analyze_earnings_impact(symbols, descriptions)
+        result = analyze_earnings_impact(symbols, descriptions, asset_types)
         return {"snapshot_date": snapshot_date, **result}
     except Exception as e:
         return {"snapshot_date": snapshot_date, "error": str(e), "positions": [], "upcoming_alerts": []}
