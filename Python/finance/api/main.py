@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 import csv
+import re
 import time
 from datetime import date, datetime
 from pathlib import Path
@@ -119,6 +120,77 @@ def _annotate_iso_date(rows: list[dict], source_col: str, target_col: str) -> li
 
 def _parse_money(val: str) -> Optional[float]:
     return _parse_float(val)
+
+
+def _parse_single_balance_file(path: Path) -> Optional[dict]:
+    """Parse one Schwab balance key-value CSV into a normalised row dict."""
+    try:
+        content = path.read_text(encoding="utf-8-sig")
+    except Exception:
+        return None
+    lines = content.splitlines()
+    if not lines:
+        return None
+
+    # Header: "Balances for account XXXX as of MM/DD/YYYY HH:MM AM/PM ET"
+    header = lines[0].strip().strip('"')
+    snapshot_date = ""
+    snapshot_time = ""
+    m = re.search(r"as of (\d{1,2}/\d{1,2}/\d{4}) (\d{1,2}:\d{2} [AP]M)", header, re.IGNORECASE)
+    if m:
+        snapshot_date = m.group(1)
+        snapshot_time = m.group(2)
+
+    # State-tracked key-value extraction (handles repeated keys in subsections)
+    section = ""
+    kv: dict[str, str] = {}
+    for line in lines[1:]:
+        line = line.strip()
+        if not line:
+            section = ""
+            continue
+        try:
+            parts = next(csv.reader([line]))
+        except StopIteration:
+            continue
+        key = parts[0].strip().strip('"') if parts else ""
+        val = parts[1].strip().strip('"') if len(parts) > 1 else ""
+        if not key:
+            continue
+        if not val:
+            section = key
+            continue
+        # Disambiguate repeated "Cash & Cash Investments" by subsection
+        full_key = key
+        if section == "To Trade" and key == "Cash & Cash Investments":
+            full_key = "Available to Trade (Cash)"
+        elif section == "To Withdraw" and key == "Cash & Cash Investments":
+            full_key = "Available to Withdraw"
+        if full_key not in kv:
+            kv[full_key] = val
+
+    iso = _date_iso(snapshot_date)
+    return {
+        "SnapshotDate": snapshot_date,
+        "SnapshotTime": snapshot_time,
+        "Account Value": kv.get("Account Value", ""),
+        "Day Change": kv.get("Day Change", ""),
+        "Day Change %": kv.get("Day Change %", ""),
+        "Cash & Cash Investments": kv.get("Cash & Cash Investments", ""),
+        "Market Value (Securities)": kv.get("Market Value", ""),
+        "Available to Trade (Cash)": kv.get("Available to Trade (Cash)", ""),
+        "Settled Funds": kv.get("Settled Funds", ""),
+        "Available to Withdraw": kv.get("Available to Withdraw", ""),
+        "snapshot_date_iso": iso,
+        "account_value": _parse_money(kv.get("Account Value", "")),
+        "day_change": _parse_money(kv.get("Day Change", "")),
+        "day_change_pct": _parse_money(kv.get("Day Change %", "")),
+        "cash": _parse_money(kv.get("Cash & Cash Investments", "")),
+        "securities_value": _parse_money(kv.get("Market Value", "")),
+        "available_to_trade": _parse_money(kv.get("Available to Trade (Cash)", "")),
+        "settled_funds": _parse_money(kv.get("Settled Funds", "")),
+        "available_to_withdraw": _parse_money(kv.get("Available to Withdraw", "")),
+    }
 
 
 def _current_positions_from_csv() -> tuple[str, list[dict]]:
@@ -300,30 +372,61 @@ def rgl_details(
 
 @app.get("/balances")
 def balances():
-    master = BASE_DIR / "balances" / "master-balances.csv"
-    if not master.exists():
-        return {"count": 0, "rows": [], "latest": None}
-
+    bal_dir = BASE_DIR / "balances"
+    master = bal_dir / "master-balances.csv"
     rows: list[dict] = []
-    with master.open("r", encoding="utf-8-sig", newline="") as f:
-        reader = csv.DictReader(f)
-        for r in reader:
-            snapshot_iso = _date_iso(r.get("SnapshotDate", ""))
-            rows.append({
-                **r,
-                "snapshot_date_iso": snapshot_iso,
-                "account_value": _parse_money(r.get("Account Value", "")),
-                "day_change": _parse_money(r.get("Day Change", "")),
-                "day_change_pct": _parse_money(r.get("Day Change %", "")),
-                "cash": _parse_money(r.get("Cash & Cash Investments", "")),
-                "securities_value": _parse_money(r.get("Market Value (Securities)", "")),
-                "available_to_trade": _parse_money(r.get("Available to Trade (Cash)", "")),
-                "settled_funds": _parse_money(r.get("Settled Funds", "")),
-                "available_to_withdraw": _parse_money(r.get("Available to Withdraw", "")),
-            })
 
-    rows.sort(key=lambda r: r.get("snapshot_date_iso") or "")
+    if master.exists():
+        with master.open("r", encoding="utf-8-sig", newline="") as f:
+            reader = csv.DictReader(f)
+            for r in reader:
+                snapshot_iso = _date_iso(r.get("SnapshotDate", ""))
+                rows.append({
+                    **r,
+                    "snapshot_date_iso": snapshot_iso,
+                    "account_value": _parse_money(r.get("Account Value", "")),
+                    "day_change": _parse_money(r.get("Day Change", "")),
+                    "day_change_pct": _parse_money(r.get("Day Change %", "")),
+                    "cash": _parse_money(r.get("Cash & Cash Investments", "")),
+                    "securities_value": _parse_money(r.get("Market Value (Securities)", "")),
+                    "available_to_trade": _parse_money(r.get("Available to Trade (Cash)", "")),
+                    "settled_funds": _parse_money(r.get("Settled Funds", "")),
+                    "available_to_withdraw": _parse_money(r.get("Available to Withdraw", "")),
+                })
+    elif bal_dir.exists():
+        # No master — read individual Schwab balance CSV files directly
+        for p in sorted(bal_dir.glob("*.csv")) + sorted(bal_dir.glob("*.CSV")):
+            if "master" in p.name.lower():
+                continue
+            row = _parse_single_balance_file(p)
+            if row and row.get("account_value") is not None:
+                rows.append(row)
+
+    # Deduplicate by snapshot_date_iso, keeping latest file per date
+    seen: dict[str, dict] = {}
+    for r in rows:
+        key = r.get("snapshot_date_iso") or r.get("SnapshotDate") or ""
+        seen[key] = r
+    rows = sorted(seen.values(), key=lambda r: r.get("snapshot_date_iso") or "")
     return {"count": len(rows), "rows": rows, "latest": rows[-1] if rows else None}
+
+
+@app.get("/transactions/actions")
+def transaction_actions():
+    """Return all unique Action values seen in the transactions data."""
+    tx_dir = BASE_DIR / "transactions"
+    master = tx_dir / "Joint_Tenant_Transactions_MASTER.csv"
+    if master.exists():
+        _, rows = parse_transactions_csv(str(master))
+    else:
+        rows = []
+        for p in sorted(tx_dir.glob("*.csv")):
+            if "MASTER" in p.name:
+                continue
+            _, r = parse_transactions_csv(str(p))
+            rows.extend(r)
+    actions = sorted({r.get("Action", "").strip() for r in rows if r.get("Action", "").strip()})
+    return {"actions": actions}
 
 
 @app.get("/portfolio/context")

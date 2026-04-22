@@ -288,6 +288,7 @@ export const api = {
     ).toString();
     return get<MonteCarloResponse>(`/portfolio/monte-carlo${q ? "?" + q : ""}`);
   },
+  transactionActions: () => get<{ actions: string[] }>("/transactions/actions"),
   transactions: (params?: { from_date?: string; to_date?: string; symbol?: string; action?: string }) => {
     const q = new URLSearchParams(params as Record<string, string>).toString();
     return get<{ count: number; transactions: Transaction[] }>(`/transactions${q ? "?" + q : ""}`);
