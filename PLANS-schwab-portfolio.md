@@ -320,6 +320,102 @@ Task 5a,5b,5c are independent maintenance tasks
 
 ---
 
+## Balances Data — Master CSV Workflow
+
+### What is a Schwab balance snapshot?
+
+Each time you export balances from Schwab, you get a key-value CSV like:
+
+```
+"Balances for account XXXX-8231 as of 04/22/2026 02:50 AM ET"
+
+Account Value,"$299,625.78"
+Day Change,"-$1,727.77"
+Day Change %,"-0.57%"
+Cash & Cash Investments,"$135,458.02"
+Market Value,"$164,167.76"
+...
+Funds Available,
+To Trade,
+Cash & Cash Investments,"$134,694.44"
+Settled Funds,"$134,694.44"
+To Withdraw,
+Cash & Cash Investments,"$134,694.44"
+```
+
+This is **not a columnar CSV** — each file is one snapshot in key-value format.
+Files are named `XXXX8231_Balances_YYYYMMDD-HHMMSS.CSV`.
+
+### master-balances.csv
+
+The processor converts all individual snapshots into a single columnar master:
+
+```
+SnapshotDate, SnapshotTime, Account Value, Day Change, Day Change %,
+Cash & Cash Investments, Market Value (Securities), Available to Trade (Cash),
+Settled Funds, Available to Withdraw, source_file
+```
+
+**Location:** `Data/Private/finance/schwab-brokerage/balances/master-balances.csv`
+**Script:** `Monoclaw/Python/finance/schwab_balances_processor.py`
+
+### Parser notes for AI agents
+
+- The header line `"Balances for account ... as of MM/DD/YYYY HH:MM AM/PM ET"` contains the snapshot date/time.
+- `"Cash & Cash Investments"` appears **three times** in the raw file:
+  - First occurrence (top-level summary) → `Cash & Cash Investments` column — **first occurrence wins**
+  - Under `To Trade,` subsection → `Available to Trade (Cash)` column
+  - Under `To Withdraw,` subsection → `Available to Withdraw` column
+- Use **section tracking**: when a line has a key but no value, it sets the current subsection name.
+- `"Market Value"` appears twice; first occurrence = securities market value → `Market Value (Securities)`.
+- Strip `$`, `%`, and commas before parsing numbers; negative values are like `"-$1,727.77"`.
+- Deduplication key = `SnapshotDate`. If multiple files share a date, the lexicographically latest filename wins (filename encodes the download timestamp).
+
+### Commands
+
+**Rebuild master from scratch** (after moving new files to the balances dir):
+
+```bash
+python Python/finance/schwab_balances_processor.py rebuild \
+  --dir ~/.openclaw/workspace/Data/Private/finance/schwab-brokerage/balances
+```
+
+**Append one new file** (faster, only processes the new snapshot):
+
+```bash
+python Python/finance/schwab_balances_processor.py append \
+  --dir ~/.openclaw/workspace/Data/Private/finance/schwab-brokerage/balances \
+  --csv ~/Downloads/XXXX8231_Balances_20260430-183000.CSV
+```
+
+**Using the `.venv` at the Monoclaw repo root:**
+
+```bash
+/path/to/Monoclaw/.venv/bin/python Python/finance/schwab_balances_processor.py rebuild \
+  --dir ~/.openclaw/workspace/Data/Private/finance/schwab-brokerage/balances
+```
+
+### API priority
+
+The `/balances` endpoint checks in this order:
+1. `master-balances.csv` (preferred — fast, single read, columnar)
+2. Individual `*.csv` / `*.CSV` files in the balances dir (fallback for machines that haven't run the processor yet)
+
+Always run the processor after moving new balance files — this keeps the master current and makes the API faster.
+
+### Download workflow (after downloading a new snapshot from Schwab)
+
+1. Move the file from `~/Downloads/` to `Data/Private/finance/schwab-brokerage/balances/`
+2. Run `append` (or `rebuild` if unsure):
+   ```bash
+   python Python/finance/schwab_balances_processor.py append \
+     --dir ~/.openclaw/workspace/Data/Private/finance/schwab-brokerage/balances \
+     --csv ~/.openclaw/workspace/Data/Private/finance/schwab-brokerage/balances/XXXX8231_Balances_YYYYMMDD-HHMMSS.CSV
+   ```
+3. No API restart needed — the API re-reads the master on every request.
+
+---
+
 ## Rules for All Coding Tasks
 
 1. **Never commit to main/master.** Use feature branches. Ernest merges.
