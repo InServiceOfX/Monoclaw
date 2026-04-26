@@ -75,9 +75,59 @@ which is fine for our scheduler (we only need beat-precise).
 
 ---
 
-### TBD — `[Open]` Stems vs 2-deck classic for v1
+### 2026-04-25 · v1 = classic 2-deck, no stems
 
-Pending Ernest input. Recommend: classic 2-deck for M0–M3, stems in M5+.
+**Context.** Mixxx 2.5+ supports stems. More creative options, but adds a build dimension and analysis step.
+
+**Decision.** Classic 2-deck for M0–M3. Revisit stems in M5+.
+
+**Consequences.** Faster path to a live demo. Mapping XML/JS only needs Channel1+Channel2.
+
+---
+
+### 2026-04-25 · v1 = 100% software, no hardware MIDI controller
+
+**Context.** Ernest does not currently have a hardware MIDI controller; we want to minimize moving parts.
+
+**Decision.** Drive Mixxx exclusively through `IAC Driver clawdj` virtual MIDI port from clawdj-core. Hardware controller can be layered in later as a separate Mixxx mapping.
+
+**Consequences.** Setup is purely software — anyone with macOS + Mixxx can replicate. Removes a class of debugging issues (no hardware quirks).
+
+---
+
+### 2026-04-25 · macOS App Store Mixxx is the target
+
+**Context.** Ernest's running install lives at `~/Library/Containers/org.mixxx.mixxx/...` — the App Store sandboxed build, not a `brew --cask install mixxx` Homebrew copy.
+
+**Decision.** Target the sandboxed App Store build. Our mapping path:
+`~/Library/Containers/org.mixxx.mixxx/Data/Library/Application Support/Mixxx/controllers/clawdj.midi.xml` (+ `.js`).
+Our Rust core never touches Mixxx's process or files at runtime; communication is exclusively over MIDI.
+
+**Consequences.** Easiest install path for end users. Mixxx already has Document-Access tokens for `~/Music`, so it can read the audio files even though sandboxed. Our `clawdj setup` command just verifies port + mapping presence — no entitlement gymnastics needed.
+
+---
+
+### 2026-04-25 · Reuse Mixxx's existing library DB as a bootstrap source
+
+**Context.** Mixxx already maintains `mixxxdb.sqlite` with tags, `track_locations.location` (full file path), durations, and a slot for BPM/key. Ernest's instance has 1,033 tracks indexed (313 West Coast Rap, 175 Rap, 94 R&B — hip-hop heavy as advertised). Only 8/1,033 tracks have BPM/key, so analysis is still required.
+
+**Decision.** `clawdj scan` reads Mixxx's `mixxxdb.sqlite` first (tracks + paths + tags) and only crawls the filesystem for *new* paths. Our deeper analyzer fills BPM/key/sections/lyrics in our *own* DB; we never write to Mixxx's DB except for one specific use:
+
+---
+
+### 2026-04-25 · Track-loading mechanism: "clawdj queue" Mixxx playlist
+
+**Context.** Mixxx's controller-script JS API has *no* `loadTrackByPath` function. Confirmed via Mixxx wiki + community threads. Available routes are:
+  - `LoadSelectedTrackFromGroup` — loads whatever is highlighted in the library UI (requires GUI navigation).
+  - Auto-DJ queue manipulation.
+  - GUI drag-and-drop (not scriptable).
+
+**Decision.** clawdj-core maintains a Mixxx playlist named `__clawdj_queue` by directly inserting/deleting rows in `Playlists` and `PlaylistTracks` tables of `mixxxdb.sqlite`. To load a track into a deck:
+  1. Rust core inserts the target `track_id` into `__clawdj_queue` at a known index (e.g. row 0).
+  2. Sends a MIDI message to our mapping JS.
+  3. Mapping JS issues the official `LoadSelectedTrackFromGroup` against `[Channel<n>]` after pointing the library focus at our playlist row 0 via `[Library]` controls.
+
+**Consequences.** Stable across Mixxx versions because we use the *sanctioned* load API. Direct-DB writes are scoped to one playlist we own; we never modify Mixxx's actual `library` table. We must obtain Mixxx's lock on the DB safely — short writes only, with retry.
 
 ---
 
