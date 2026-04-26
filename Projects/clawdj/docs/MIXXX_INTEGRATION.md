@@ -123,10 +123,27 @@ though it could later power local lyric/embedding analysis on Apple Silicon.
 Mixxx as the working assumption (matches the "live mix mp3/aac" story
 perfectly).
 
-## Open questions to confirm with Ernest
+## Confirmed environment (Ernest's machine, 2026-04-25)
 
-1. Did "mlxxx" mean **Mixxx**? (95% confidence yes.)
-2. Are the AAC files DRM-free `.m4a` exports from Apple Music, or protected
-   `.m4p`? Mixxx cannot decode protected AAC.
-3. Do we want stems (DJ.com / Mixxx 2.5 stem support) or stay 2-deck classic?
-4. MIDI/HID hardware controller in the loop too, or 100% software?
+- ✅ Mixxx is the target (PID 47256 was running while planning).
+- ✅ macOS, App Store sandboxed build (`org.mixxx.mixxx` container).
+- ✅ IAC Driver enabled with port `clawdj` online — visible to CoreMIDI as both source and destination. Bus 1 left untouched (default, harmless).
+- ✅ Library: 1,033 tracks in `mixxxdb.sqlite`, only 8 with BPM/key. We will run a full analysis pass in M1.
+- ✅ Audio files: DRM-free `.m4a` + mp3.
+- ✅ v1 = classic 2-deck, 100% software, no hardware controller.
+
+## Loading tracks: the catch and the fix
+
+There is **no JS API to load a track by file path** from a controller script. The available routes are:
+
+1. `LoadSelectedTrackFromGroup` — acts on whatever is highlighted in the GUI library.
+2. Auto-DJ queue.
+3. GUI drag-and-drop (not scriptable).
+
+**Our solution:** clawdj-core maintains a Mixxx playlist called `__clawdj_queue` by writing directly to Mixxx's `Playlists` / `PlaylistTracks` SQLite tables (read-only access to `library` / `track_locations` for ID resolution). To load:
+
+1. Rust: `INSERT OR REPLACE` the desired `track_id` at row 0 of `__clawdj_queue`.
+2. Rust: send MIDI "load deck N from queue row 0" to mapping.
+3. JS in Mixxx: focus the library on our playlist, set selection to row 0, fire `LoadSelectedTrackFromGroup` against `[Channel<N>]`.
+
+This stays inside Mixxx's sanctioned API. We never modify the real `library` table.

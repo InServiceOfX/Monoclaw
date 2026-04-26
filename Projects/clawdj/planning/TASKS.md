@@ -14,6 +14,9 @@ Status legend: `TODO` `WIP` `BLOCKED` `DONE`.
 - All paths relative to `Projects/clawdj/` unless noted.
 - No hardcoded music paths or user-identifying info in committed code.
 - Tests required for every Rust crate task; Python sidecar gets `pytest`.
+- macOS Mixxx data root resolved via env or default to:
+  `${XDG_DATA_HOME:-$HOME/Library/Containers/org.mixxx.mixxx/Data/Library/Application Support}/Mixxx/`.
+- MIDI port name constant: `IAC Driver clawdj` (macOS), `clawdj` (Linux/ALSA).
 
 ---
 
@@ -48,6 +51,15 @@ Include header comment with our channel allocation table.
 ```
 codex "create a Cargo workspace at Projects/clawdj/core-rust per docs/ARCHITECTURE.md, with one library crate `clawdj` and one binary crate `clawdj-cli`. Implement only the `setup` and `load` subcommands using midir."
 ```
+
+### T0.4b — `clawdj-queue-bootstrap` · TODO · agent
+Add a `clawdj queue init` subcommand that opens Mixxx's `mixxxdb.sqlite`
+(path: `$HOME/Library/Containers/org.mixxx.mixxx/Data/Library/Application Support/Mixxx/mixxxdb.sqlite` on macOS)
+and creates a hidden Mixxx playlist named `__clawdj_queue` if it does not
+exist. Provides `clawdj queue set <deck> <track_id>` which inserts the track
+at row 0 and `clawdj queue clear`. Use SQLite WAL mode + retry on lock; never
+write to Mixxx's `library` or `track_locations` tables. See DECISIONS.md
+"Track-loading mechanism".
 
 ### T0.5 — `m0-end-to-end-test` · TODO · human
 Manual: open Mixxx with mapping loaded; run `clawdj load 1
