@@ -16,6 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .price_fetcher import get_prices
 from .schwab_parser import parse_positions_csv, parse_rgl_csv, parse_transactions_csv
 from .monte_carlo import Holding, run_monte_carlo
+from .doi import DOIInputs, DOIWeights, compute_doi
 
 BASE_DIR = Path(os.environ.get("SCHWAB_BASE_DIR", "~/.openclaw/workspace/Data/Private/finance/schwab-brokerage")).expanduser()
 _EARNINGS_CACHE: dict[str, tuple[float, dict]] = {}
@@ -214,6 +215,24 @@ def _is_security_position(row: dict) -> bool:
 
 def _yahoo_symbol(sym: str) -> str:
     return sym.strip().replace("/", "-")
+
+
+def _portfolio_cash_totals() -> tuple[float, float]:
+    bal_data = balances()
+    latest = bal_data.get("latest") if isinstance(bal_data, dict) else None
+    if latest:
+        cash_value = _parse_float(latest.get("Available to Trade (Cash)", "")) or latest.get("available_to_trade")
+        total_account_value = _parse_float(latest.get("Account Value", "")) or latest.get("account_value")
+        if cash_value is not None and total_account_value:
+            return float(cash_value), float(total_account_value)
+
+    snapshot_date, rows = _current_positions_from_csv()
+    del snapshot_date
+    positions = [r for r in rows if _is_security_position(r)]
+    total_mv = sum(_position_market_value(r) for r in positions)
+    cash_rows = [r for r in rows if not _is_security_position(r)]
+    cash = sum(_position_market_value(r) for r in cash_rows if _position_market_value(r) > 0)
+    return cash, total_mv + cash
 
 
 # ── endpoints ────────────────────────────────────────────────────────────────
@@ -428,6 +447,31 @@ def transaction_actions():
             rows.extend(r)
     actions = sorted({r.get("Action", "").strip() for r in rows if r.get("Action", "").strip()})
     return {"actions": actions}
+
+
+@app.get("/doi/snapshot")
+def doi_snapshot():
+    pos = positions_current()
+    positions = pos.get("positions", [])
+    holdings = [
+        {
+            "symbol": p.get("symbol", ""),
+            "description": p.get("description", ""),
+            "market_value": p.get("market_value"),
+            "current_price": p.get("current_price"),
+            "pct_of_account": p.get("pct_of_account"),
+            "asset_type": p.get("asset_type", ""),
+        }
+        for p in positions
+        if p.get("symbol") and p.get("symbol") != "Positions Total" and p.get("qty") is not None
+    ]
+    cash_value, total_account_value = _portfolio_cash_totals()
+    inputs = DOIInputs(
+        holdings=holdings,
+        cash_value=cash_value,
+        total_account_value=total_account_value,
+    )
+    return compute_doi(inputs, DOIWeights())
 
 
 @app.get("/portfolio/context")
