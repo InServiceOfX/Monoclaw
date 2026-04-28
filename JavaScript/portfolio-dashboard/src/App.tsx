@@ -8,6 +8,7 @@ import RGL from "./pages/RGL";
 import Balances from "./pages/Balances";
 import Insights from "./pages/Insights";
 import MonteCarlo from "./pages/MonteCarlo";
+import DOI from "./pages/DOI";
 import Earnings from "./pages/Earnings";
 import Recommendations from "./pages/Recommendations";
 
@@ -30,6 +31,7 @@ export default function App() {
                 <Tabs.Tab value="rgl">Realized G/L</Tabs.Tab>
                 <Tabs.Tab value="insights">Context</Tabs.Tab>
                 <Tabs.Tab value="mc">Monte Carlo</Tabs.Tab>
+                <Tabs.Tab value="doi">DOI</Tabs.Tab>
                 <Tabs.Tab value="earnings">Earnings</Tabs.Tab>
                 <Tabs.Tab value="recommendations">Recs</Tabs.Tab>
               </Tabs.List>
@@ -44,6 +46,7 @@ export default function App() {
           {tab === "rgl" && <RGL />}
           {tab === "insights" && <Insights />}
           {tab === "mc" && <MonteCarlo />}
+          {tab === "doi" && <DOI />}
           {tab === "earnings" && <Earnings />}
           {tab === "recommendations" && <Recommendations />}
         </AppShell.Main>

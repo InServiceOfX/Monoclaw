@@ -1,6 +1,6 @@
 # Portfolio Dashboard — Progress
 
-**Last Updated:** 2026-04-18
+**Last Updated:** 2026-04-28
 **Status:** MVP Complete, analytics polish phase
 
 ---
@@ -18,6 +18,7 @@
 | **Balances** | ✅ Complete | Snapshot cards, account/cash/securities trend, balances table |
 | **Context** | ✅ First pass | Local risk flags, YTD realized tax snapshot, top holdings context, earnings watch |
 | **Monte Carlo** | ✅ First pass | Portfolio percentile bands, current holdings simulation, optional watchlist candidate runs |
+| **DOI** | ✅ First pass | Deployment Opportunity Index tab with portfolio score, index regime panel, and ticker breakdown |
 
 ### Backend API
 
@@ -36,6 +37,7 @@ All endpoints functional in `Python/finance/api/main.py`:
 | `GET /portfolio/context` | ✅ | Local deterministic risk/tax/holdings context |
 | `GET /portfolio/earnings?limit=` | ✅ | Earnings watch for top holdings via yfinance |
 | `GET /portfolio/monte-carlo?...` | ✅ | Monte Carlo risk bands + watchlist candidate ranking |
+| `GET /doi/snapshot` | ✅ | Deployment Opportunity Index snapshot for frontend tab |
 
 ---
 
@@ -81,3 +83,4 @@ All endpoints functional in `Python/finance/api/main.py`:
 - Moved stray hardcoded Monte Carlo script into shared backend logic at `Python/finance/api/monte_carlo.py`.
 - Replaced `schwab_portfolio_mc.py` with a CLI wrapper around the shared module.
 - Added Monte Carlo dashboard tab and `/portfolio/monte-carlo` endpoint.
+- Added DOI dashboard tab and `/doi/snapshot` frontend integration with portfolio-, index-, and ticker-level breakdowns.
