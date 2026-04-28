@@ -1,11 +1,12 @@
 """Local Schwab portfolio API — binds to 127.0.0.1:8765 only."""
 from __future__ import annotations
 
+import json
 import os
 import csv
 import re
 import time
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
@@ -799,4 +800,122 @@ def portfolio_timeseries(period: str = Query("1y", description="1m 3m 6m 1y 2y")
         "benchmark_spy": benchmark,
         "note": "Current holdings × historical prices. Not actual historical portfolio value.",
         "period": period,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Recommendations report
+# ---------------------------------------------------------------------------
+
+REC_FILE = Path("~/.openclaw/workspace/Data/Private/finance/recommendations/recommendations.jsonl").expanduser()
+REC_REPORTS_DIR = Path("~/.openclaw/workspace/Data/Private/finance/recommendations/reports").expanduser()
+
+
+def _latest_report(prefix: str) -> Optional[dict]:
+    """Load the most recent report file matching reports/{prefix}_*.json."""
+    if not REC_REPORTS_DIR.exists():
+        return None
+    files = sorted(REC_REPORTS_DIR.glob(f"{prefix}_*.json"))
+    if not files:
+        return None
+    with open(files[-1]) as f:
+        return json.load(f)
+
+
+@app.get("/recommendations/report")
+def recommendations_report(days: int = Query(default=90, ge=1, le=3650)):
+    """
+    Returns recommendations with match attribution and forward-return performance.
+    Joins recommendations.jsonl + latest match_*.json + latest performance_*.json.
+    """
+    if not REC_FILE.exists():
+        return {"recommendations": [], "summary": {}, "generated_at": datetime.now().isoformat()}
+
+    cutoff = datetime.now() - timedelta(days=days)
+
+    recs: list[dict] = []
+    with open(REC_FILE) as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rec = json.loads(line)
+                ts = datetime.fromisoformat(rec["timestamp"])
+                if ts.replace(tzinfo=None) >= cutoff:
+                    recs.append(rec)
+            except Exception:
+                continue
+
+    # Build lookup tables from latest reports
+    match_report = _latest_report("match")
+    perf_report = _latest_report("performance")
+
+    attribution_by_id: dict[str, str] = {}
+    matched_trade_by_id: dict[str, dict] = {}
+    if match_report:
+        for m in match_report.get("matches", []):
+            rid = m.get("recommendation_id")
+            if rid:
+                attribution_by_id[rid] = m.get("attribution", "unknown")
+                matched_trade_by_id[rid] = m.get("matched_trade", {})
+        for u in match_report.get("unmatched_recs", []):
+            rid = u.get("recommendation_id")
+            if rid:
+                attribution_by_id[rid] = "ignored"
+
+    perf_by_id: dict[str, dict] = {}
+    if perf_report:
+        for p in perf_report.get("results", []):
+            rid = p.get("recommendation_id")
+            if rid:
+                perf_by_id[rid] = p
+
+    # Combine
+    combined = []
+    for rec in recs:
+        rid = rec["id"]
+        perf = perf_by_id.get(rid, {})
+        combined.append({
+            "id": rid,
+            "symbol": rec["symbol"],
+            "action": rec["action"],
+            "conviction": rec.get("conviction"),
+            "timestamp": rec["timestamp"],
+            "risk_reward_score": rec.get("metrics", {}).get("risk_reward_score"),
+            "expected_return": rec.get("metrics", {}).get("expected_return"),
+            "prob_gain": rec.get("metrics", {}).get("prob_gain"),
+            "attribution": attribution_by_id.get(rid, "unknown"),
+            "matched_trade": matched_trade_by_id.get(rid),
+            "forward_returns": perf.get("forward_returns"),
+            "spy_alpha": perf.get("spy_alpha"),
+        })
+
+    # Summary stats
+    by_attribution: dict[str, int] = {}
+    by_conviction: dict[str, int] = {}
+    for r in combined:
+        attr = r["attribution"]
+        by_attribution[attr] = by_attribution.get(attr, 0) + 1
+        conv = r["conviction"] or "unknown"
+        by_conviction[conv] = by_conviction.get(conv, 0) + 1
+
+    total = len(combined)
+    followed = by_attribution.get("followed", 0)
+    partial = by_attribution.get("partially_followed", 0)
+
+    summary = {
+        "total": total,
+        "days_lookback": days,
+        "by_attribution": by_attribution,
+        "by_conviction": by_conviction,
+        "follow_rate_pct": round((followed + partial) / total * 100, 1) if total > 0 else 0,
+        "match_report_date": match_report.get("generated_at") if match_report else None,
+        "perf_report_date": perf_report.get("generated_at") if perf_report else None,
+    }
+
+    return {
+        "recommendations": combined,
+        "summary": summary,
+        "generated_at": datetime.now().isoformat(),
     }

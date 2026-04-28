@@ -272,6 +272,55 @@ export interface EarningsImpactResponse {
   note?: string;
 }
 
+export interface ForwardReturns {
+  "1d"?: number | null;
+  "7d"?: number | null;
+  "30d"?: number | null;
+  "90d"?: number | null;
+}
+
+export interface SpyAlpha {
+  "1d"?: number | null;
+  "7d"?: number | null;
+  "30d"?: number | null;
+  "90d"?: number | null;
+}
+
+export interface RecommendationRec {
+  id: string;
+  symbol: string;
+  action: string;
+  conviction: string | null;
+  timestamp: string;
+  risk_reward_score: number | null;
+  expected_return: number | null;
+  prob_gain: number | null;
+  attribution: "followed" | "partially_followed" | "ignored" | "contrary" | "unknown";
+  matched_trade: {
+    date: string;
+    action: string;
+    quantity: string;
+    price: string;
+    amount: string;
+  } | null;
+  forward_returns: ForwardReturns | null;
+  spy_alpha: SpyAlpha | null;
+}
+
+export interface RecommendationsReport {
+  recommendations: RecommendationRec[];
+  summary: {
+    total: number;
+    days_lookback: number;
+    by_attribution: Record<string, number>;
+    by_conviction: Record<string, number>;
+    follow_rate_pct: number;
+    match_report_date: string | null;
+    perf_report_date: string | null;
+  };
+  generated_at: string;
+}
+
 export const api = {
   summary: () => get<PortfolioSummary>("/portfolio/summary"),
   positions: () => get<PositionsResponse>("/positions/current"),
@@ -305,4 +354,6 @@ export const api = {
       period: string;
       error?: string;
     }>(`/portfolio/timeseries?period=${period}`),
+  recommendations: (days = 90) =>
+    get<RecommendationsReport>(`/recommendations/report?days=${days}`),
 };
