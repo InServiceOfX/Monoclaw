@@ -321,6 +321,47 @@ export interface RecommendationsReport {
   generated_at: string;
 }
 
+export interface DOITicker {
+  symbol: string;
+  current_price: number | null;
+  high_52w: number | null;
+  drawdown_score: number | null;
+  index_regime_score: number | null;
+  cash_availability_score: number | null;
+  conviction_score: number | null;
+  momentum_exhaustion: number | null;
+  breadth_deterioration: number | null;
+  doi: number | null;
+  action: "deploy" | "hold" | "trim" | "data_missing";
+  size_hint_dollars: number | null;
+}
+
+export interface DOIIndexInfo {
+  local_top_prob: number | null;
+  regime_score: number | null;
+}
+
+export interface DOISnapshot {
+  as_of: string;
+  weights: {
+    w1: number;
+    w2: number;
+    w3: number;
+    w4: number;
+    w5: number;
+    w6: number;
+  };
+  portfolio_doi: number;
+  cash_deficit_warning: boolean;
+  cash_pct: number | null;
+  tickers: DOITicker[];
+  indices: {
+    SPX: DOIIndexInfo;
+    QQQ: DOIIndexInfo;
+    DJI: DOIIndexInfo;
+  };
+}
+
 export const api = {
   summary: () => get<PortfolioSummary>("/portfolio/summary"),
   positions: () => get<PositionsResponse>("/positions/current"),
@@ -354,6 +395,7 @@ export const api = {
       period: string;
       error?: string;
     }>(`/portfolio/timeseries?period=${period}`),
+  doi: () => get<DOISnapshot>("/doi/snapshot"),
   recommendations: (days = 90) =>
     get<RecommendationsReport>(`/recommendations/report?days=${days}`),
 };
