@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Accordion,
@@ -10,10 +11,12 @@ import {
   Paper,
   RingProgress,
   ScrollArea,
+  SegmentedControl,
   SimpleGrid,
   Stack,
   Table,
   Text,
+  TextInput,
   Tooltip,
 } from "@mantine/core";
 import { api } from "../api";
@@ -105,6 +108,16 @@ function actionCounts(tickers: DOITicker[]) {
     },
     { deploy: 0, hold: 0, trim: 0, data_missing: 0 } as Record<DOITicker["action"], number>,
   );
+}
+
+type DOIFilter = "all" | "actionable" | "positive" | "nearDeploy" | "exhausted";
+
+function isHighConviction(ticker: DOITicker) {
+  return (ticker.conviction_score ?? 0) >= 0.6;
+}
+
+function isNearDeploy(ticker: DOITicker) {
+  return (ticker.doi ?? -Infinity) >= 0.25;
 }
 
 function indexInterpretation(info: DOIIndexInfo) {
@@ -222,15 +235,32 @@ function DOIHeaderCounts({ tickers }: { tickers: DOITicker[] }) {
   );
 }
 
-function DOITable({ tickers }: { tickers: DOITicker[] }) {
+function DOITable({
+  tickers,
+  title = "Ticker Breakdown",
+  subtitle,
+  maxHeight = 480,
+  showCounts = true,
+  framed = true,
+}: {
+  tickers: DOITicker[];
+  title?: string;
+  subtitle?: string;
+  maxHeight?: number;
+  showCounts?: boolean;
+  framed?: boolean;
+}) {
   const sorted = [...tickers].sort((a, b) => (b.doi ?? -Infinity) - (a.doi ?? -Infinity));
-  return (
-    <Paper withBorder p="md" radius="md">
+  const content = (
+    <>
       <Group justify="space-between" mb="sm">
-        <Text fw={600}>Ticker Breakdown</Text>
-        <DOIHeaderCounts tickers={tickers} />
+        <Box>
+          <Text fw={600}>{title}</Text>
+          {subtitle && <Text size="xs" c="dimmed">{subtitle}</Text>}
+        </Box>
+        {showCounts && <DOIHeaderCounts tickers={tickers} />}
       </Group>
-      <ScrollArea mah={480}>
+      <ScrollArea mah={maxHeight}>
         <Table striped withTableBorder>
           <Table.Thead>
             <Table.Tr>
@@ -252,6 +282,13 @@ function DOITable({ tickers }: { tickers: DOITicker[] }) {
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
+            {sorted.length === 0 && (
+              <Table.Tr>
+                <Table.Td colSpan={7}>
+                  <Text size="sm" c="dimmed" ta="center" py="md">No tickers match this view.</Text>
+                </Table.Td>
+              </Table.Tr>
+            )}
             {sorted.map((ticker) => {
               const drawdown = drawdownPct(ticker);
               const missing = ticker.doi == null;
@@ -278,6 +315,90 @@ function DOITable({ tickers }: { tickers: DOITicker[] }) {
           </Table.Tbody>
         </Table>
       </ScrollArea>
+    </>
+  );
+
+  if (!framed) return content;
+  return (
+    <Paper withBorder p="md" radius="md">
+      {content}
+    </Paper>
+  );
+}
+
+function ActionableWatchlist({ tickers }: { tickers: DOITicker[] }) {
+  const watchlist = [...tickers]
+    .filter((ticker) => ticker.doi != null && isHighConviction(ticker))
+    .sort((a, b) => (b.doi ?? -Infinity) - (a.doi ?? -Infinity))
+    .slice(0, 10);
+
+  return (
+    <DOITable
+      tickers={watchlist}
+      title="Actionable Watchlist"
+      subtitle="High-conviction names only. This avoids letting low-conviction deep drawdowns dominate the first decision surface."
+      maxHeight={360}
+      showCounts={false}
+    />
+  );
+}
+
+function applyTickerFilter(tickers: DOITicker[], filter: DOIFilter, query: string) {
+  const normalized = query.trim().toUpperCase();
+  return tickers.filter((ticker) => {
+    if (normalized && !ticker.symbol.includes(normalized)) return false;
+    if (filter === "actionable") return isHighConviction(ticker);
+    if (filter === "positive") return (ticker.doi ?? -Infinity) > 0;
+    if (filter === "nearDeploy") return isNearDeploy(ticker);
+    if (filter === "exhausted") return (ticker.momentum_exhaustion ?? 0) >= 0.5;
+    return true;
+  });
+}
+
+function DOIExplorer({ tickers }: { tickers: DOITicker[] }) {
+  const [filter, setFilter] = useState<DOIFilter>("all");
+  const [query, setQuery] = useState("");
+  const filtered = applyTickerFilter(tickers, filter, query);
+
+  return (
+    <Paper withBorder p="md" radius="md">
+      <Stack gap="sm">
+        <Group justify="space-between" align="flex-end">
+          <Box>
+            <Text fw={600}>Full DOI Explorer</Text>
+            <Text size="xs" c="dimmed">
+              Search and filter the full portfolio instead of treating the raw drawdown leaders as the buy list.
+            </Text>
+          </Box>
+          <DOIHeaderCounts tickers={tickers} />
+        </Group>
+
+        <Group gap="sm" align="flex-end">
+          <SegmentedControl
+            size="xs"
+            value={filter}
+            onChange={(value) => setFilter(value as DOIFilter)}
+            data={[
+              { value: "all", label: "All" },
+              { value: "actionable", label: "High conviction" },
+              { value: "positive", label: "Positive DOI" },
+              { value: "nearDeploy", label: "Near deploy" },
+              { value: "exhausted", label: "Momentum hot" },
+            ]}
+          />
+          <TextInput
+            size="xs"
+            label="Symbol"
+            placeholder="Search"
+            value={query}
+            onChange={(event) => setQuery(event.currentTarget.value)}
+            w={150}
+          />
+          <Text size="xs" c="dimmed" pb={6}>{filtered.length} of {tickers.length}</Text>
+        </Group>
+
+        <DOITable tickers={filtered} title="Filtered Breakdown" maxHeight={480} showCounts={false} framed={false} />
+      </Stack>
     </Paper>
   );
 }
@@ -287,8 +408,8 @@ const weightExplanations = [
     key: "w1",
     label: "Drawdown",
     sign: "+",
-    tone: "Entry value",
-    detail: "Rewards names trading below their 52-week high. A deeper pullback raises DOI, but the backend dampens the effect so one large drop does not dominate the score.",
+    tone: "Entry value, not a quality signal",
+    detail: "Rewards names trading below their 52-week high, but now at a lower weight so deep drawdowns do not dominate without conviction or better timing.",
   },
   {
     key: "w2",
@@ -309,7 +430,7 @@ const weightExplanations = [
     label: "Conviction",
     sign: "+",
     tone: "Portfolio intent",
-    detail: "Uses the private conviction file for ticker-specific preference. Higher conviction allows a good technical setup to matter more than a generic ticker would.",
+    detail: "Uses the private conviction file for ticker-specific preference. Unlisted names now receive a lower default score, so curated names have to carry the deploy list.",
   },
   {
     key: "w5",
@@ -484,7 +605,8 @@ export default function DOI() {
       )}
 
       <IndicesPanel indices={data.indices} />
-      <DOITable tickers={data.tickers} />
+      <ActionableWatchlist tickers={data.tickers} />
+      <DOIExplorer tickers={data.tickers} />
       <WeightsFooter weights={data.weights} />
     </Stack>
   );

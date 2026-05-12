@@ -52,8 +52,9 @@ DEFAULT_CONVICTION = {
         "AAPL": 0.6,
         "TSLA": 0.6,
     },
-    "default": 0.3,
+    "default": 0.1,
 }
+LEGACY_DEFAULT_CONVICTION = 0.3
 _HISTORY_CACHE: dict[str, tuple[float, Any]] = {}
 
 
@@ -66,12 +67,12 @@ class DOIInputs:
 
 @dataclass(frozen=True)
 class DOIWeights:
-    w1: float = 0.30
+    w1: float = 0.16
     w2: float = 0.20
     w3: float = 0.15
-    w4: float = 0.20
-    w5: float = 0.10
-    w6: float = 0.05
+    w4: float = 0.25
+    w5: float = 0.14
+    w6: float = 0.10
 
 
 def _clip(value: float, low: float, high: float) -> float:
@@ -112,6 +113,8 @@ def _load_conviction() -> dict[str, Any]:
 
     tickers = payload.get("tickers")
     default = _finite_or_none(payload.get("default"))
+    if default == LEGACY_DEFAULT_CONVICTION:
+        default = DEFAULT_CONVICTION["default"]
     if not isinstance(tickers, dict):
         logger.warning("Conviction file missing ticker map, using defaults")
         return DEFAULT_CONVICTION
