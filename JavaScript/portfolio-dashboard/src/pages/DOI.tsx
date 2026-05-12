@@ -1,10 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import {
+  Accordion,
   Alert,
   Badge,
+  Box,
+  Divider,
   Group,
   Loader,
   Paper,
+  RingProgress,
   ScrollArea,
   SimpleGrid,
   Stack,
@@ -278,14 +282,164 @@ function DOITable({ tickers }: { tickers: DOITicker[] }) {
   );
 }
 
+const weightExplanations = [
+  {
+    key: "w1",
+    label: "Drawdown",
+    sign: "+",
+    tone: "Entry value",
+    detail: "Rewards names trading below their 52-week high. A deeper pullback raises DOI, but the backend dampens the effect so one large drop does not dominate the score.",
+  },
+  {
+    key: "w2",
+    label: "Index regime",
+    sign: "+/-",
+    tone: "Market timing",
+    detail: "Averages SPX, QQQ, and DJI short-term regime scores. Negative index stretch is treated as more buyable; overheated index action lowers the deploy impulse.",
+  },
+  {
+    key: "w3",
+    label: "Cash",
+    sign: "+",
+    tone: "Dry powder",
+    detail: "Measures available cash relative to account value. More cash increases the score because the portfolio has room to deploy without forcing a trim first.",
+  },
+  {
+    key: "w4",
+    label: "Conviction",
+    sign: "+",
+    tone: "Portfolio intent",
+    detail: "Uses the private conviction file for ticker-specific preference. Higher conviction allows a good technical setup to matter more than a generic ticker would.",
+  },
+  {
+    key: "w5",
+    label: "Momentum",
+    sign: "-",
+    tone: "Exhaustion check",
+    detail: "Penalizes overbought RSI-style momentum. Strong upward exhaustion can be good for existing holdings, but it is usually a worse fresh-entry window.",
+  },
+  {
+    key: "w6",
+    label: "Breadth",
+    sign: "-",
+    tone: "Portfolio health",
+    detail: "Looks at top holdings versus their 50-day moving averages. Broad weakness across the portfolio lowers deploy urgency even when one ticker looks attractive.",
+  },
+] as const;
+
+const termExplanations = [
+  {
+    value: "drawdown",
+    title: "Drawdown",
+    text: "How far the current price sits below its 52-week high. DOI converts that gap into a 0-1 score, where larger but still bounded pullbacks improve entry attractiveness.",
+  },
+  {
+    value: "regime",
+    title: "Regime",
+    text: "A short-term index stretch measure using price versus the 20-day average and volatility. Negative values mean the index is below trend enough to be more buyable; positive values mean extended conditions.",
+  },
+  {
+    value: "cash",
+    title: "Cash availability",
+    text: "Cash as a percent of total account value, capped for scoring once it reaches roughly a useful deployment buffer. A cash deficit warning overrides naive deploy enthusiasm.",
+  },
+  {
+    value: "conviction",
+    title: "Conviction",
+    text: "A human preference layer from the private conviction JSON file. It keeps the algorithm from treating every ticker as equally desirable when technical conditions line up.",
+  },
+  {
+    value: "momentum",
+    title: "Momentum exhaustion",
+    text: "An RSI-derived overbought pressure score. High exhaustion subtracts from DOI because chasing a hot move usually has worse entry timing.",
+  },
+  {
+    value: "breadth",
+    title: "Breadth deterioration",
+    text: "The share of major holdings trading below their 50-day averages, normalized after moderate weakness. It asks whether portfolio-wide participation is deteriorating.",
+  },
+  {
+    value: "vix",
+    title: "VIX in top probability",
+    text: "VIX is used in the index local-top probability, not directly in each ticker row. Low VIX adds a complacency adjustment when indices are already stretched.",
+  },
+];
+
+function weightValue(weights: DOISnapshot["weights"], key: (typeof weightExplanations)[number]["key"]) {
+  return weights[key];
+}
+
 function WeightsFooter({ weights }: { weights: DOISnapshot["weights"] }) {
   return (
-    <Paper withBorder p="sm" radius="md">
-      <Group gap={4} wrap="wrap">
-        <Text size="xs" c="dimmed" style={{ fontFamily: "monospace" }}>
-          w1 (drawdown) {weights.w1.toFixed(2)} · w2 (regime) {weights.w2.toFixed(2)} · w3 (cash) {weights.w3.toFixed(2)} · w4 (conviction) {weights.w4.toFixed(2)} · w5 (momentum) {weights.w5.toFixed(2)} · w6 (breadth) {weights.w6.toFixed(2)}
-        </Text>
-      </Group>
+    <Paper withBorder p="md" radius="md">
+      <Stack gap="md">
+        <Group justify="space-between" align="flex-start">
+          <Box>
+            <Text fw={700}>How DOI is scored</Text>
+            <Text size="sm" c="dimmed">
+              Positive terms raise deployment attractiveness; penalty terms cool it down when timing or portfolio health is poor.
+            </Text>
+          </Box>
+          <Paper withBorder px="sm" py={6} radius="sm" bg="dark.8">
+            <Text size="xs" c="indigo.2" style={{ fontFamily: "monospace", overflowWrap: "anywhere" }}>
+              DOI = w1*drawdown + w2*regime + w3*cash + w4*conviction - w5*momentum - w6*breadth
+            </Text>
+          </Paper>
+        </Group>
+
+        <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">
+          {weightExplanations.map((item) => {
+            const value = weightValue(weights, item.key);
+            return (
+              <Paper key={item.key} withBorder p="sm" radius="sm" bg="dark.7">
+                <Group justify="space-between" align="center" wrap="nowrap">
+                  <Group gap="sm" wrap="nowrap">
+                    <RingProgress
+                      size={56}
+                      thickness={5}
+                      roundCaps
+                      sections={[{ value: value * 100, color: item.sign === "-" ? "red" : "teal" }]}
+                      label={
+                        <Text ta="center" size="xs" fw={700} c={item.sign === "-" ? "red.3" : "teal.3"}>
+                          {item.key}
+                        </Text>
+                      }
+                    />
+                    <Box>
+                      <Group gap={6}>
+                        <Text fw={700} size="sm">{item.label}</Text>
+                        <Badge size="xs" color={item.sign === "-" ? "red" : item.sign === "+/-" ? "yellow" : "teal"} variant="light">
+                          {item.sign}
+                        </Badge>
+                      </Group>
+                      <Text size="xs" c="dimmed">{item.tone}</Text>
+                    </Box>
+                  </Group>
+                  <Text fw={700} style={{ fontVariantNumeric: "tabular-nums" }}>
+                    {value.toFixed(2)}
+                  </Text>
+                </Group>
+                <Text size="xs" c="dimmed" mt="xs">{item.detail}</Text>
+              </Paper>
+            );
+          })}
+        </SimpleGrid>
+
+        <Divider />
+
+        <Accordion variant="separated" radius="sm" multiple>
+          {termExplanations.map((term) => (
+            <Accordion.Item key={term.value} value={term.value}>
+              <Accordion.Control>
+                <Text fw={600} size="sm">{term.title}</Text>
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Text size="sm" c="dimmed">{term.text}</Text>
+              </Accordion.Panel>
+            </Accordion.Item>
+          ))}
+        </Accordion>
+      </Stack>
     </Paper>
   );
 }
