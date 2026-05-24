@@ -152,6 +152,11 @@ api_key = prof.get("api_key")
 if api_key:
     server_args.extend(["--api-key", api_key])
 
+# Multimodal projector (vision encoder — enables image input)
+mmproj = prof.get("mmproj_path")
+if mmproj:
+    server_args.extend(["--mmproj", mmproj])
+
 # Chat template
 ct = prof.get("chat_template")
 if ct:
