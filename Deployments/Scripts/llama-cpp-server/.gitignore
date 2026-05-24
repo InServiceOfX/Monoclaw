@@ -3,3 +3,4 @@ config.yml
 
 profiles/qwen35-9b-distilled.yml
 profiles/qwen35-9b-distilled-q5.yml
+profiles/qwen35-9b-distilled-q8.yml
