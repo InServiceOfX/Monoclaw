@@ -1,0 +1,49 @@
+services:
+  isaac:
+    build:
+      context: .
+      args:
+        ISAAC_VERSION: ${ISAAC_VERSION:-4.5.0}
+    container_name: ${CONTAINER_NAME:-isaac-sim}
+    stdin_open: true
+    tty: true
+    # host network required so DDS discovery sees the sibling ROS container
+    # and the host-side rosa-cli. All three share ROS_DOMAIN_ID=0.
+    network_mode: host
+    ipc: host
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              # Desktop: GPU 1 = RTX 3060 12GB (GPU 0 = GTX 980 Ti, no RT cores)
+              # Laptop:  GPU 0 = RTX 3070 8GB  (change GPU_ID=0 in .env)
+              device_ids: ["${GPU_ID:-1}"]
+              capabilities: [gpu, compute, utility, graphics]
+    environment:
+      - ACCEPT_EULA=Y
+      - PRIVACY_CONSENT=Y
+      - DISPLAY=${DISPLAY:-:0}
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+      - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
+      - OMNI_USER=${OMNI_USER:-admin}
+      - OMNI_PASS=${OMNI_PASS:-admin}
+      # headless | windowed | streaming
+      - ISAAC_MODE=${ISAAC_MODE:-headless}
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      # Persist shader cache so subsequent boots don't take 5 min
+      - isaac-cache:/root/.cache/ov
+      - isaac-data:/root/.local/share/ov/data
+      # Starship scene — edited on host, auto-picked up by Isaac
+      - ./starship:/isaac-sim/exts/starship
+    ports:
+      # Omniverse Streaming Client (ISAAC_MODE=streaming)
+      - "8211:8211"
+      - "8011:8011"
+      - "8111:8111"
+
+volumes:
+  isaac-cache:
+  isaac-data:

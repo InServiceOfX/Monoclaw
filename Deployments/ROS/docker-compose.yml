@@ -1,0 +1,23 @@
+services:
+  ros2:
+    build:
+      context: .
+      args:
+        ROS_DISTRO: ${ROS_DISTRO:-humble}
+    container_name: ${CONTAINER_NAME:-rosa-ros2}
+    stdin_open: true
+    tty: true
+    # host network is REQUIRED for DDS discovery between the container and
+    # a host-side rosa-cli. Docker bridge NAT breaks multicast discovery.
+    network_mode: host
+    ipc: host
+    environment:
+      - ROS_DISTRO=${ROS_DISTRO:-humble}
+      - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+      - DISPLAY=${DISPLAY}
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      # No rosa source mount — rosa runs OUTSIDE this container as a Rust binary.
+    # No GPU / nvidia runtime — GPU belongs to the IsaacSim container only.
+    command: ["bash", "-lc", "exec /entrypoint.sh bash"]
