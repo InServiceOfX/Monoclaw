@@ -25,7 +25,14 @@ services:
       - ACCEPT_EULA=Y
       - PRIVACY_CONSENT=Y
       - DISPLAY=${DISPLAY:-:0}
+      # Isaac Sim bundles its own ROS 2 Humble libs at this path.
+      # Without LD_LIBRARY_PATH pointing here, librmw_cyclonedds_cpp.so is not
+      # found even though RMW_IMPLEMENTATION is set, and the bridge fails with:
+      #   "failed to load shared library 'librmw_cyclonedds_cpp.so'"
+      # Isaac Sim tells you the fix in its own startup log — we just bake it in.
+      - LD_LIBRARY_PATH=/isaac-sim/exts/isaacsim.ros2.bridge/humble/lib
       - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+      - ROS_DISTRO=humble
       - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
       - OMNI_USER=${OMNI_USER:-admin}
       - OMNI_PASS=${OMNI_PASS:-admin}
