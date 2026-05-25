@@ -1,0 +1,45 @@
+# Profile: Qwen3.5-9B Claude 4.6 Opus Reasoning Distilled v2 (Q4_K_M)
+# Source: Jackrong/Qwen3.5-9B-Claude-4.6-Opus-Reasoning-Distilled-v2-GGUF
+#
+# Tested on Apple M5 (36GB unified memory):
+#   262K context, all layers on GPU (Metal), multimodal projector loaded.
+#   Model + mmproj estimated ~6.5GB + 1.15GB ≈ 7.7GB.
+
+# ─── Model ────────────────────────────────────────────────────────────────────
+model_path: /Users/ernestyeung/.cache/huggingface/hub/models--Jackrong--Qwen3.5-9B-Claude-4.6-Opus-Reasoning-Distilled-v2-GGUF/snapshots/b4d6d8e3760a202ca208a7c8aabb88b2ac18a10a/Qwen3.5-9B.Q4_K_M.gguf
+
+# ─── Server ───────────────────────────────────────────────────────────────────
+server:
+  host: 127.0.0.1
+  port: 8080
+
+# ─── GPU & Layers ─────────────────────────────────────────────────────────────
+# -ngl 99: offload all layers to Metal GPU.
+n_gpu_layers: 99
+
+# ─── Context ─────────────────────────────────────────────────────────────────
+# -c 262144: 256K context. M5 with 36GB unified memory handles this.
+# Reduce to 131072 (128K) if memory pressure is too high.
+ctx_size: 262144
+
+# ─── Parallelism ──────────────────────────────────────────────────────────────
+# parallel: auto (llama-server picks n_parallel=4 by default on this hardware)
+# Uncomment to force single-slot for lower memory:
+# parallel: 1
+
+# ─── Token Prediction ────────────────────────────────────────────────────────
+# -n -1: unlimited generation length.
+n_predict: -1
+
+# ─── Flash Attention ──────────────────────────────────────────────────────────
+# Metal supports flash attention in recent llama.cpp builds.
+# flash_attn: "on"
+
+# ─── KV Cache Quantization ───────────────────────────────────────────────────
+# Optional: compress KV cache to fit larger contexts. Uncomment if needed.
+# cache_type_k: q4_0
+# cache_type_v: q4_0
+
+# ─── Reasoning / Thinking ────────────────────────────────────────────────────
+# Qwen3.5 supports <think>...</think> reasoning mode.
+# reasoning: auto

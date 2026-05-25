@@ -1,0 +1,17 @@
+# llama.cpp Native Server — Global Config (macOS / Metal)
+# Copy to config.yml and edit for your machine.
+#
+# No Docker, no CUDA — runs llama-server binary directly with Metal acceleration.
+# Full server docs: https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md
+
+server:
+  # Path to llama-server binary (brew install llama.cpp, or build from source)
+  binary: llama-server
+
+  # Default host/port (can be overridden per-profile)
+  host: 127.0.0.1
+  port: 8080
+
+# Base directory for model files.
+# Profiles reference model_path relative to this, or use absolute paths.
+models_dir: /Users/ernestyeung/.cache/huggingface/hub

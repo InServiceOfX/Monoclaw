@@ -1,0 +1,41 @@
+# Profile: Qwen3.5-9B Claude 4.6 Opus Reasoning Distilled v2 (Q5_K_M)
+# Source: Jackrong/Qwen3.5-9B-Claude-4.6-Opus-Reasoning-Distilled-v2-GGUF
+#
+# Q5_K_M: better quality than Q4_K_M, ~6.5GB weights.
+# Apple M5 36GB: fits 256K context comfortably.
+
+model_path: /Users/ernestyeung/.cache/huggingface/hub/models--Jackrong--Qwen3.5-9B-Claude-4.6-Opus-Reasoning-Distilled-v2-GGUF/snapshots/b4d6d8e3760a202ca208a7c8aabb88b2ac18a10a/Qwen3.5-9B.Q5_K_M.gguf
+
+server:
+  host: 127.0.0.1
+  port: 8080
+
+n_gpu_layers: 99
+ctx_size: 262144
+n_predict: -1
+
+# ─── macOS / Metal Performance ───────────────────────────────────────────────
+
+# Flash attention: keeps generation speed constant regardless of context length.
+# Metal supports this in recent llama.cpp builds.
+flash_attn: "on"
+
+# mlock: prevent macOS from compressing/swapping model memory.
+# With 36GB unified memory and ~7.7GB model+mmproj, plenty of headroom.
+mlock: true
+
+# Threads: CPU threads for any non-GPU work. M5 has 10 cores (4P + 6E).
+# Use P-cores count for generation. -1 = auto-detect.
+threads: 4
+
+# Batch size: larger = faster prompt processing. M5 memory bandwidth handles this well.
+batch_size: 4096
+
+# Priority: elevate thread priority for lower latency.
+# 0=normal, 1=medium, 2=high, 3=realtime
+priority: 1
+
+# KV cache quantization: compress KV cache to fit larger contexts.
+# q8_0 is a good balance of quality/memory on Apple Silicon with ample RAM.
+cache_type_k: q8_0
+cache_type_v: q8_0
