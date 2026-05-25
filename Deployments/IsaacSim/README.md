@@ -53,6 +53,8 @@ The Isaac Sim image is the **official NVIDIA-published image** from NGC:
 No custom base image needed; the Dockerfile is a thin wrapper that adds
 CycloneDDS config and the `start_isaac.sh` launcher script.
 
+### First time (build + start)
+
 ```bash
 cd Monoclaw/Deployments/IsaacSim
 cp .env.example .env   # GPU_ID=1 on desktop (RTX 3060), GPU_ID=0 on laptop (RTX 3070)
@@ -65,14 +67,60 @@ docker compose build
 
 # Start headless (default ISAAC_MODE=headless)
 docker compose up -d
+```
 
-# Watch logs — wait for the ROS 2 bridge extension to load
-# Look for: "[Info] [omni.isaac.ros2_bridge] ... loaded"
-docker compose logs -f isaac
+### Every time — watch for bridge ready
 
-# Verify ROS 2 topics are visible from the sibling ROS container:
+The startup log is very verbose (hundreds of deprecation warnings — all harmless).
+Use the filtered command so you only see what matters:
+
+```bash
+docker compose logs -f isaac 2>&1 | grep -E 'ros2\.bridge|ROS2 Bridge|app ready|\[Error\]|LD_LIBRARY'
+```
+
+**Success looks like** (order matters):
+
+```
+[ext: isaacsim.ros2.bridge-4.1.15] startup      ← bridge extension loading
+[25s] app ready                                   ← Isaac Sim fully up
+                                                  ← NO "ROS2 Bridge startup failed" line
+```
+
+**Failure looks like** (the LD_LIBRARY_PATH gotcha — see Known Gotchas § 5):
+```
+Error getting RMW implementation ... librmw_cyclonedds_cpp.so: No such file or directory
+[Error] ROS2 Bridge startup failed
+```
+
+### Verify ROS 2 topics (from the sibling ROS container)
+
+Run this in a second terminal **while Isaac is running**:
+
+```bash
 docker compose -f ../ROS/docker-compose.yml exec ros2 bash -ic "ros2 topic list"
-# Expected: /tf  /tf_static  /clock  (Isaac Sim defaults)
+```
+
+**Expected once the bridge is up** — you should see Isaac's default topics
+alongside anything else running (e.g. turtlesim):
+
+```
+/clock
+/tf
+/tf_static
+/parameter_events
+/rosout
+```
+
+If you only see `/parameter_events` and `/rosout` (no `/clock` or `/tf`),
+the bridge did not start — check the filtered logs above.
+
+### Restart only (no rebuild needed for config changes)
+
+When you change `.env` or `docker-compose.yml` environment variables,
+a rebuild is **not** needed — just restart:
+
+```bash
+docker compose down && docker compose up -d
 ```
 
 ---
@@ -138,10 +186,29 @@ These files are created by rosa agent-task 07 (`agent-tasks/07-starship-sim-conf
 
 ## Known Gotchas
 
-1. **First boot is slow** — Omniverse compiles shaders; expect 2–5 min. The `isaac-cache` volume persists this across restarts.
+1. **First boot is slow** — Omniverse compiles shaders; expect 2–5 min. The `isaac-cache` volume persists this across restarts. Subsequent `docker compose up -d` starts in ~25 seconds.
+
 2. **EGL / no DISPLAY** — headless mode uses `runheadless.native.sh`, not `isaac-sim.sh`. If you see display errors in headless mode, check the right script is running.
-3. **DDS discovery** — if Isaac topics don't appear in the ROS container, verify `RMW_IMPLEMENTATION=rmw_cyclonedds_cpp` and `ROS_DOMAIN_ID=0` in **both** containers and the host shell.
-4. **Ports clash** — if 8211/8011/8111 are in use, change them in docker-compose.yml.
+
+3. **DDS discovery** — if Isaac topics don't appear in the ROS container, check in order:
+   - `RMW_IMPLEMENTATION=rmw_cyclonedds_cpp` set in **both** containers ✓ (already in compose)
+   - `LD_LIBRARY_PATH` includes the bundled libs (see § 5 below) ✓ (already in compose)
+   - `ROS_DOMAIN_ID=0` matches in both containers ✓ (already in compose)
+   - Both containers using `network_mode: host` ✓ (already in compose)
+
+4. **Ports clash** — `8211/8011/8111` are only used in `streaming` mode. In headless mode they're harmless. Change them in `docker-compose.yml` if something else holds those ports.
+
+5. **`librmw_cyclonedds_cpp.so: No such file or directory` / ROS2 Bridge startup failed** —
+   Isaac Sim bundles its own ROS 2 Humble libs at:
+   ```
+   /isaac-sim/exts/isaacsim.ros2.bridge/humble/lib
+   ```
+   Without `LD_LIBRARY_PATH` pointing here, the dynamic linker can't find `librmw_cyclonedds_cpp.so`
+   even though `RMW_IMPLEMENTATION=rmw_cyclonedds_cpp` is set. This is already fixed in
+   `docker-compose.yml` but recorded here because Isaac Sim's own log tells you the fix if
+   you ever see it again.
+
+6. **Deprecation warnings** — The log contains hundreds of `omni.isaac.X has been deprecated in favor of isaacsim.Y` lines. These are all harmless — NVIDIA renamed internal APIs in 4.5. Ignore them.
 
 ---
 
