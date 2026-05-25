@@ -16,6 +16,12 @@ services:
       - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
       - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
       - DISPLAY=${DISPLAY}
+      # Force Qt/OpenGL to use software (Mesa llvmpipe) rendering.
+      # The ROS container has no NVIDIA runtime — the GPU lives in the IsaacSim
+      # container only. Without this, Qt probes DRI3 then nouveau, both fail
+      # with errors before falling back to software anyway. This skips the noise.
+      # Turtlesim is 2D only; software GL is plenty fast.
+      - LIBGL_ALWAYS_SOFTWARE=1
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       # No rosa source mount — rosa runs OUTSIDE this container as a Rust binary.
