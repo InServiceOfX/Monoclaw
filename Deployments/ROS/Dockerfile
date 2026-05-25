@@ -30,6 +30,16 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 # Fast-DDS has known multicast issues when bridging host <-> container.
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
+# Bake the ROS 2 environment into every shell that starts in this container.
+# Without this, `docker compose exec ros2 ros2 ...` fails with
+# "executable file not found in $PATH" because exec bypasses the ENTRYPOINT.
+# ROS_DISTRO is set by the base image (osrf/ros:humble-desktop) so ${ROS_DISTRO}
+# resolves correctly at build time.
+RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /root/.bashrc && \
+    echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /root/.bash_profile && \
+    echo "export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp" >> /root/.bashrc && \
+    echo "export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp" >> /root/.bash_profile
+
 COPY ros2_entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 

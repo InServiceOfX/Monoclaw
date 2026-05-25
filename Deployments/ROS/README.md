@@ -21,12 +21,21 @@ docker compose build
 docker compose up -d
 
 # Verify ROS 2 is healthy
-docker compose exec ros2 ros2 doctor
+# NOTE: use `bash -ic` so .bashrc is sourced and ros2 is in PATH.
+# `docker compose exec ros2 ros2 ...` alone will fail with "not found in $PATH"
+# because exec bypasses the ENTRYPOINT.
+docker compose exec ros2 bash -ic "ros2 doctor"
 
 # Launch turtlesim (requires X11 on the host)
 xhost +local:docker
-docker compose exec ros2 ros2 run turtlesim turtlesim_node
+docker compose exec ros2 bash -ic "ros2 run turtlesim turtlesim_node"
 ```
+
+> **Why `bash -ic`?**  
+> `docker compose exec` starts a raw process — it does **not** run the container's `ENTRYPOINT`.  
+> The `-i` flag tells bash to read `.bashrc`, which sources `/opt/ros/humble/setup.bash`  
+> and puts `ros2` in `$PATH`. Alternatively, open a full shell with  
+> `docker compose exec -it ros2 bash` — that also sources `.bashrc`.
 
 From the **host** (with ROS 2 sourced, or in host-network mode):
 ```bash
