@@ -10,36 +10,73 @@ It hosts ROS 2 Humble + turtlesim. `rosa-cli` (a Rust binary) runs on the **host
 
 ## Quick Start
 
+> **Note on `bash -ic`:** `docker compose exec` starts a raw process and does **not** run the
+> container's ENTRYPOINT. The `-i` flag makes bash read `.bashrc`, which sources
+> `/opt/ros/humble/setup.bash` and puts `ros2` in `$PATH`. Every `exec` command below uses
+> this pattern. To open a persistent shell instead: `docker compose exec -it ros2 bash`.
+
 ```bash
 cd Monoclaw/Deployments/ROS
-cp .env.example .env        # edit if needed
+cp .env.example .env        # edit if needed (defaults work on desktop)
 
-# Build (first time or after Dockerfile changes)
+# 1. Build (first time, or after any Dockerfile change)
 docker compose build
 
-# Start the container
+# 2. Start the container (detached)
 docker compose up -d
 
-# Verify ROS 2 is healthy
-# NOTE: use `bash -ic` so .bashrc is sourced and ros2 is in PATH.
-# `docker compose exec ros2 ros2 ...` alone will fail with "not found in $PATH"
-# because exec bypasses the ENTRYPOINT.
+# 3. Verify ROS 2 is healthy — expect "All 5 checks passed"
 docker compose exec ros2 bash -ic "ros2 doctor"
 
-# Launch turtlesim (requires X11 on the host)
+# 4. Allow X11 connections from Docker (one time per host login session)
 xhost +local:docker
-docker compose exec ros2 bash -ic "ros2 run turtlesim turtlesim_node"
 ```
 
-> **Why `bash -ic`?**  
-> `docker compose exec` starts a raw process — it does **not** run the container's `ENTRYPOINT`.  
-> The `-i` flag tells bash to read `.bashrc`, which sources `/opt/ros/humble/setup.bash`  
-> and puts `ros2` in `$PATH`. Alternatively, open a full shell with  
-> `docker compose exec -it ros2 bash` — that also sources `.bashrc`.
+### Launch turtlesim
 
-From the **host** (with ROS 2 sourced, or in host-network mode):
+`turtlesim_node` **blocks the terminal** while it runs. Choose one of:
+
+**Option A — two terminals (recommended for keyboard control)**
+
 ```bash
-ros2 topic list    # should see /turtle1/cmd_vel once turtlesim is running
+# Terminal 1: start turtlesim (window opens on your desktop)
+docker compose exec ros2 bash -ic "ros2 run turtlesim turtlesim_node"
+
+# Terminal 2: keyboard teleop — arrow keys drive the turtle
+docker compose exec ros2 bash -ic "ros2 run turtlesim turtle_teleop_key"
+```
+
+**Option B — background + one-shot publish (no second terminal)**
+
+```bash
+# Start turtlesim in the background
+docker compose exec ros2 bash -ic "ros2 run turtlesim turtlesim_node &"
+
+# Publish a single Twist command (move forward)
+docker compose exec ros2 bash -ic "ros2 topic pub --once /turtle1/cmd_vel \
+  geometry_msgs/msg/Twist '{linear: {x: 2.0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.0}}'"
+
+# Spin in place
+docker compose exec ros2 bash -ic "ros2 topic pub --once /turtle1/cmd_vel \
+  geometry_msgs/msg/Twist '{linear: {x: 0.0}, angular: {z: 1.57}}'"
+```
+
+**Option C — interactive shell (most convenient for exploration)**
+
+```bash
+docker compose exec -it ros2 bash
+# Now inside the container — all ros2 commands work directly:
+ros2 run turtlesim turtlesim_node &
+ros2 topic list
+ros2 topic pub --once /turtle1/cmd_vel geometry_msgs/msg/Twist \
+  '{linear: {x: 2.0}, angular: {z: 0.0}}'
+```
+
+### Verify topics (from inside the container)
+
+```bash
+# Check topics while turtlesim is running — should include /turtle1/cmd_vel
+docker compose exec ros2 bash -ic "ros2 topic list"
 ```
 
 ---
