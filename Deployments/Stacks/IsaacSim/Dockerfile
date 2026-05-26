@@ -23,4 +23,8 @@ RUN chmod +x /usr/local/bin/start_isaac.sh
 # Starship scene is mounted at runtime via volume (not baked into image)
 # so the USD can be iterated without rebuilds.
 
-CMD ["/usr/local/bin/start_isaac.sh"]
+# The base NGC image sets ENTRYPOINT ["/bin/sh", "-c", "/isaac-sim/runheadless.sh"]
+# which causes our CMD to be treated as $0 (a label), never executed.
+# Explicitly reset ENTRYPOINT so our start_isaac.sh actually runs as PID 1.
+ENTRYPOINT ["/usr/local/bin/start_isaac.sh"]
+CMD []
