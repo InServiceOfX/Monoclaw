@@ -1,14 +1,14 @@
 # Agent Brief — NVIDIA Isaac Sim Docker Deployment
 
 **Owner role:** Sim + Docker agent (familiarity with NGC, Omniverse, ROS 2 bridge)
-**Repo:** `Monoclaw` (net-new dir `Deployments/IsaacSim/`)
+**Repo:** `Monoclaw` (net-new dir `Deployments/Stacks/IsaacSim/`)
 **Branch:** create `feat/isaacsim-deploy` from `master`.
 **Estimate:** 4–8 hr first pass (mostly NGC auth + first successful headless boot)
 **Blocks:** rosa task 07 (Starship sim)
 
 ## Goal
 
-Stand up NVIDIA Isaac Sim 4.5+ as a Docker container that publishes ROS 2 topics on the host network, sharing the DDS domain with the sibling `Deployments/ROS` stack. Once up, the Isaac container is where the Starship-stand-in scene lives.
+Stand up NVIDIA Isaac Sim 4.5+ as a Docker container that publishes ROS 2 topics on the host network, sharing the DDS domain with the sibling `Deployments/Stacks/ROS` stack. Once up, the Isaac container is where the Starship-stand-in scene lives.
 
 ## Hardware reality check
 
@@ -20,7 +20,7 @@ Verified on this host (2026-05-24):
 | RTX 3060 (GPU 1)    | 12 GB  | 8.6     | ✅              | **pin Isaac here on desktop** |
 | RTX 3070 (laptop)   | 8 GB   | 8.6     | ✅              | OK on laptop; tight for big scenes |
 
-Pin GPU 1 via `device_ids: ["1"]` and the existing UUID `GPU-61cb440a-b948-dd3e-eff7-26dd209d2411` (matches `Deployments/ROS/docker-compose.yml` NVIDIA_VISIBLE_DEVICES line). Host RAM 32 GB meets Isaac's recommendation. NVIDIA driver 580.x is fine (≥ 535 required).
+Pin GPU 1 via `device_ids: ["1"]` and the existing UUID `GPU-61cb440a-b948-dd3e-eff7-26dd209d2411` (matches `Deployments/Stacks/ROS/docker-compose.yml` NVIDIA_VISIBLE_DEVICES line). Host RAM 32 GB meets Isaac's recommendation. NVIDIA driver 580.x is fine (≥ 535 required).
 
 If the 3060 can't sustain the Starship scene at interactive frame rate, drop visual quality in `app.config.json` (RTX → ray traced lighting → off) — the Starship MVP doesn't need pretty rendering, just physics + topics.
 
@@ -38,7 +38,7 @@ Do not bake the key into any file. Document the prereq in the README; check the 
 ## What to create
 
 ```
-Monoclaw/Deployments/IsaacSim/
+Monoclaw/Deployments/Stacks/IsaacSim/
 ├── README.md
 ├── AGENT_BRIEF.md            ← this file
 ├── docker-compose.yml

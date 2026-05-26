@@ -16,7 +16,7 @@ It hosts ROS 2 Humble + turtlesim. `rosa-cli` (a Rust binary) runs on the **host
 > this pattern. To open a persistent shell instead: `docker compose exec -it ros2 bash`.
 
 ```bash
-cd Monoclaw/Deployments/ROS
+cd Monoclaw/Deployments/Stacks/ROS
 cp .env.example .env        # edit if needed (defaults work on desktop)
 
 # 1. Build (first time, or after any Dockerfile change)
@@ -115,8 +115,8 @@ cargo run --release --example turtle
 
 | Stack               | Location                             | Purpose               |
 |---------------------|--------------------------------------|-----------------------|
-| This container      | `Deployments/ROS/`                   | ROS 2 + turtlesim     |
-| Isaac Sim container | `Deployments/IsaacSim/`              | GPU sim (Starship)    |
+| This container      | `Deployments/Stacks/ROS/`                   | ROS 2 + turtlesim     |
+| Isaac Sim container | `Deployments/Stacks/IsaacSim/`              | GPU sim (Starship)    |
 | rosa Rust binary    | `~/workspace2/repos/rosa/`           | LLM agent + tools     |
 
 See also:

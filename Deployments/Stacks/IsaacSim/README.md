@@ -56,7 +56,7 @@ CycloneDDS config and the `start_isaac.sh` launcher script.
 ### First time (build + start)
 
 ```bash
-cd Monoclaw/Deployments/IsaacSim
+cd Monoclaw/Deployments/Stacks/IsaacSim
 cp .env.example .env   # GPU_ID=1 on desktop (RTX 3060), GPU_ID=0 on laptop (RTX 3070)
 
 # Must be logged in to NGC first (see Prerequisites § 1)
@@ -216,8 +216,8 @@ These files are created by rosa agent-task 07 (`agent-tasks/07-starship-sim-conf
 
 | Stack           | Location               | Purpose              |
 |-----------------|------------------------|----------------------|
-| ROS 2 container | `Deployments/ROS/`     | ROS 2 + turtlesim    |
-| This container  | `Deployments/IsaacSim/`| GPU sim + Starship   |
+| ROS 2 container | `Deployments/Stacks/ROS/`     | ROS 2 + turtlesim    |
+| This container  | `Deployments/Stacks/IsaacSim/`| GPU sim + Starship   |
 | rosa CLI        | `~/workspace2/repos/rosa/`| Rust LLM agent    |
 
 See also:

@@ -1,7 +1,7 @@
 # Agent Brief — ROS 2 Docker Deployment
 
 **Owner role:** any agent (Docker + shell)
-**Repo:** `Monoclaw` (untracked dir `Deployments/ROS/`)
+**Repo:** `Monoclaw` (untracked dir `Deployments/Stacks/ROS/`)
 **Branch:** create `feat/ros2-deploy-strip-langchain` from `master`. Do not commit to `master`.
 **Estimate:** 1–2 hr
 **Blocks:** rosa task 06 (turtle demo)
@@ -12,7 +12,7 @@ Rewrite this directory so the ROS 2 container is **ROS 2 + Rust toolchain only**
 
 ## Why
 
-The current `Dockerfile` (read it first — `/home/propdev/.openclaw/workspace/repos/Monoclaw/Deployments/ROS/Dockerfile`) pip-installs `langchain`, `langchain-community`, `langchain-core`, `langchain-openai`, etc. and mounts a deprecated ROSA source tree. That entire layer is dead per the rosa rewrite plan (see `/home/propdev/.openclaw/workspace/workspace2/repos/rosa/ORCHESTRATION.md`).
+The current `Dockerfile` (read it first — `/home/propdev/.openclaw/workspace/repos/Monoclaw/Deployments/Stacks/ROS/Dockerfile`) pip-installs `langchain`, `langchain-community`, `langchain-core`, `langchain-openai`, etc. and mounts a deprecated ROSA source tree. That entire layer is dead per the rosa rewrite plan (see `/home/propdev/.openclaw/workspace/workspace2/repos/rosa/ORCHESTRATION.md`).
 
 ## What to change
 
