@@ -89,7 +89,11 @@ if scene_path and os.path.isfile(scene_path):
         app.update()
         time.sleep(0.1)
     print("[rosa] Scene loaded")
+    # Start Starship sim modules if starship.usd was preloaded
+    # (deferred to after OmniGraph clock is created — we do it after the loop below)
+    _preload_scene_path = scene_path
 else:
+    _preload_scene_path = ""
     if scene_path:
         print(f"[rosa] ISAAC_SCENE_PATH={scene_path!r} not found — using empty stage")
     else:
@@ -226,6 +230,35 @@ _server_thread.start()
 
 # ── Helpers for main-thread command execution ─────────────────────────────────
 
+# ── Starship sim modules (optional — loaded when starship.usd is active) ─────
+_starship_publisher  = None
+_starship_controller = None
+_STARSHIP_USD_PATH   = "/isaac-sim/exts/starship/starship.usd"
+
+
+def _maybe_start_starship(stage_path: str) -> None:
+    """Load Starship publisher + controller if the Starship USD is active."""
+    global _starship_publisher, _starship_controller
+    if _STARSHIP_USD_PATH not in stage_path:
+        return
+    if _starship_publisher is not None:
+        return  # already running
+
+    try:
+        import sys
+        sys.path.insert(0, "/isaac-sim/exts/starship")
+        from starship_publisher import StarshipPublisher
+        from starship_controller import StarshipController
+
+        _starship_publisher  = StarshipPublisher(app)
+        _starship_controller = StarshipController(app, _starship_publisher)
+        _starship_publisher.start()
+        _starship_controller.start()
+        print("[rosa] Starship publisher + controller started")
+    except Exception as exc:
+        print(f"[rosa] WARNING: could not start Starship sim modules: {exc}")
+
+
 def _handle_cmd(cmd: dict) -> None:
     cmd_type = cmd.get("type")
     if cmd_type == "timeline":
@@ -241,6 +274,10 @@ def _handle_cmd(cmd: dict) -> None:
         if path:
             print(f"[rosa] Loading scene from API: {path}")
             omni.usd.get_context().open_stage(path)
+            # Give the stage a few frames to settle, then start Starship modules
+            for _ in range(30):
+                app.update()
+            _maybe_start_starship(path)
 
 
 def _update_diag() -> None:
@@ -257,6 +294,10 @@ def _update_diag() -> None:
         pass
 
 
+# ── Starship modules: start if stage was preloaded via ISAAC_SCENE_PATH ───────
+if _preload_scene_path:
+    _maybe_start_starship(_preload_scene_path)
+
 # ── Main loop ─────────────────────────────────────────────────────────────────
 print("[rosa] Isaac Sim running — Ctrl-C or SIGTERM to stop")
 
@@ -270,11 +311,46 @@ try:
                 break
 
         _update_diag()
+
+        # Apply Starship forces before physics step
+        if _starship_controller is not None:
+            _starship_controller.apply_forces(_diag.get("physics_dt", 1.0 / 60.0))
+
+        # Handle pending reset from /starship/reset service
+        if _starship_publisher is not None and _starship_publisher.pending_reset:
+            _starship_publisher.pending_reset = False
+            print("[rosa] Resetting Starship to launch-pad position")
+            try:
+                from pxr import Gf
+                stage = omni.usd.get_context().get_stage()
+                if stage:
+                    prim = stage.GetPrimAtPath("/World/Starship")
+                    if prim.IsValid():
+                        from pxr import UsdGeom
+                        xform = UsdGeom.Xformable(prim)
+                        ops = xform.GetOrderedXformOps()
+                        for op in ops:
+                            if "translate" in op.GetOpName():
+                                op.Set(Gf.Vec3d(0, 25, 0))
+                        # Zero velocity via physics attrs
+                        vel_attr = prim.GetAttribute("physics:velocity")
+                        if vel_attr.IsValid():
+                            vel_attr.Set(Gf.Vec3f(0, 0, 0))
+                        ang_attr = prim.GetAttribute("physics:angularVelocity")
+                        if ang_attr.IsValid():
+                            ang_attr.Set(Gf.Vec3f(0, 0, 0))
+            except Exception as exc:
+                print(f"[rosa] Reset error: {exc}")
+
         app.update()
 
 except KeyboardInterrupt:
     print("\n[rosa] Caught interrupt — shutting down")
 finally:
+    if _starship_controller is not None:
+        _starship_controller.stop()
+    if _starship_publisher is not None:
+        _starship_publisher.stop()
     timeline.stop()
     app.close()
     print("[rosa] Isaac Sim stopped")

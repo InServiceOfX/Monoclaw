@@ -38,6 +38,9 @@ services:
       - OMNI_PASS=${OMNI_PASS:-admin}
       # headless | windowed | streaming
       - ISAAC_MODE=${ISAAC_MODE:-headless}
+      # Optional: pre-load a USD scene on startup (e.g. the Starship stage)
+      # Set in .env: ISAAC_SCENE_PATH=/isaac-sim/exts/starship/starship.usd
+      - ISAAC_SCENE_PATH=${ISAAC_SCENE_PATH:-}
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       # Persist shader cache so subsequent boots don't take 5 min
