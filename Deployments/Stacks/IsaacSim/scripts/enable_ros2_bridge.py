@@ -102,10 +102,15 @@ else:
 # ── OmniGraph: wire /clock publisher ──────────────────────────────────────────
 # In Isaac Sim 4.x, enabling the bridge extension does NOT publish /clock.
 # Topics are produced only by OmniGraph nodes triggered by OnPlaybackTick.
-if bridge_enabled:
+# This must be called once on startup AND again after any open_stage() call
+# (a new stage wipes out all OmniGraph nodes in the previous stage).
+
+def _create_clock_omnigraph() -> bool:
+    """Create/recreate the OmniGraph clock publisher. Returns True on success."""
+    if not bridge_enabled:
+        return False
     try:
         import omni.graph.core as og
-
         og.Controller.edit(
             {"graph_path": "/ActionGraph/ROS_Clock", "evaluator_name": "execution"},
             {
@@ -122,11 +127,15 @@ if bridge_enabled:
                 ],
             },
         )
-        for _ in range(10):
-            app.update()
         print("[rosa] OmniGraph /clock publisher created")
+        return True
     except Exception as exc:
         print(f"[rosa] WARNING: could not create clock OmniGraph: {exc}")
+        return False
+
+if _create_clock_omnigraph():
+    for _ in range(10):
+        app.update()
 
 # ── Timeline: start playing so /clock ticks ───────────────────────────────────
 import omni.timeline
@@ -209,6 +218,9 @@ class _ControlHandler(BaseHTTPRequestHandler):
             if not path:
                 self._send_json({"error": "'path' field required"}, 400)
                 return
+            if not os.path.isfile(path):
+                self._send_json({"error": f"file not found: {path}"}, 404)
+                return
             _cmd_queue.put({"type": "load_scene", "path": path})
             self._send_json({"status": "queued", "path": path})
         else:
@@ -272,10 +284,18 @@ def _handle_cmd(cmd: dict) -> None:
     elif cmd_type == "load_scene":
         path = cmd.get("path", "")
         if path:
+            if not os.path.isfile(path):
+                print(f"[rosa] load_scene SKIPPED — path not found: {path!r}")
+                return
             print(f"[rosa] Loading scene from API: {path}")
             omni.usd.get_context().open_stage(path)
-            # Give the stage a few frames to settle, then start Starship modules
+            # Wait for stage to settle, then restore /clock OmniGraph
+            # (open_stage wipes all OmniGraph nodes from the previous stage)
             for _ in range(30):
+                app.update()
+            _create_clock_omnigraph()
+            timeline.play()
+            for _ in range(10):
                 app.update()
             _maybe_start_starship(path)
 

@@ -57,11 +57,17 @@ _check "POST /timeline/pause → status=queued" "queued" "$PAU"
 PLAY=$(curl -sf -X POST "$BASE/timeline/play" 2>/dev/null | jq -r .status 2>/dev/null || echo "FAIL")
 _check "POST /timeline/play → status=queued" "queued" "$PLAY"
 
-# ── /scene/load (bad path — should still queue) ───────────────────────────────
-LOAD=$(curl -sf -X POST "$BASE/scene/load" \
-         -H "Content-Type: application/json" \
-         -d '{"path": "/nonexistent/test.usd"}' 2>/dev/null | jq -r .status 2>/dev/null || echo "FAIL")
-_check "POST /scene/load → status=queued" "queued" "$LOAD"
+# ── /scene/load (bad path → 404, safe: server validates before touching stage) ─
+LOAD_CODE=$(curl -so /dev/null -w "%{http_code}" -X POST "$BASE/scene/load" \
+              -H "Content-Type: application/json" \
+              -d '{"path": "/nonexistent/test.usd"}' 2>/dev/null || echo "000")
+_check "POST /scene/load (bad path) → HTTP 404" "404" "$LOAD_CODE"
+
+# ── /scene/load (missing path field) ─────────────────────────────────────────
+LOAD_EMPTY=$(curl -so /dev/null -w "%{http_code}" -X POST "$BASE/scene/load" \
+               -H "Content-Type: application/json" \
+               -d '{}' 2>/dev/null || echo "000")
+_check "POST /scene/load (no path) → HTTP 400" "400" "$LOAD_EMPTY"
 
 # ── unknown route → 404 ───────────────────────────────────────────────────────
 HTTP_CODE=$(curl -so /dev/null -w "%{http_code}" "$BASE/nonexistent" 2>/dev/null || echo "000")
