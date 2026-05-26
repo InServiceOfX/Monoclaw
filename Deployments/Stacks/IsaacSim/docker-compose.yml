@@ -45,7 +45,14 @@ services:
       - isaac-data:/root/.local/share/ov/data
       # Starship scene — edited on host, auto-picked up by Isaac
       - ./starship:/isaac-sim/exts/starship
+      # Script hot-reload: mount scripts so changes take effect on restart
+      # without a full docker build cycle (the image COPY is overridden by these).
+      - ./scripts/enable_ros2_bridge.py:/isaac-sim/scripts/enable_ros2_bridge.py:ro
+      - ./scripts/start_isaac.sh:/usr/local/bin/start_isaac.sh:ro
     ports:
+      # Isaac control API (rosa-isaac Rust tools) — host-networked, no mapping needed
+      # but documented here for reference.
+      # - "8282:8282"  (host network: port is directly available at localhost:8282)
       # Omniverse Streaming Client (ISAAC_MODE=streaming)
       - "8211:8211"
       - "8011:8011"
