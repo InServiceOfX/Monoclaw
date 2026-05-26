@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  CycloneDDS configuration for Isaac Sim ↔ rosa-ros2 discovery.
+
+  Problem: CycloneDDS auto-interface selection picks the "best" non-loopback
+  interface, which may differ between the Isaac Sim process and the
+  rosa-ros2 process if the host has multiple interfaces (eno1, wlp8s0,
+  tailscale0, docker0). Two processes selecting different interfaces won't
+  discover each other via multicast.
+
+  Fix: explicitly pin both to the same interface.
+
+  Usage:
+    Add to docker-compose.yml for BOTH containers:
+      environment:
+        - CYCLONEDDS_URI=/cyclonedds.xml
+      volumes:
+        - ./cyclonedds.xml:/cyclonedds.xml:ro
+
+  To use loopback (for same-host processes):
+    Set Interface name="lo" — multicast on loopback always works locally.
+  To use Ethernet:
+    Set Interface name="eno1" (adjust to match your primary interface).
+
+  Default below: loopback — most reliable for same-host containers.
+-->
+<CycloneDDS>
+  <Domain id="any">
+    <General>
+      <Interfaces>
+        <NetworkInterface name="lo" multicast="true" priority="default"/>
+      </Interfaces>
+    </General>
+  </Domain>
+</CycloneDDS>
