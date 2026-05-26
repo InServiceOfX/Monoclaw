@@ -48,6 +48,11 @@ CONFIG = {
     "renderer": "RayTracedLighting",
     "width": 1280,
     "height": 720,
+    # Pre-declare the ROS 2 bridge as a startup extension so it loads as part
+    # of SimulationApp initialization rather than as a post-init call.
+    # This may reduce boot time by loading the bridge in parallel with other
+    # startup extensions rather than serially after app.ready().
+    "/isaac/startup/ros_bridge_extension": "isaacsim.ros2.bridge",
 }
 
 print("[rosa] Starting Isaac Sim headless...")
