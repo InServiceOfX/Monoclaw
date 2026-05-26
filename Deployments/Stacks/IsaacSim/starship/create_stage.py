@@ -59,7 +59,12 @@ physics_scene.CreateGravityMagnitudeAttr(9.81)   # m/s²
 
 # Enable GPU dynamics for faster simulation
 physx_scene = PhysxSchema.PhysxSceneAPI.Apply(physics_scene.GetPrim())
-physx_scene.CreateGpuDynamicsEnabledAttr(True)
+# Enable GPU dynamics if supported (attribute name varies across Isaac Sim versions)
+for _attr_fn in ("CreateGpuDynamicsEnabledAttr", "CreateEnableGPUDynamicsAttr"):
+    _fn = getattr(physx_scene, _attr_fn, None)
+    if _fn:
+        _fn(True)
+        break
 
 # ── Ground plane ──────────────────────────────────────────────────────────────
 

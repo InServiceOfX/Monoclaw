@@ -204,6 +204,13 @@ class _ControlHandler(BaseHTTPRequestHandler):
             self._send_json(dict(_diag))
         elif self.path == "/scene/list":
             self._send_json({"scenes": _list_usd_scenes()})
+        elif self.path == "/starship/stage-status":
+            exists = os.path.isfile(_STARSHIP_USD_PATH)
+            self._send_json({
+                "path": _STARSHIP_USD_PATH,
+                "exists": exists,
+                "size_bytes": os.path.getsize(_STARSHIP_USD_PATH) if exists else 0,
+            })
         else:
             self._send_json({"error": "not found"}, 404)
 
@@ -223,6 +230,11 @@ class _ControlHandler(BaseHTTPRequestHandler):
                 return
             _cmd_queue.put({"type": "load_scene", "path": path})
             self._send_json({"status": "queued", "path": path})
+        elif self.path == "/starship/create-stage":
+            # Create the Starship USD stage from within the running SimulationApp
+            # (pxr is only available inside the Kit runtime process).
+            _cmd_queue.put({"type": "create_starship_stage"})
+            self._send_json({"status": "queued", "output": _STARSHIP_USD_PATH})
         else:
             self._send_json({"error": "not found"}, 404)
 
@@ -271,6 +283,78 @@ def _maybe_start_starship(stage_path: str) -> None:
         print(f"[rosa] WARNING: could not start Starship sim modules: {exc}")
 
 
+def _create_starship_stage_inline() -> None:
+    """
+    Generate /isaac-sim/exts/starship/starship.usd from within the running
+    SimulationApp process where pxr (USD Python bindings) is available.
+    Mirrors the logic in starship/create_stage.py but runs in-process.
+    """
+    try:
+        from pxr import Gf, UsdGeom, UsdPhysics, Sdf, Usd, PhysxSchema
+
+        out = _STARSHIP_USD_PATH
+        os.makedirs(os.path.dirname(out), exist_ok=True)
+
+        stage = Usd.Stage.CreateNew(out)
+        UsdGeom.SetStageUpAxis(stage, UsdGeom.Tokens.y)
+        UsdGeom.SetStageMetersPerUnit(stage, 1.0)
+
+        world = UsdGeom.Xform.Define(stage, "/World")
+        stage.SetDefaultPrim(world.GetPrim())
+
+        physics_scene = UsdPhysics.Scene.Define(stage, "/World/PhysicsScene")
+        physics_scene.CreateGravityDirectionAttr(Gf.Vec3f(0.0, -1.0, 0.0))
+        physics_scene.CreateGravityMagnitudeAttr(9.81)
+        physx_scene = PhysxSchema.PhysxSceneAPI.Apply(physics_scene.GetPrim())
+        # Enable GPU dynamics if the API supports it (Isaac Sim 4.5 attribute name varies)
+        for attr_name in ("CreateGpuDynamicsEnabledAttr", "CreateEnableGPUDynamicsAttr"):
+            fn = getattr(physx_scene, attr_name, None)
+            if fn:
+                fn(True)
+                break
+
+        ground = UsdGeom.Mesh.Define(stage, "/World/GroundPlane/Plane")
+        ground.CreatePointsAttr([
+            Gf.Vec3f(-500, 0, -500), Gf.Vec3f(500, 0, -500),
+            Gf.Vec3f(500, 0, 500),   Gf.Vec3f(-500, 0, 500),
+        ])
+        ground.CreateFaceVertexCountsAttr([4])
+        ground.CreateFaceVertexIndicesAttr([0, 1, 2, 3])
+        ground.CreateNormalsAttr([Gf.Vec3f(0, 1, 0)] * 4)
+        UsdPhysics.CollisionAPI.Apply(ground.GetPrim())
+
+        starship_xform = UsdGeom.Xform.Define(stage, "/World/Starship")
+        starship_xform.AddTranslateOp().Set(Gf.Vec3d(0, 25, 0))
+        capsule = UsdGeom.Capsule.Define(stage, "/World/Starship/Body")
+        capsule.CreateRadiusAttr(4.5)
+        capsule.CreateHeightAttr(50.0)
+        capsule.CreateAxisAttr("Y")
+        capsule.CreateDisplayColorAttr([Gf.Vec3f(0.8, 0.8, 0.85)])
+        UsdPhysics.RigidBodyAPI.Apply(starship_xform.GetPrim())
+        UsdPhysics.CollisionAPI.Apply(capsule.GetPrim())
+        mass_api = UsdPhysics.MassAPI.Apply(starship_xform.GetPrim())
+        mass_api.CreateMassAttr(130000.0)
+
+        camera_xform = UsdGeom.Xform.Define(stage, "/World/Starship/Camera")
+        camera_xform.AddTranslateOp().Set(Gf.Vec3d(0, 27, 0))
+        camera_xform.AddRotateXYZOp().Set(Gf.Vec3f(-90, 0, 0))
+        camera = UsdGeom.Camera.Define(stage, "/World/Starship/Camera/Sensor")
+        camera.CreateProjectionAttr(UsdGeom.Tokens.perspective)
+        camera.CreateFocalLengthAttr(24.0)
+        camera.CreateHorizontalApertureAttr(20.955)
+        camera.CreateVerticalApertureAttr(15.2908)
+        camera.CreateClippingRangeAttr(Gf.Vec2f(0.1, 10000.0))
+
+        stage.GetPrimAtPath("/World/Starship").SetCustomDataByKey(
+            "ros2_topic_namespace", "starship"
+        )
+        stage.Save()
+        print(f"[rosa] Starship stage created: {out}")
+
+    except Exception as exc:
+        print(f"[rosa] ERROR creating Starship stage: {exc}")
+
+
 def _handle_cmd(cmd: dict) -> None:
     cmd_type = cmd.get("type")
     if cmd_type == "timeline":
@@ -281,6 +365,8 @@ def _handle_cmd(cmd: dict) -> None:
             timeline.stop()
         elif action == "pause":
             timeline.pause()
+    elif cmd_type == "create_starship_stage":
+        _create_starship_stage_inline()
     elif cmd_type == "load_scene":
         path = cmd.get("path", "")
         if path:

@@ -61,7 +61,9 @@ STARSHIP_PRIM   = "/World/Starship"
 LAUNCH_PAD_Y    = 0.0          # metres AGL when resting on pad
 MAX_THRUST_N    = 14_700_000.0 # 14.7 MN max (6x Raptor @ 2.45 MN each, simplified)
 DRY_MASS_KG     = 130_000.0    # 130 tonnes upper-stage dry mass
-FUEL_CAPACITY_L = 1_200_000.0  # 1.2 ML propellant (LOX+LCH4 combined, volumetric kg)
+# Calibrated so hover throttle ≈ 0.45–0.55 at typical operating fuel fraction.
+# Full tank (830 t): hover ≈ 0.554. Half tank (480 t): hover ≈ 0.321.
+FUEL_CAPACITY_L = 700_000.0    # 700 t propellant (LOX+LCH4, illustrative)
 
 
 def _ros_time_now(node: Node) -> RosTime:
@@ -154,16 +156,25 @@ class StarshipPublisher:
     # ── Internal ─────────────────────────────────────────────────────────
 
     def _loop(self) -> None:
+        import sys
         interval = 1.0 / self._tick_hz
         imu_counter = 0
         fuel_counter = 0
         engine_counter = 0
+        _err_count = 0
         while self._running:
             t0 = time.monotonic()
             try:
                 self._tick(imu_counter, fuel_counter, engine_counter)
+                _err_count = 0
             except Exception as exc:
-                print(f"[starship_pub] tick error: {exc}")
+                _err_count += 1
+                if _err_count <= 3 or _err_count % 100 == 0:
+                    import traceback
+                    print(f"[starship_pub] tick error #{_err_count}: {exc}", flush=True)
+                    if _err_count <= 3:
+                        traceback.print_exc()
+                    sys.stdout.flush()
             imu_counter   += 1
             fuel_counter  += 1
             engine_counter += 1
@@ -172,6 +183,9 @@ class StarshipPublisher:
 
     def _tick(self, imu_ctr: int, fuel_ctr: int, engine_ctr: int) -> None:
         """Read physics state and publish (called at ~100 Hz)."""
+        import sys
+        from pxr import UsdGeom, Usd
+
         # ── Read USD stage ────────────────────────────────────────────────
         stage = get_current_stage()
         if stage is None:
@@ -181,15 +195,9 @@ class StarshipPublisher:
         if not prim.IsValid():
             return
 
-        # World-space transform (position + rotation)
-        xform_cache = omni.usd.get_world_transform_cache(stage)
-        try:
-            matrix = xform_cache.GetLocalToWorldTransform(prim)
-        except Exception:
-            # Fallback: compute from xform ops directly
-            from pxr import UsdGeom
-            xform = UsdGeom.Xformable(prim)
-            matrix = xform.ComputeLocalToWorldTransform(0.0)  # time=0 (current)
+        # World-space transform via UsdGeom.Xformable (correct Isaac Sim 4.x API)
+        xform = UsdGeom.Xformable(prim)
+        matrix = xform.ComputeLocalToWorldTransform(Usd.TimeCode.Default())
 
         pos = matrix.ExtractTranslation()  # Gf.Vec3d
         rot = matrix.ExtractRotationMatrix()
@@ -198,17 +206,23 @@ class StarshipPublisher:
         altitude_m = pos[1]
 
         # ── Velocity from physics ─────────────────────────────────────────
-        # Isaac Sim 4.x: use PhysxRigidBodyAPI
-        try:
-            from pxr import PhysxSchema
-            rb_api = PhysxSchema.PhysxRigidBodyAPI(prim)
-            vel_attr = prim.GetAttribute("physics:velocity")
-            ang_attr = prim.GetAttribute("physics:angularVelocity")
-            vel = vel_attr.Get() if vel_attr.IsValid() else Gf.Vec3f(0, 0, 0)
-            ang = ang_attr.Get() if ang_attr.IsValid() else Gf.Vec3f(0, 0, 0)
-        except Exception:
-            vel = Gf.Vec3f(0, 0, 0)
-            ang = Gf.Vec3f(0, 0, 0)
+        # Try physxRigidBody:* attributes first, then physics:* fallback
+        vel = Gf.Vec3f(0, 0, 0)
+        ang = Gf.Vec3f(0, 0, 0)
+        for vel_name in ("physxRigidBody:velocity", "physics:velocity"):
+            attr = prim.GetAttribute(vel_name)
+            if attr.IsValid():
+                v = attr.Get()
+                if v is not None:
+                    vel = Gf.Vec3f(v[0], v[1], v[2])
+                    break
+        for ang_name in ("physxRigidBody:angularVelocity", "physics:angularVelocity"):
+            attr = prim.GetAttribute(ang_name)
+            if attr.IsValid():
+                v = attr.Get()
+                if v is not None:
+                    ang = Gf.Vec3f(v[0], v[1], v[2])
+                    break
 
         stamp = _ros_time_now(self._node)
         now_sec = float(stamp.sec) + stamp.nanosec * 1e-9
