@@ -199,11 +199,19 @@ class StarshipPublisher:
         xform = UsdGeom.Xformable(prim)
         matrix = xform.ComputeLocalToWorldTransform(Usd.TimeCode.Default())
 
-        pos = matrix.ExtractTranslation()  # Gf.Vec3d
-        rot = matrix.ExtractRotationMatrix()
+        pos = matrix.ExtractTranslation()   # Gf.Vec3d
 
         # Altitude = Y world coord (Y-up, ground at y=0)
         altitude_m = pos[1]
+
+        # Rotation quaternion — use ExtractRotationQuat() which returns GfQuatd
+        # directly, avoiding the GfRotation intermediate (API varies by version)
+        try:
+            quatd = matrix.ExtractRotationQuat()  # GfQuatd
+            img   = quatd.GetImaginary()
+            qx, qy, qz, qw = float(img[0]), float(img[1]), float(img[2]), float(quatd.GetReal())
+        except Exception:
+            qx, qy, qz, qw = 0.0, 0.0, 0.0, 1.0  # identity
 
         # ── Velocity from physics ─────────────────────────────────────────
         # Try physxRigidBody:* attributes first, then physics:* fallback
@@ -234,9 +242,6 @@ class StarshipPublisher:
         pose_msg.pose.position.x = pos[0]
         pose_msg.pose.position.y = pos[1]
         pose_msg.pose.position.z = pos[2]
-        # Convert rotation matrix → quaternion (via Gf.Rotation)
-        rotation = Gf.Rotation(rot)
-        qx, qy, qz, qw = _quat_from_gf(rotation)
         pose_msg.pose.orientation.x = qx
         pose_msg.pose.orientation.y = qy
         pose_msg.pose.orientation.z = qz

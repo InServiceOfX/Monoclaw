@@ -324,7 +324,10 @@ def _create_starship_stage_inline() -> None:
         UsdPhysics.CollisionAPI.Apply(ground.GetPrim())
 
         starship_xform = UsdGeom.Xform.Define(stage, "/World/Starship")
-        starship_xform.AddTranslateOp().Set(Gf.Vec3d(0, 25, 0))
+        # Center at y=29.5 so base is at y=0 (ground level).
+        # Capsule: cylinder height=50m + 2x hemisphere radius=4.5m → total 59m.
+        # Bottom = center_y − (height/2 + radius) = 29.5 − (25+4.5) = 0 ✓
+        starship_xform.AddTranslateOp().Set(Gf.Vec3d(0, 29.5, 0))
         capsule = UsdGeom.Capsule.Define(stage, "/World/Starship/Body")
         capsule.CreateRadiusAttr(4.5)
         capsule.CreateHeightAttr(50.0)
@@ -375,6 +378,9 @@ def _handle_cmd(cmd: dict) -> None:
                 return
             print(f"[rosa] Loading scene from API: {path}")
             omni.usd.get_context().open_stage(path)
+            # Stop → ensures PhysX resets all rigid bodies to their USD-defined
+            # initial positions (t=0).  Then play restarts the simulation.
+            timeline.stop()
             # Wait for stage to settle, then restore /clock OmniGraph
             # (open_stage wipes all OmniGraph nodes from the previous stage)
             for _ in range(30):

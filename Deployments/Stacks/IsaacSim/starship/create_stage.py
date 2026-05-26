@@ -87,8 +87,10 @@ UsdPhysics.CollisionAPI.Apply(ground.GetPrim())
 # Launch position: base at y = 0, tip at y ≈ 50 m
 
 starship_xform = UsdGeom.Xform.Define(stage, "/World/Starship")
-# Place so the base is at y = 0 (ground level)
-starship_xform.AddTranslateOp().Set(Gf.Vec3d(0, 25, 0))   # center at 25 m AGL
+# Place so the base is at y = 0 (ground level).
+# Capsule: cylinder height=50m + 2x hemisphere radius=4.5m → total 59m.
+# Bottom = center_y − (height/2 + radius) = 29.5 − 29.5 = 0 ✓
+starship_xform.AddTranslateOp().Set(Gf.Vec3d(0, 29.5, 0))
 
 capsule = UsdGeom.Capsule.Define(stage, "/World/Starship/Body")
 capsule.CreateRadiusAttr(4.5)       # 9 m diameter
@@ -108,7 +110,7 @@ mass_api.CreateMassAttr(130000.0)   # 130 tonnes (simplified upper stage)
 # The camera looks forward (down the Z axis in the local frame).
 
 camera_xform = UsdGeom.Xform.Define(stage, "/World/Starship/Camera")
-camera_xform.AddTranslateOp().Set(Gf.Vec3d(0, 27, 0))  # just above nose cone
+camera_xform.AddTranslateOp().Set(Gf.Vec3d(0, 31.5, 0))  # nose cone tip (29.5+2m above center)
 camera_xform.AddRotateXYZOp().Set(Gf.Vec3f(-90, 0, 0))  # look down/forward
 
 camera = UsdGeom.Camera.Define(stage, "/World/Starship/Camera/Sensor")

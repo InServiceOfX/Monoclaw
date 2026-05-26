@@ -288,17 +288,18 @@ def _apply_force_torque(prim, force: Gf.Vec3f, torque: Gf.Vec3f) -> None:
         import omni.physx
         physx = omni.physx.get_physx_interface()
         prim_path_str = str(prim.GetPath())
-        # apply_force_at_pos(prim_path, force, pos, is_global)
+        # Isaac Sim 4.x: apply_force_at_pos takes (path, force_list, pos_list, world_frame)
+        # where force and pos are [x, y, z] lists/tuples, NOT carb.Float3
         physx.apply_force_at_pos(
             prim_path_str,
-            carb.Float3(force[0], force[1], force[2]),
-            carb.Float3(0.0, 0.0, 0.0),   # at CoM
-            True,                          # world space
+            [force[0], force[1], force[2]],
+            [0.0, 0.0, 0.0],   # at CoM
+            True,               # world space
         )
         if torque.GetLength() > 0.01:
             physx.apply_torque(
                 prim_path_str,
-                carb.Float3(torque[0], torque[1], torque[2]),
+                [torque[0], torque[1], torque[2]],
                 True,
             )
     except Exception as e1:
