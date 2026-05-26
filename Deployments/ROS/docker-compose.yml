@@ -24,6 +24,11 @@ services:
       - LIBGL_ALWAYS_SOFTWARE=1
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
-      # No rosa source mount — rosa runs OUTSIDE this container as a Rust binary.
+      # Starship telemetry stub — mounted read-only so edits on the host are
+      # immediately visible inside the container without docker cp or rebuild.
+      # Set ROSA_PATH in .env (see .env.example) or export it before compose up.
+      # Run stub: docker compose exec ros2 bash -ic "python3 /starship/stub.py"
+      - ${ROSA_PATH}/examples/starship:/starship:ro
+      # No rosa binary source mount — rosa runs OUTSIDE this container as a Rust binary.
     # No GPU / nvidia runtime — GPU belongs to the IsaacSim container only.
     command: ["bash", "-lc", "exec /entrypoint.sh bash"]
