@@ -269,8 +269,14 @@ def _maybe_start_starship(stage_path: str) -> None:
         return  # already running
 
     try:
-        import sys
-        sys.path.insert(0, "/isaac-sim/exts/starship")
+        import sys, importlib
+        starship_dir = "/isaac-sim/exts/starship"
+        if starship_dir not in sys.path:
+            sys.path.insert(0, starship_dir)
+        # Force re-import from disk (volume-mounted scripts may have changed)
+        for mod_name in ("starship_publisher", "starship_controller"):
+            if mod_name in sys.modules:
+                importlib.reload(sys.modules[mod_name])
         from starship_publisher import StarshipPublisher
         from starship_controller import StarshipController
 
