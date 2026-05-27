@@ -280,40 +280,31 @@ def _apply_force_torque(prim, force: Gf.Vec3f, torque: Gf.Vec3f) -> None:
     """
     Apply a world-space force and torque to a PhysX rigid body prim.
 
-    Isaac Sim 4.x exposes this via the PhysxRigidBodyAPI's custom attributes
-    written each step.  We use the lower-level carb/PhysX direct-force API.
+    Isaac Sim 4.x apply_force_at_pos signature:
+      (body_path: str, force: carb.Float3, pos: carb.Float3, mode: str='Force') -> None
+    mode='Force' applies a continuous world-space force; 'Impulse' for one-shot.
     """
     try:
-        # Preferred path: omni.physx articulation/rigid body interface
         import omni.physx
+        import carb
         physx = omni.physx.get_physx_interface()
         prim_path_str = str(prim.GetPath())
-        # Isaac Sim 4.x: apply_force_at_pos takes (path, force_list, pos_list, world_frame)
-        # where force and pos are [x, y, z] lists/tuples, NOT carb.Float3
         physx.apply_force_at_pos(
             prim_path_str,
-            [force[0], force[1], force[2]],
-            [0.0, 0.0, 0.0],   # at CoM
-            True,               # world space
+            carb.Float3(float(force[0]), float(force[1]), float(force[2])),
+            carb.Float3(0.0, 0.0, 0.0),  # at CoM
+            "Force",                      # world-space continuous force
         )
         if torque.GetLength() > 0.01:
             physx.apply_torque(
                 prim_path_str,
-                [torque[0], torque[1], torque[2]],
-                True,
+                carb.Float3(float(torque[0]), float(torque[1]), float(torque[2])),
+                "Force",
             )
-    except Exception as e1:
-        try:
-            # Fallback: direct USD attribute write (lower fidelity but works)
-            # PhysX picks these up at the next step boundary
-            rb = PhysxSchema.PhysxRigidBodyAPI(prim)
-            rb.GetLinearVelocityAttr()  # just verify it's a rigid body
-            # Write force via custom data (Isaac Sim extensions read this)
-            prim.SetCustomDataByKey("__ext_force__", {
-                "x": force[0], "y": force[1], "z": force[2]
-            })
-            prim.SetCustomDataByKey("__ext_torque__", {
-                "x": torque[0], "y": torque[1], "z": torque[2]
-            })
-        except Exception as e2:
-            print(f"[starship_ctrl] force apply fallback also failed: {e1} / {e2}")
+    except Exception as exc:
+        # Only print the first few occurrences to avoid log spam
+        if not hasattr(_apply_force_torque, "_err_count"):
+            _apply_force_torque._err_count = 0
+        _apply_force_torque._err_count += 1
+        if _apply_force_torque._err_count <= 3:
+            print(f"[starship_ctrl] force apply error #{_apply_force_torque._err_count}: {exc}", flush=True)
