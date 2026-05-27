@@ -35,7 +35,6 @@ Environment variables:
 import json
 import os
 import queue
-import sys
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -46,34 +45,38 @@ from isaacsim import SimulationApp
 CONFIG = {
     "headless": True,
     "anti_aliasing": 0,       # disable MSAA in headless — saves VRAM
-    # Use PathTracing for better visuals when capturing screenshots, or
-    # RayTracedLighting for real-time. Omit for default (RayTracedLighting).
-    # For a pure physics/control demo, rendering is secondary.
+    "renderer": "RayTracedLighting",
     "width": 1280,
     "height": 720,
+    # Pre-declare the ROS 2 bridge as a startup extension so it loads as part
+    # of SimulationApp initialization rather than as a post-init call.
+    # This may reduce boot time by loading the bridge in parallel with other
+    # startup extensions rather than serially after app.ready().
+    "/isaac/startup/ros_bridge_extension": "isaacsim.ros2.bridge",
 }
 
-print("[rosa] Starting Isaac Sim headless...", flush=True)
+print("[rosa] Starting Isaac Sim headless...")
 app = SimulationApp(CONFIG)
-print("[rosa] SimulationApp ready — starting HTTP control server...", flush=True)
 
 # ── Extensions ────────────────────────────────────────────────────────────────
 import omni.kit.app
 
 manager = omni.kit.app.get_app().get_extension_manager()
 
-# The ROS2 bridge is NOT loaded here — for this demo the stub node in
-# rosa-ros2 container handles all /starship/* topic publishing.
-# Isaac Sim provides USD physics + stage + screenshot capability.
+# Enable the ROS 2 bridge (name changed from omni.isaac.ros2_bridge in 4.x)
 bridge_enabled = False
 for ext_name in ("isaacsim.ros2.bridge", "omni.isaac.ros2_bridge"):
     if manager.is_extension_enabled(ext_name):
-        print(f"[rosa] {ext_name} already enabled", flush=True)
+        print(f"[rosa] {ext_name} already enabled")
+        bridge_enabled = True
+        break
+    if manager.set_extension_enabled_immediate(ext_name, True):
+        print(f"[rosa] Enabled extension: {ext_name}")
         bridge_enabled = True
         break
 
 if not bridge_enabled:
-    print("[rosa] ROS2 bridge not loaded — using stub node for /starship/* topics", flush=True)
+    print("[rosa] WARNING: could not enable ROS 2 bridge extension — topics may not publish")
 
 # ── Stage ─────────────────────────────────────────────────────────────────────
 import omni.usd
@@ -134,15 +137,14 @@ if _create_clock_omnigraph():
     for _ in range(10):
         app.update()
 
-# ── Timeline: start playing so physics step ────────────────────────────────────
+# ── Timeline: start playing so /clock ticks ───────────────────────────────────
 import omni.timeline
 timeline = omni.timeline.get_timeline_interface()
 timeline.play()
-print("[rosa] Simulation timeline started", flush=True)
-if bridge_enabled:
-    print("[rosa] /clock should now be visible on the ROS 2 network", flush=True)
-print("[rosa] ROS_DOMAIN_ID =", os.environ.get("ROS_DOMAIN_ID", "0"), flush=True)
-print("[rosa] RMW           =", os.environ.get("RMW_IMPLEMENTATION", "rmw_cyclonedds_cpp"), flush=True)
+print("[rosa] Simulation timeline started")
+print("[rosa] /clock should now be visible on the ROS 2 network")
+print("[rosa] ROS_DOMAIN_ID =", os.environ.get("ROS_DOMAIN_ID", "0"))
+print("[rosa] RMW           =", os.environ.get("RMW_IMPLEMENTATION", "rmw_cyclonedds_cpp"))
 
 # ── HTTP control server ───────────────────────────────────────────────────────
 # All Isaac Sim API calls MUST happen on the main thread.
@@ -158,12 +160,6 @@ _diag: dict = {
     "sim_time":   0.0,
     "fps":        0.0,
     "physics_dt": 0.0,
-}
-
-# Shared physics state — current gravity body.
-_physics_state: dict = {
-    "body":   "mars",     # default: Mars operations
-    "g_m_s2": 3.72,
 }
 
 # Known USD scene paths (populated on startup; also lists /scene/list-known dirs)
@@ -215,8 +211,6 @@ class _ControlHandler(BaseHTTPRequestHandler):
                 "exists": exists,
                 "size_bytes": os.path.getsize(_STARSHIP_USD_PATH) if exists else 0,
             })
-        elif self.path == "/physics/gravity":
-            self._send_json(dict(_physics_state))
         else:
             self._send_json({"error": "not found"}, 404)
 
@@ -241,22 +235,6 @@ class _ControlHandler(BaseHTTPRequestHandler):
             # (pxr is only available inside the Kit runtime process).
             _cmd_queue.put({"type": "create_starship_stage"})
             self._send_json({"status": "queued", "output": _STARSHIP_USD_PATH})
-        elif self.path == "/physics/set_gravity":
-            # Change gravity to a named body: earth | moon | mars | zero
-            body = self._read_json_body()
-            body_name = body.get("body", "mars").lower()
-            _GRAVITY_BODIES = {
-                "earth": 9.81,
-                "moon":  1.62,
-                "mars":  3.72,
-                "zero":  0.0,
-            }
-            g = _GRAVITY_BODIES.get(body_name)
-            if g is None:
-                self._send_json({"error": f"unknown body '{body_name}'; use earth/moon/mars/zero"}, 400)
-                return
-            _cmd_queue.put({"type": "set_gravity", "body": body_name, "g": g})
-            self._send_json({"status": "queued", "body": body_name, "g_m_s2": g})
         else:
             self._send_json({"error": "not found"}, 404)
 
@@ -315,24 +293,7 @@ def _create_starship_stage_inline() -> None:
     """
     Generate /isaac-sim/exts/starship/starship.usd from within the running
     SimulationApp process where pxr (USD Python bindings) is available.
-    Delegates to create_stage.py which lives in the volume-mounted starship dir.
-    """
-    import importlib.util, sys as _sys
-    create_stage_path = "/isaac-sim/exts/starship/create_stage.py"
-    try:
-        spec = importlib.util.spec_from_file_location("create_stage", create_stage_path)
-        mod  = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        print(f"[rosa] Starship stage created via {create_stage_path}")
-    except Exception as exc:
-        print(f"[rosa] create_stage.py failed ({exc}) — falling back to inline capsule")
-        _create_starship_stage_capsule_fallback()
-
-
-def _create_starship_stage_capsule_fallback() -> None:
-    """
-    Minimal capsule-only stage used when create_stage.py is unavailable.
-    Physics-correct but visually plain (gray capsule).
+    Mirrors the logic in starship/create_stage.py but runs in-process.
     """
     try:
         from pxr import Gf, UsdGeom, UsdPhysics, Sdf, Usd, PhysxSchema
@@ -351,12 +312,15 @@ def _create_starship_stage_capsule_fallback() -> None:
         physics_scene.CreateGravityDirectionAttr(Gf.Vec3f(0.0, -1.0, 0.0))
         physics_scene.CreateGravityMagnitudeAttr(9.81)
         physx_scene = PhysxSchema.PhysxSceneAPI.Apply(physics_scene.GetPrim())
+        # Enable GPU dynamics if the API supports it (Isaac Sim 4.5 attribute name varies)
         for attr_name in ("CreateGpuDynamicsEnabledAttr", "CreateEnableGPUDynamicsAttr"):
             fn = getattr(physx_scene, attr_name, None)
             if fn:
                 fn(True)
                 break
 
+        # Ground plane: use a Cube slab — PhysX handles box primitives reliably.
+        # 1000×1×1000 m slab centered at y=-0.5 so top face is exactly at y=0.
         ground_xform = UsdGeom.Xform.Define(stage, "/World/GroundPlane")
         ground_xform.AddTranslateOp().Set(Gf.Vec3d(0, -0.5, 0))
         ground_cube = UsdGeom.Cube.Define(stage, "/World/GroundPlane/Geom")
@@ -365,14 +329,15 @@ def _create_starship_stage_capsule_fallback() -> None:
         ground_cube.CreateDisplayColorAttr([Gf.Vec3f(0.3, 0.3, 0.3)])
         UsdPhysics.CollisionAPI.Apply(ground_cube.GetPrim())
 
-        # Y=0 at engine plane; capsule centre at y=25 so base touches y=0.
         starship_xform = UsdGeom.Xform.Define(stage, "/World/Starship")
-        starship_xform.AddTranslateOp().Set(Gf.Vec3d(0, 0, 0))
+        # Center at y=29.5 so base is at y=0 (ground level).
+        # Capsule: cylinder height=50m + 2x hemisphere radius=4.5m → total 59m.
+        # Bottom = center_y − (height/2 + radius) = 29.5 − (25+4.5) = 0 ✓
+        starship_xform.AddTranslateOp().Set(Gf.Vec3d(0, 29.5, 0))
         capsule = UsdGeom.Capsule.Define(stage, "/World/Starship/Body")
         capsule.CreateRadiusAttr(4.5)
-        capsule.CreateHeightAttr(44.0)
+        capsule.CreateHeightAttr(50.0)
         capsule.CreateAxisAttr("Y")
-        capsule.AddTranslateOp().Set(Gf.Vec3d(0, 25, 0))
         capsule.CreateDisplayColorAttr([Gf.Vec3f(0.8, 0.8, 0.85)])
         UsdPhysics.RigidBodyAPI.Apply(starship_xform.GetPrim())
         UsdPhysics.CollisionAPI.Apply(capsule.GetPrim())
@@ -380,7 +345,7 @@ def _create_starship_stage_capsule_fallback() -> None:
         mass_api.CreateMassAttr(130000.0)
 
         camera_xform = UsdGeom.Xform.Define(stage, "/World/Starship/Camera")
-        camera_xform.AddTranslateOp().Set(Gf.Vec3d(0, 48, 0))
+        camera_xform.AddTranslateOp().Set(Gf.Vec3d(0, 27, 0))
         camera_xform.AddRotateXYZOp().Set(Gf.Vec3f(-90, 0, 0))
         camera = UsdGeom.Camera.Define(stage, "/World/Starship/Camera/Sensor")
         camera.CreateProjectionAttr(UsdGeom.Tokens.perspective)
@@ -393,10 +358,10 @@ def _create_starship_stage_capsule_fallback() -> None:
             "ros2_topic_namespace", "starship"
         )
         stage.Save()
-        print(f"[rosa] Fallback capsule stage saved: {out}")
+        print(f"[rosa] Starship stage created: {out}")
 
     except Exception as exc:
-        print(f"[rosa] ERROR creating fallback stage: {exc}")
+        print(f"[rosa] ERROR creating Starship stage: {exc}")
 
 
 def _handle_cmd(cmd: dict) -> None:
@@ -409,25 +374,6 @@ def _handle_cmd(cmd: dict) -> None:
             timeline.stop()
         elif action == "pause":
             timeline.pause()
-    elif cmd_type == "set_gravity":
-        body_name = cmd.get("body", "mars")
-        g = float(cmd.get("g", 3.72))
-        try:
-            import omni.usd
-            from pxr import Gf, UsdPhysics
-            stage = omni.usd.get_context().get_stage()
-            if stage:
-                physics_prim = stage.GetPrimAtPath("/World/PhysicsScene")
-                if physics_prim.IsValid():
-                    scene = UsdPhysics.Scene(physics_prim)
-                    scene.GetGravityMagnitudeAttr().Set(g)
-                    _physics_state["body"]   = body_name
-                    _physics_state["g_m_s2"] = g
-                    print(f"[rosa] Gravity set to {body_name}: {g} m/s²")
-                else:
-                    print(f"[rosa] WARNING: /World/PhysicsScene not found — gravity unchanged")
-        except Exception as exc:
-            print(f"[rosa] set_gravity error: {exc}")
     elif cmd_type == "create_starship_stage":
         _create_starship_stage_inline()
     elif cmd_type == "load_scene":
