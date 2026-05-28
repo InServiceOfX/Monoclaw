@@ -45,12 +45,14 @@ from isaacsim import SimulationApp
 
 CONFIG = {
     "headless": True,
-    "anti_aliasing": 0,       # disable MSAA in headless — saves VRAM
-    # Use PathTracing for better visuals when capturing screenshots, or
-    # RayTracedLighting for real-time. Omit for default (RayTracedLighting).
-    # For a pure physics/control demo, rendering is secondary.
-    "width": 1280,
-    "height": 720,
+    "anti_aliasing": 0,
+    # Small viewport — physics demo only, rendering is secondary.
+    # Keeps peak RAM under 8 GB on RTX 3070 8 GB laptop during shader warm-up.
+    "width": 640,
+    "height": 360,
+    # Rasterization avoids the RTX shader compilation spike that OOM-kills on 15 GB systems.
+    "renderer": "RayTracedLighting",
+    "headless_egl": True,
 }
 
 print("[rosa] Starting Isaac Sim headless...", flush=True)
@@ -340,7 +342,7 @@ def _create_starship_stage_capsule_fallback() -> None:
         out = _STARSHIP_USD_PATH
         os.makedirs(os.path.dirname(out), exist_ok=True)
 
-        stage = Usd.Stage.CreateNew(out)
+        stage = Usd.Stage.CreateInMemory()
         UsdGeom.SetStageUpAxis(stage, UsdGeom.Tokens.y)
         UsdGeom.SetStageMetersPerUnit(stage, 1.0)
 
@@ -392,8 +394,11 @@ def _create_starship_stage_capsule_fallback() -> None:
         stage.GetPrimAtPath("/World/Starship").SetCustomDataByKey(
             "ros2_topic_namespace", "starship"
         )
-        stage.Save()
-        print(f"[rosa] Fallback capsule stage saved: {out}")
+        _tmp = out + ".tmp"
+        stage.Export(_tmp)
+        import shutil as _shutil
+        _shutil.move(_tmp, out)
+        print(f"[rosa] Fallback capsule stage written: {out}")
 
     except Exception as exc:
         print(f"[rosa] ERROR creating fallback stage: {exc}")

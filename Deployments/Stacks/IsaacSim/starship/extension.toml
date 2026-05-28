@@ -1,0 +1,6 @@
+[package]
+title = "Starship"
+version = "0.1.0"
+description = "Starship USD scene and physics scripts for rosa demo"
+
+[dependencies]

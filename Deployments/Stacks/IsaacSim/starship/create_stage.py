@@ -112,7 +112,10 @@ def _define_pbr_material(stage, prim_path: str,
 
 print("[starship] Creating Starship USD stage...")
 
-stage = Usd.Stage.CreateNew(OUTPUT_PATH)
+# CreateNew fails when called from within a running Isaac Sim session because
+# the Sdf layer registry still holds starship.usd's identifier (it's the loaded
+# stage). CreateInMemory() + Export() bypasses the registry check entirely.
+stage = Usd.Stage.CreateInMemory()
 UsdGeom.SetStageUpAxis(stage, UsdGeom.Tokens.y)
 UsdGeom.SetStageMetersPerUnit(stage, 1.0)   # 1 USD unit = 1 metre
 
@@ -269,8 +272,14 @@ except Exception as exc:
 
 # ── Save ──────────────────────────────────────────────────────────────────
 
-stage.Save()
-print(f"[starship] Stage saved → {OUTPUT_PATH}")
+# Export to a temp path (not in the Sdf layer registry) then rename to
+# atomically overwrite the real file. The registry keeps the old layer
+# object alive, but the file on disk is updated for the next scene load.
+_tmp = OUTPUT_PATH + ".tmp"
+stage.Export(_tmp)
+import shutil
+shutil.move(_tmp, OUTPUT_PATH)
+print(f"[starship] Stage written → {OUTPUT_PATH}")
 print("[starship] Scene hierarchy:")
 for prim in stage.Traverse():
     depth = len(prim.GetPath().pathString.split("/")) - 1

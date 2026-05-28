@@ -52,6 +52,7 @@ services:
       # without a full docker build cycle (the image COPY is overridden by these).
       - ./scripts/enable_ros2_bridge.py:/isaac-sim/scripts/enable_ros2_bridge.py:ro
       - ./scripts/start_isaac.sh:/usr/local/bin/start_isaac.sh:ro
+      - ./scripts/load_starship_hook.py:/isaac-sim/scripts/load_starship_hook.py:ro
     ports:
       # Isaac control API (rosa-isaac Rust tools) — host-networked, no mapping needed
       # but documented here for reference.
