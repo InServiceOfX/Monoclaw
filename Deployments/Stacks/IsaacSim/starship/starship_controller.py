@@ -114,6 +114,9 @@ class StarshipController:
         self._sub_safe = self._node.create_subscription(
             Bool, "/starship/safe_mode", self._cb_safe_mode, 10
         )
+        self._sub_refuel = self._node.create_subscription(
+            Float32, "/starship/refuel", self._cb_refuel, 10
+        )
         print("[starship_ctrl] rclpy node 'starship_controller' ready")
 
     # ── Public API ────────────────────────────────────────────────────────
@@ -261,6 +264,28 @@ class StarshipController:
             self._safe_mode = bool(msg.data)
         mode_str = "ENGAGED" if msg.data else "disengaged"
         print(f"[starship_ctrl] safe_mode {mode_str}")
+
+    def _cb_refuel(self, msg: Float32) -> None:
+        from pxr import UsdGeom, Usd
+        stage = get_current_stage()
+        if stage is None:
+            print("[starship_ctrl] refuel rejected: no stage")
+            return
+        prim = stage.GetPrimAtPath(STARSHIP_PRIM)
+        if not prim.IsValid():
+            print("[starship_ctrl] refuel rejected: Starship prim not found")
+            return
+        altitude_m = UsdGeom.Xformable(prim) \
+            .ComputeLocalToWorldTransform(Usd.TimeCode.Default()) \
+            .ExtractTranslation()[1]
+        if altitude_m > 5.0:
+            print(f"[starship_ctrl] refuel rejected: airborne at {altitude_m:.1f} m")
+            return
+        fraction = max(0.0, min(1.0, float(msg.data)))
+        fuel_kg = fraction * 700_000.0
+        if self._publisher is not None:
+            self._publisher._fuel_kg = fuel_kg
+            print(f"[starship_ctrl] refueled → {fraction:.1%} ({fuel_kg:.0f} kg)")
 
     # ── Spin thread ───────────────────────────────────────────────────────
 
