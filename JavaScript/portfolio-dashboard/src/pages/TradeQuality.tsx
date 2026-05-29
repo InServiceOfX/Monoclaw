@@ -35,9 +35,15 @@ export default function TradeQuality() {
     queryFn: () => api("/grading/top-bottom?limit=5"),
   });
 
+  const { data: bySymbol } = useQuery<any>({
+    queryKey: ["grading-by-symbol"],
+    queryFn: () => api("/grading/by-symbol"),
+  });
+
   const sells = graded?.graded_sells ?? [];
   const bestSells = topBottom?.best_sells ?? [];
   const worstSells = topBottom?.worst_sells ?? [];
+  const symbolStats = bySymbol?.by_symbol ?? [];
 
   return (
     <>
@@ -161,6 +167,43 @@ export default function TradeQuality() {
           </Table>
         </Stack>
       </SimpleGrid>
+
+      <Title order={4} mt="xl" mb="sm">Timing Quality by Symbol</Title>
+      <Table striped highlightOnHover>
+        <Table.Thead>
+          <Table.Tr>
+            <Table.Th>Symbol</Table.Th>
+            <Table.Th>Sells</Table.Th>
+            <Table.Th>Avg Quality</Table.Th>
+            <Table.Th>% Near Peak</Table.Th>
+            <Table.Th>Avg MFE</Table.Th>
+            <Table.Th>Edge</Table.Th>
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>
+          {symbolStats.length === 0 && (
+            <Table.Tr>
+              <Table.Td colSpan={6} c="dimmed" ta="center">Not enough data yet</Table.Td>
+            </Table.Tr>
+          )}
+          {symbolStats.map((s: any, i: number) => (
+            <Table.Tr key={i}>
+              <Table.Td fw={600}>{s.symbol}</Table.Td>
+              <Table.Td>{s.sells}</Table.Td>
+              <Table.Td c={s.avg_quality_score > 10 ? "teal" : s.avg_quality_score < -5 ? "red" : undefined}>
+                {s.avg_quality_score}
+              </Table.Td>
+              <Table.Td>{s.pct_near_peak}%</Table.Td>
+              <Table.Td>{s.avg_mfe_after_sell}</Table.Td>
+              <Table.Td>
+                <Badge color={s.edge === "Strong" ? "teal" : s.edge === "Weak" ? "red" : "gray"}>
+                  {s.edge}
+                </Badge>
+              </Table.Td>
+            </Table.Tr>
+          ))}
+        </Table.Tbody>
+      </Table>
     </>
   );
 }

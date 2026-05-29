@@ -966,7 +966,7 @@ def recommendations_report(days: int = Query(default=90, ge=1, le=3650)):
     }
 
 
-# ── Transaction Grading (Phase 4 + Enhancements) ────────────────────────────────────────────
+# ── Transaction Grading (Phase 4 + Per-Symbol) ────────────────────────────────────────────
 
 from .price_history import calculate_sell_quality
 
@@ -1104,5 +1104,57 @@ def grading_top_bottom(limit: int = Query(5, ge=3, le=20)):
     return {
         "best_sells": best,
         "worst_sells": worst,
+        "generated_at": datetime.now().isoformat(),
+    }
+
+
+@app.get("/grading/by-symbol")
+def grading_by_symbol():
+    """Per-symbol timing quality summary."""
+    tx_master = BASE_DIR / "transactions" / "Joint_Tenant_Transactions_MASTER.csv"
+    if not tx_master.exists():
+        return {"error": "Transactions master not found"}
+
+    from collections import defaultdict
+    symbol_data: dict[str, list] = defaultdict(list)
+
+    with open(tx_master) as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            if row.get("Action", "").strip().lower() != "sell":
+                continue
+            sym = row.get("Symbol", "").strip()
+            if not sym:
+                continue
+            try:
+                score_data = calculate_sell_quality(sym, row.get("Date", ""))
+                if score_data["quality_score"] is not None:
+                    symbol_data[sym].append(score_data)
+            except Exception:
+                continue
+
+    results = []
+    for sym, scores in symbol_data.items():
+        if len(scores) < 2:
+            continue  # need at least 2 sells for meaningful stats
+        avg_score = sum(s["quality_score"] for s in scores) / len(scores)
+        near_peak = sum(1 for s in scores if s.get("is_near_local_peak")) / len(scores)
+        avg_mfe = sum((s.get("mfe_pct") or 0) for s in scores) / len(scores)
+
+        edge = "Strong" if avg_score > 15 else "Weak" if avg_score < -5 else "Neutral"
+
+        results.append({
+            "symbol": sym,
+            "sells": len(scores),
+            "avg_quality_score": round(avg_score, 1),
+            "pct_near_peak": round(near_peak * 100, 1),
+            "avg_mfe_after_sell": round(avg_mfe, 1),
+            "edge": edge,
+        })
+
+    results.sort(key=lambda x: x["avg_quality_score"], reverse=True)
+    return {
+        "by_symbol": results,
+        "symbols_analyzed": len(results),
         "generated_at": datetime.now().isoformat(),
     }
