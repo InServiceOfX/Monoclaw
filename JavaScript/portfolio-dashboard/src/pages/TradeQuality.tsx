@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Card, Group, SimpleGrid, Table, Text, Title, Badge } from "@mantine/core";
+import { Card, Group, SimpleGrid, Table, Text, Title, Badge, Stack } from "@mantine/core";
 import { api } from "../api";
 
 interface GradingSummary {
@@ -30,7 +30,14 @@ export default function TradeQuality() {
     queryFn: () => api("/transactions/grading?limit=30"),
   });
 
+  const { data: topBottom } = useQuery<any>({
+    queryKey: ["grading-top-bottom"],
+    queryFn: () => api("/grading/top-bottom?limit=5"),
+  });
+
   const sells = graded?.graded_sells ?? [];
+  const bestSells = topBottom?.best_sells ?? [];
+  const worstSells = topBottom?.worst_sells ?? [];
 
   return (
     <>
@@ -100,6 +107,60 @@ export default function TradeQuality() {
           ))}
         </Table.Tbody>
       </Table>
+
+      <SimpleGrid cols={2} mt="xl">
+        <Stack>
+          <Title order={4}>Best Timed Sells</Title>
+          <Table striped>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>Date</Table.Th>
+                <Table.Th>Symbol</Table.Th>
+                <Table.Th>Score</Table.Th>
+                <Table.Th>Flag</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {bestSells.map((s: any, i: number) => (
+                <Table.Tr key={i}>
+                  <Table.Td>{s.date}</Table.Td>
+                  <Table.Td fw={500}>{s.symbol}</Table.Td>
+                  <Table.Td c="teal">{s.quality_score}</Table.Td>
+                  <Table.Td>
+                    {s.sold_too_early && <Badge color="red" size="xs">Sold too early</Badge>}
+                  </Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Stack>
+
+        <Stack>
+          <Title order={4}>Worst Timed Sells</Title>
+          <Table striped>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>Date</Table.Th>
+                <Table.Th>Symbol</Table.Th>
+                <Table.Th>Score</Table.Th>
+                <Table.Th>Flag</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {worstSells.map((s: any, i: number) => (
+                <Table.Tr key={i}>
+                  <Table.Td>{s.date}</Table.Td>
+                  <Table.Td fw={500}>{s.symbol}</Table.Td>
+                  <Table.Td c="red">{s.quality_score}</Table.Td>
+                  <Table.Td>
+                    {s.sold_too_early && <Badge color="red" size="xs">Sold too early</Badge>}
+                  </Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Stack>
+      </SimpleGrid>
     </>
   );
 }

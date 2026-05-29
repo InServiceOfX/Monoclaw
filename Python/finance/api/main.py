@@ -966,7 +966,7 @@ def recommendations_report(days: int = Query(default=90, ge=1, le=3650)):
     }
 
 
-# ── Transaction Grading (Phase 4) ────────────────────────────────────────────
+# ── Transaction Grading (Phase 4 + Enhancements) ────────────────────────────────────────────
 
 from .price_history import calculate_sell_quality
 
@@ -1056,5 +1056,53 @@ def grading_summary():
         "total_sells_scored": len(scores),
         "sells_near_local_peak": peak_sells,
         "pct_near_peak": round(peak_sells / len(scores) * 100, 1) if scores else 0,
+        "generated_at": datetime.now().isoformat(),
+    }
+
+
+@app.get("/grading/top-bottom")
+def grading_top_bottom(limit: int = Query(5, ge=3, le=20)):
+    """Return best and worst timed sells (Phase 4 enhancement)."""
+    tx_master = BASE_DIR / "transactions" / "Joint_Tenant_Transactions_MASTER.csv"
+    if not tx_master.exists():
+        return {"error": "Transactions master not found"}
+
+    scored_sells = []
+    with open(tx_master) as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            if row.get("Action", "").strip().lower() != "sell":
+                continue
+            sym = row.get("Symbol", "").strip()
+            try:
+                sell_date = row.get("Date", "")
+                score_data = calculate_sell_quality(sym, sell_date)
+                if score_data["quality_score"] is not None:
+                    scored_sells.append({
+                        "date": sell_date,
+                        "symbol": sym,
+                        "quality_score": score_data["quality_score"],
+                        "mfe_pct": score_data["mfe_pct"],
+                        "near_local_peak": score_data["is_near_local_peak"],
+                    })
+            except Exception:
+                continue
+
+    if not scored_sells:
+        return {"error": "No scored sells"}
+
+    # Sort by quality score
+    scored_sells.sort(key=lambda x: x["quality_score"], reverse=True)
+
+    best = scored_sells[:limit]
+    worst = scored_sells[-limit:][::-1]  # worst first
+
+    # Flag "sold too early" = high MFE after sell
+    for s in best + worst:
+        s["sold_too_early"] = (s.get("mfe_pct") or 0) > 15
+
+    return {
+        "best_sells": best,
+        "worst_sells": worst,
         "generated_at": datetime.now().isoformat(),
     }
