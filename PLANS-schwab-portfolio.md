@@ -1,8 +1,11 @@
 # Schwab Portfolio: Task Plans for AI Agents
 
-**Created:** 2026-04-16
+**Created:** 2026-04-16  
+**Last Updated:** 2026-05-28  
 **Author:** Grimlock (OpenClaw agent) for Ernest Yeung
 **Purpose:** Break down portfolio dashboard, data layer, and analytics into discrete tasks that can be delegated to Claude Code, Codex, or other OpenClaw agents.
+
+> **Related Document:** See `TRANSACTION-GRADING-SYSTEM.md` for the detailed design of the transaction timing / opportunity cost scoring system (added 2026-05-28).
 
 ---
 
