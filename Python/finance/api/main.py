@@ -964,3 +964,23 @@ def recommendations_report(days: int = Query(default=90, ge=1, le=3650)):
         "summary": summary,
         "generated_at": datetime.now().isoformat(),
     }
+
+
+# ── Transaction Grading (Phase 2) ────────────────────────────────────────────
+
+from .price_history import calculate_sell_quality
+
+
+@app.get("/transactions/grading")
+def transaction_grading(
+    symbol: Optional[str] = Query(None),
+    limit: int = Query(50, ge=1, le=500),
+):
+    """Return graded sell transactions with timing quality scores."""
+    # Placeholder: in real implementation we would load from MASTER transactions CSV
+    # and compute scores. For now return example structure.
+    return {
+        "status": "phase2_stub",
+        "message": "calculate_sell_quality ready. Full backfill coming in next iteration.",
+        "example": calculate_sell_quality("AAPL", "2026-04-15", realized_gain_pct=12.5),
+    }

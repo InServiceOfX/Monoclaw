@@ -153,3 +153,48 @@ def detect_local_peak(
     # Check if any peak exists within ±3 trading days of the date
     nearby = df.loc[(df.index >= date - timedelta(days=3)) & (df.index <= date + timedelta(days=3))]
     return bool(nearby["is_peak"].any())
+
+
+def calculate_sell_quality(
+    symbol: str,
+    sell_date: str | datetime,
+    realized_gain_pct: float | None = None,
+    window_days: int = 30,
+) -> dict[str, float | None]:
+    """Calculate quality score for a sell transaction.
+
+    Returns dict with:
+        - quality_score: composite score (-100 to +100)
+        - mfe_pct, max_drawdown_pct
+        - avoided_drop_score, missed_gain_score
+        - is_near_local_peak: bool
+    """
+    metrics = compute_forward_mfe_and_drawdown(symbol, sell_date, window_days)
+    is_peak = detect_local_peak(symbol, sell_date, window=20, prominence_pct=8.0)
+
+    mfe = metrics.get("mfe_pct") or 0.0
+    max_dd = metrics.get("max_drawdown_pct") or 0.0
+
+    # Avoided drop score (positive contribution)
+    avoided_drop = max(0.0, -max_dd) * 1.2   # reward avoiding big drops
+
+    # Missed gain penalty
+    missed_gain = max(0.0, mfe) * 0.9
+
+    # Realized profit component (if provided)
+    profit_component = (realized_gain_pct or 0.0) * 0.5
+
+    # Simple volatility penalty (placeholder - can be improved with historical vol)
+    vol_penalty = min(15.0, abs(mfe - max_dd) * 0.15)
+
+    quality = avoided_drop - missed_gain + profit_component - vol_penalty
+    quality = max(-100.0, min(100.0, quality))
+
+    return {
+        "quality_score": round(quality, 1),
+        "mfe_pct": metrics.get("mfe_pct"),
+        "max_drawdown_pct": metrics.get("max_drawdown_pct"),
+        "avoided_drop_score": round(avoided_drop, 1),
+        "missed_gain_score": round(missed_gain, 1),
+        "is_near_local_peak": is_peak,
+    }
