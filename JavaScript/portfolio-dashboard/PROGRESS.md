@@ -1,6 +1,6 @@
 # Portfolio Dashboard — Progress
 
-**Last Updated:** 2026-04-28
+**Last Updated:** 2026-05-29
 **Status:** MVP Complete, analytics polish phase
 
 ---
@@ -19,6 +19,7 @@
 | **Context** | ✅ First pass | Local risk flags, YTD realized tax snapshot, top holdings context, earnings watch |
 | **Monte Carlo** | ✅ First pass | Portfolio percentile bands, current holdings simulation, optional watchlist candidate runs |
 | **DOI** | ✅ First pass | Deployment Opportunity Index tab with portfolio score, index regime panel, and ticker breakdown |
+| **Trade Quality** | ✅ First pass | Transaction timing dashboard with loading progress, provisional recent-sell badges, summary cards, best/worst sells, and per-symbol timing table |
 
 ### Backend API
 
@@ -84,3 +85,9 @@ All endpoints functional in `Python/finance/api/main.py`:
 - Replaced `schwab_portfolio_mc.py` with a CLI wrapper around the shared module.
 - Added Monte Carlo dashboard tab and `/portfolio/monte-carlo` endpoint.
 - Added DOI dashboard tab and `/doi/snapshot` frontend integration with portfolio-, index-, and ticker-level breakdowns.
+
+### Fixed 2026-05-29
+
+- Wired the Trade Quality page to typed API client methods instead of calling the API object directly.
+- Added visible loading progress and API-error messaging for grading endpoints.
+- Display provisional badges for very recent sells that do not have enough forward price history yet, while the primary graded table now asks the backend for mature sells first.

@@ -55,7 +55,7 @@ def get_daily_history(
 
     if not force_refresh and cache_key in _history_cache:
         ts, df = _history_cache[cache_key]
-        if now - ts < _CACHE_TTL and not df.empty:
+        if now - ts < _CACHE_TTL:
             return df
 
     try:
@@ -67,7 +67,12 @@ def get_daily_history(
             auto_adjust=False,
         )
         if df.empty:
-            return pd.DataFrame()
+            empty = pd.DataFrame()
+            _history_cache[cache_key] = (now, empty)
+            return empty
+
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = [col[0] if isinstance(col, tuple) else col for col in df.columns]
 
         # Ensure consistent column names
         df = df.rename(columns={"Adj Close": "AdjClose"})
@@ -77,7 +82,9 @@ def get_daily_history(
         _history_cache[cache_key] = (now, df)
         return df
     except Exception:
-        return pd.DataFrame()
+        empty = pd.DataFrame()
+        _history_cache[cache_key] = (now, empty)
+        return empty
 
 
 def compute_forward_mfe_and_drawdown(
@@ -170,6 +177,29 @@ def calculate_sell_quality(
         - is_near_local_peak: bool
     """
     try:
+        parsed_sell_date = pd.to_datetime(str(sell_date).split(" as of ", 1)[0], errors="coerce")
+        if pd.isna(parsed_sell_date):
+            return {
+                "quality_score": None,
+                "mfe_pct": None,
+                "max_drawdown_pct": None,
+                "avoided_drop_score": None,
+                "missed_gain_score": None,
+                "is_near_local_peak": False,
+                "is_provisional": False,
+            }
+
+        if parsed_sell_date.to_pydatetime() > datetime.now() - timedelta(days=3):
+            return {
+                "quality_score": 0.0,
+                "mfe_pct": None,
+                "max_drawdown_pct": None,
+                "avoided_drop_score": 0.0,
+                "missed_gain_score": 0.0,
+                "is_near_local_peak": False,
+                "is_provisional": True,
+            }
+
         metrics = compute_forward_mfe_and_drawdown(symbol, sell_date, window_days)
         is_peak = detect_local_peak(symbol, sell_date, window=20, prominence_pct=8.0)
 
@@ -191,6 +221,7 @@ def calculate_sell_quality(
             "avoided_drop_score": round(avoided_drop, 1),
             "missed_gain_score": round(missed_gain, 1),
             "is_near_local_peak": is_peak,
+            "is_provisional": False,
         }
     except Exception:
         # Fail gracefully
@@ -201,4 +232,5 @@ def calculate_sell_quality(
             "avoided_drop_score": None,
             "missed_gain_score": None,
             "is_near_local_peak": False,
+            "is_provisional": False,
         }

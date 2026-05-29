@@ -970,56 +970,130 @@ def recommendations_report(days: int = Query(default=90, ge=1, le=3650)):
 
 from .price_history import calculate_sell_quality
 
+_SELL_SCORE_CACHE_TTL = 15 * 60
+_SELL_SCORE_CACHE: dict[tuple[str, str], tuple[float, dict]] = {}
+_GRADING_MAX_CANDIDATES = 1000
+_GRADING_MATURE_DAYS = 35
+
+
+def _load_transaction_rows() -> list[dict]:
+    tx_dir = BASE_DIR / "transactions"
+    preferred = [
+        tx_dir / "Joint_Tenant_Transactions_MASTER.csv",
+        tx_dir / "master-transactions.csv",
+    ]
+    for master in preferred:
+        if master.exists():
+            _, rows = parse_transactions_csv(str(master))
+            return rows
+
+    rows: list[dict] = []
+    for p in sorted(tx_dir.glob("*.csv")):
+        if "MASTER" in p.name or p.name.startswith("master-"):
+            continue
+        _, parsed = parse_transactions_csv(str(p))
+        rows.extend(parsed)
+    return rows
+
+
+def _sell_rows(symbol: Optional[str] = None) -> list[dict]:
+    rows = []
+    for row in _load_transaction_rows():
+        if row.get("Action", "").strip().lower() != "sell":
+            continue
+        sym = row.get("Symbol", "").strip()
+        if not sym:
+            continue
+        if symbol and sym.upper() != symbol.upper():
+            continue
+        rows.append(row)
+    rows.sort(key=lambda r: _parse_schwab_date(r.get("Date", "")) or date.min, reverse=True)
+    return rows
+
+
+def _cached_sell_quality(sym: str, sell_date: str) -> dict:
+    key = (sym.upper(), sell_date)
+    now = time.time()
+    cached = _SELL_SCORE_CACHE.get(key)
+    if cached and now - cached[0] < _SELL_SCORE_CACHE_TTL:
+        return cached[1]
+
+    score = calculate_sell_quality(sym, sell_date, realized_gain_pct=None)
+    _SELL_SCORE_CACHE[key] = (now, score)
+    return score
+
+
+def _is_provisional_sell(row: dict, mature_days: int = _GRADING_MATURE_DAYS) -> bool:
+    sell_date = _parse_schwab_date(row.get("Date", ""))
+    if sell_date is None:
+        return True
+    return sell_date > date.today() - timedelta(days=mature_days)
+
+
+def _graded_sells(
+    symbol: Optional[str] = None,
+    limit: Optional[int] = None,
+    max_candidates: int = _GRADING_MAX_CANDIDATES,
+    include_provisional: bool = False,
+) -> tuple[list[dict], int, int]:
+    candidates = _sell_rows(symbol)
+    graded = []
+    provisional_skipped = 0
+    mature_scanned = 0
+    for row in candidates:
+        if not include_provisional and _is_provisional_sell(row):
+            provisional_skipped += 1
+            continue
+        mature_scanned += 1
+        if mature_scanned > max_candidates:
+            break
+
+        sym = row.get("Symbol", "").strip()
+        sell_date = row.get("Date", "")
+        try:
+            score = _cached_sell_quality(sym, sell_date)
+        except Exception:
+            continue
+        if score.get("quality_score") is None:
+            continue
+
+        graded.append({
+            "date": sell_date,
+            "symbol": sym,
+            "action": "Sell",
+            "quality_score": score["quality_score"],
+            "mfe_pct": score["mfe_pct"],
+            "max_drawdown_pct": score["max_drawdown_pct"],
+            "near_local_peak": score["is_near_local_peak"],
+            "provisional": score.get("is_provisional", False),
+        })
+        if limit is not None and len(graded) >= limit:
+            break
+    return graded, len(candidates), provisional_skipped
+
 
 @app.get("/transactions/grading")
 def transaction_grading(
     symbol: Optional[str] = Query(None),
     limit: int = Query(100, ge=1, le=1000),
+    include_provisional: bool = Query(False),
 ):
     """Return graded sell transactions with timing quality scores (Phase 3)."""
-    tx_master = BASE_DIR / "transactions" / "Joint_Tenant_Transactions_MASTER.csv"
-    if not tx_master.exists():
-        return {"error": "Transactions master not found"}
-
-    graded = []
     try:
-        with open(tx_master) as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                action = row.get("Action", "").strip().lower()
-                if action != "sell":
-                    continue
-                sym = row.get("Symbol", "").strip()
-                if symbol and sym.upper() != symbol.upper():
-                    continue
-                try:
-                    sell_date = row.get("Date", "")
-                    gain_str = row.get("Amount", "0").replace("$", "").replace(",", "")
-                    realized_gain = float(gain_str) if gain_str else None
-                except Exception:
-                    continue
-
-                score = calculate_sell_quality(sym, sell_date, realized_gain_pct=realized_gain)
-                if score.get("quality_score") is None:
-                    continue
-
-                graded.append({
-                    "date": sell_date,
-                    "symbol": sym,
-                    "action": "Sell",
-                    "quality_score": score["quality_score"],
-                    "mfe_pct": score["mfe_pct"],
-                    "max_drawdown_pct": score["max_drawdown_pct"],
-                    "near_local_peak": score["is_near_local_peak"],
-                })
-                if len(graded) >= limit:
-                    break
+        graded, total_sells, provisional_skipped = _graded_sells(
+            symbol=symbol,
+            limit=limit,
+            include_provisional=include_provisional,
+        )
     except Exception as e:
         return {"error": str(e)}
 
     return {
         "graded_sells": graded,
         "count": len(graded),
+        "total_sells": total_sells,
+        "candidates_scanned": min(total_sells, _GRADING_MAX_CANDIDATES),
+        "provisional_skipped": provisional_skipped,
         "generated_at": datetime.now().isoformat(),
     }
 
@@ -1027,33 +1101,26 @@ def transaction_grading(
 @app.get("/grading/summary")
 def grading_summary():
     """Aggregate Trader Score and key statistics (Phase 4)."""
-    tx_master = BASE_DIR / "transactions" / "Joint_Tenant_Transactions_MASTER.csv"
-    if not tx_master.exists():
-        return {"error": "Transactions master not found"}
-
-    scores = []
-    peak_sells = 0
     try:
-        with open(tx_master) as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                if row.get("Action", "").strip().lower() != "sell":
-                    continue
-                sym = row.get("Symbol", "").strip()
-                try:
-                    sell_date = row.get("Date", "")
-                    score = calculate_sell_quality(sym, sell_date)
-                    if score.get("quality_score") is not None:
-                        scores.append(score["quality_score"])
-                    if score.get("is_near_local_peak"):
-                        peak_sells += 1
-                except Exception:
-                    continue
+        graded, total_sells, provisional_skipped = _graded_sells(max_candidates=300)
     except Exception as e:
         return {"error": str(e)}
 
+    scores = [s["quality_score"] for s in graded]
+    peak_sells = sum(1 for s in graded if s.get("near_local_peak"))
     if not scores:
-        return {"error": "No scored sells found"}
+        return {
+            "trader_score": None,
+            "avg_quality_score": None,
+            "total_sells_scored": 0,
+            "total_sells": total_sells,
+            "candidates_scanned": min(total_sells, 300),
+            "provisional_skipped": provisional_skipped,
+            "sells_near_local_peak": 0,
+            "pct_near_peak": 0,
+            "error": "No scored sells found",
+            "generated_at": datetime.now().isoformat(),
+        }
 
     import statistics
     median_score = statistics.median(scores)
@@ -1063,6 +1130,9 @@ def grading_summary():
         "trader_score": round(median_score, 1),
         "avg_quality_score": round(avg_score, 1),
         "total_sells_scored": len(scores),
+        "total_sells": total_sells,
+        "candidates_scanned": min(total_sells, 300),
+        "provisional_skipped": provisional_skipped,
         "sells_near_local_peak": peak_sells,
         "pct_near_peak": round(peak_sells / len(scores) * 100, 1) if scores else 0,
         "generated_at": datetime.now().isoformat(),
@@ -1072,33 +1142,18 @@ def grading_summary():
 @app.get("/grading/top-bottom")
 def grading_top_bottom(limit: int = Query(5, ge=3, le=20)):
     """Return best and worst timed sells (Phase 4 enhancement)."""
-    tx_master = BASE_DIR / "transactions" / "Joint_Tenant_Transactions_MASTER.csv"
-    if not tx_master.exists():
-        return {"error": "Transactions master not found"}
-
-    scored_sells = []
-    with open(tx_master) as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            if row.get("Action", "").strip().lower() != "sell":
-                continue
-            sym = row.get("Symbol", "").strip()
-            try:
-                sell_date = row.get("Date", "")
-                score_data = calculate_sell_quality(sym, sell_date)
-                if score_data["quality_score"] is not None:
-                    scored_sells.append({
-                        "date": sell_date,
-                        "symbol": sym,
-                        "quality_score": score_data["quality_score"],
-                        "mfe_pct": score_data["mfe_pct"],
-                        "near_local_peak": score_data["is_near_local_peak"],
-                    })
-            except Exception:
-                continue
+    scored_sells, total_sells, provisional_skipped = _graded_sells(limit=None, max_candidates=300)
 
     if not scored_sells:
-        return {"error": "No scored sells"}
+        return {
+            "best_sells": [],
+            "worst_sells": [],
+            "total_sells": total_sells,
+            "candidates_scanned": min(total_sells, 300),
+            "provisional_skipped": provisional_skipped,
+            "error": "No scored sells",
+            "generated_at": datetime.now().isoformat(),
+        }
 
     # Sort by quality score
     scored_sells.sort(key=lambda x: x["quality_score"], reverse=True)
@@ -1113,6 +1168,9 @@ def grading_top_bottom(limit: int = Query(5, ge=3, le=20)):
     return {
         "best_sells": best,
         "worst_sells": worst,
+        "total_sells": total_sells,
+        "candidates_scanned": min(total_sells, 300),
+        "provisional_skipped": provisional_skipped,
         "generated_at": datetime.now().isoformat(),
     }
 
@@ -1120,37 +1178,23 @@ def grading_top_bottom(limit: int = Query(5, ge=3, le=20)):
 @app.get("/grading/by-symbol")
 def grading_by_symbol():
     """Per-symbol timing quality summary."""
-    tx_master = BASE_DIR / "transactions" / "Joint_Tenant_Transactions_MASTER.csv"
-    if not tx_master.exists():
-        return {"error": "Transactions master not found"}
-
     from collections import defaultdict
     symbol_data: dict[str, list] = defaultdict(list)
 
     try:
-        with open(tx_master) as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                if row.get("Action", "").strip().lower() != "sell":
-                    continue
-                sym = row.get("Symbol", "").strip()
-                if not sym:
-                    continue
-                try:
-                    score_data = calculate_sell_quality(sym, row.get("Date", ""))
-                    if score_data.get("quality_score") is not None:
-                        symbol_data[sym].append(score_data)
-                except Exception:
-                    continue
+        scored_sells, total_sells, provisional_skipped = _graded_sells(limit=None, max_candidates=300)
     except Exception as e:
         return {"error": str(e)}
+
+    for sell in scored_sells:
+        symbol_data[sell["symbol"]].append(sell)
 
     results = []
     for sym, scores in symbol_data.items():
         if len(scores) < 2:
             continue  # need at least 2 sells for meaningful stats
         avg_score = sum(s["quality_score"] for s in scores) / len(scores)
-        near_peak = sum(1 for s in scores if s.get("is_near_local_peak")) / len(scores)
+        near_peak = sum(1 for s in scores if s.get("near_local_peak")) / len(scores)
         avg_mfe = sum((s.get("mfe_pct") or 0) for s in scores) / len(scores)
 
         edge = "Strong" if avg_score > 15 else "Weak" if avg_score < -5 else "Neutral"
@@ -1168,5 +1212,8 @@ def grading_by_symbol():
     return {
         "by_symbol": results,
         "symbols_analyzed": len(results),
+        "total_sells": total_sells,
+        "candidates_scanned": min(total_sells, 300),
+        "provisional_skipped": provisional_skipped,
         "generated_at": datetime.now().isoformat(),
     }

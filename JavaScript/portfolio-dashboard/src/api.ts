@@ -362,6 +362,67 @@ export interface DOISnapshot {
   };
 }
 
+export interface GradingSummary {
+  trader_score: number | null;
+  avg_quality_score: number | null;
+  total_sells_scored: number;
+  total_sells?: number;
+  candidates_scanned?: number;
+  provisional_skipped?: number;
+  sells_near_local_peak: number;
+  pct_near_peak: number;
+  error?: string;
+}
+
+export interface GradedSell {
+  date: string;
+  symbol: string;
+  action?: string;
+  quality_score: number;
+  mfe_pct: number | null;
+  max_drawdown_pct: number | null;
+  near_local_peak: boolean;
+  provisional?: boolean;
+  sold_too_early?: boolean;
+}
+
+export interface GradingTransactionsResponse {
+  graded_sells: GradedSell[];
+  count: number;
+  total_sells?: number;
+  candidates_scanned?: number;
+  provisional_skipped?: number;
+  generated_at: string;
+  error?: string;
+}
+
+export interface GradingTopBottomResponse {
+  best_sells: GradedSell[];
+  worst_sells: GradedSell[];
+  total_sells?: number;
+  candidates_scanned?: number;
+  generated_at: string;
+  error?: string;
+}
+
+export interface GradingSymbolSummary {
+  symbol: string;
+  sells: number;
+  avg_quality_score: number;
+  pct_near_peak: number;
+  avg_mfe_after_sell: number;
+  edge: "Strong" | "Weak" | "Neutral";
+}
+
+export interface GradingBySymbolResponse {
+  by_symbol: GradingSymbolSummary[];
+  symbols_analyzed: number;
+  total_sells?: number;
+  candidates_scanned?: number;
+  generated_at: string;
+  error?: string;
+}
+
 export const api = {
   summary: () => get<PortfolioSummary>("/portfolio/summary"),
   positions: () => get<PositionsResponse>("/positions/current"),
@@ -396,6 +457,11 @@ export const api = {
       error?: string;
     }>(`/portfolio/timeseries?period=${period}`),
   doi: () => get<DOISnapshot>("/doi/snapshot"),
+  gradingSummary: () => get<GradingSummary>("/grading/summary"),
+  gradingTransactions: (limit = 30, includeProvisional = false) =>
+    get<GradingTransactionsResponse>(`/transactions/grading?limit=${limit}&include_provisional=${includeProvisional}`),
+  gradingTopBottom: (limit = 5) => get<GradingTopBottomResponse>(`/grading/top-bottom?limit=${limit}`),
+  gradingBySymbol: () => get<GradingBySymbolResponse>("/grading/by-symbol"),
   recommendations: (days = 90) =>
     get<RecommendationsReport>(`/recommendations/report?days=${days}`),
 };

@@ -30,7 +30,7 @@ start_services() {
     log "Starting Python backend (uvicorn)..."
     (
         cd "$REPO_ROOT/Python/finance"
-        uv run uvicorn api.main:app --host 127.0.0.1 --port 8765 > "$REPO_ROOT/.backend.log" 2>&1 &
+        PYTHONPYCACHEPREFIX="${PYTHONPYCACHEPREFIX:-/tmp/monoclaw-pycache}" uv run uvicorn api.main:app --host 127.0.0.1 --port 8765 > "$REPO_ROOT/.backend.log" 2>&1 &
         echo $! > "$REPO_ROOT/.backend.pid"
     )
 

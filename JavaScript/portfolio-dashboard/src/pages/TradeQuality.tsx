@@ -1,71 +1,85 @@
 import { useQuery } from "@tanstack/react-query";
-import { Card, Group, SimpleGrid, Table, Text, Title, Badge, Stack } from "@mantine/core";
-import { api } from "../api";
-
-interface GradingSummary {
-  trader_score: number;
-  avg_quality_score: number;
-  total_sells_scored: number;
-  sells_near_local_peak: number;
-  pct_near_peak: number;
-}
-
-interface GradedSell {
-  date: string;
-  symbol: string;
-  quality_score: number;
-  mfe_pct: number | null;
-  max_drawdown_pct: number | null;
-  near_local_peak: boolean;
-}
+import { Alert, Badge, Card, Group, Progress, SimpleGrid, Stack, Table, Text, Title } from "@mantine/core";
+import { api, type GradedSell, type GradingSummary } from "../api";
 
 export default function TradeQuality() {
-  const { data: summary } = useQuery<GradingSummary>({
+  const summaryQuery = useQuery<GradingSummary>({
     queryKey: ["grading-summary"],
-    queryFn: () => api("/grading/summary"),
+    queryFn: () => api.gradingSummary(),
   });
 
-  const { data: graded } = useQuery<{ graded_sells: GradedSell[] }>({
+  const gradedQuery = useQuery<{ graded_sells: GradedSell[] }>({
     queryKey: ["transactions-grading"],
-    queryFn: () => api("/transactions/grading?limit=30"),
+    queryFn: () => api.gradingTransactions(30),
   });
 
-  const { data: topBottom } = useQuery<any>({
+  const topBottomQuery = useQuery<any>({
     queryKey: ["grading-top-bottom"],
-    queryFn: () => api("/grading/top-bottom?limit=5"),
+    queryFn: () => api.gradingTopBottom(5),
   });
 
-  const { data: bySymbol } = useQuery<any>({
+  const bySymbolQuery = useQuery<any>({
     queryKey: ["grading-by-symbol"],
-    queryFn: () => api("/grading/by-symbol"),
+    queryFn: () => api.gradingBySymbol(),
   });
 
+  const summary = summaryQuery.data;
+  const graded = gradedQuery.data;
+  const topBottom = topBottomQuery.data;
+  const bySymbol = bySymbolQuery.data;
   const sells = graded?.graded_sells ?? [];
   const bestSells = topBottom?.best_sells ?? [];
   const worstSells = topBottom?.worst_sells ?? [];
   const symbolStats = bySymbol?.by_symbol ?? [];
+  const isLoading =
+    summaryQuery.isLoading || gradedQuery.isLoading || topBottomQuery.isLoading || bySymbolQuery.isLoading;
+  const errors = [summaryQuery.error, gradedQuery.error, topBottomQuery.error, bySymbolQuery.error].filter(Boolean);
 
   return (
     <>
       <Title order={3} mb="md">Trade Quality</Title>
 
+      {isLoading && <Progress mb="md" value={100} animated />}
+
+      {errors.length > 0 && (
+        <Alert color="red" mb="md">
+          Trade quality data failed to load. Check that the local backend is running.
+        </Alert>
+      )}
+
+      {summary?.error && (
+        <Alert color="yellow" mb="md">
+          {summary.error}
+        </Alert>
+      )}
+
       <SimpleGrid cols={4} mb="xl">
         <Card withBorder>
           <Text size="sm" c="dimmed">Trader Score</Text>
-          <Title order={2} c={summary && summary.trader_score > 0 ? "teal" : "red"}>
-            {summary ? summary.trader_score : "—"}
+          <Title order={2} c={summary?.trader_score == null ? undefined : summary.trader_score > 0 ? "teal" : "red"}>
+            {summary?.trader_score ?? "—"}
           </Title>
           <Text size="xs" c="dimmed">Median sell quality</Text>
         </Card>
 
         <Card withBorder>
           <Text size="sm" c="dimmed">Avg Quality Score</Text>
-          <Title order={2}>{summary ? summary.avg_quality_score : "—"}</Title>
+          <Title order={2}>{summary?.avg_quality_score ?? "—"}</Title>
         </Card>
 
         <Card withBorder>
           <Text size="sm" c="dimmed">Sells Scored</Text>
-          <Title order={2}>{summary ? summary.total_sells_scored : "—"}</Title>
+          <Title order={2}>{summary?.total_sells_scored ?? "—"}</Title>
+          {summary?.candidates_scanned != null && (
+            <Text size="xs" c="dimmed">
+              {summary.candidates_scanned} mature candidates scanned
+            </Text>
+          )}
+          {summary?.provisional_skipped ? (
+            <Text size="xs" c="dimmed">
+              {summary.provisional_skipped} recent provisional skipped
+            </Text>
+          ) : null}
         </Card>
 
         <Card withBorder>
@@ -79,7 +93,7 @@ export default function TradeQuality() {
         </Card>
       </SimpleGrid>
 
-      <Title order={4} mb="sm">Recent Graded Sells</Title>
+      <Title order={4} mb="sm">Mature Graded Sells</Title>
       <Table striped highlightOnHover>
         <Table.Thead>
           <Table.Tr>
@@ -103,6 +117,7 @@ export default function TradeQuality() {
               <Table.Td fw={500}>{s.symbol}</Table.Td>
               <Table.Td c={s.quality_score > 10 ? "teal" : s.quality_score < -10 ? "red" : undefined}>
                 {s.quality_score}
+                {s.provisional && <Badge ml="xs" color="gray" size="xs">Provisional</Badge>}
               </Table.Td>
               <Table.Td>{s.mfe_pct ?? "—"}</Table.Td>
               <Table.Td c="red">{s.max_drawdown_pct ?? "—"}</Table.Td>
