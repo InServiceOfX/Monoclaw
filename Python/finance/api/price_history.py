@@ -169,32 +169,36 @@ def calculate_sell_quality(
         - avoided_drop_score, missed_gain_score
         - is_near_local_peak: bool
     """
-    metrics = compute_forward_mfe_and_drawdown(symbol, sell_date, window_days)
-    is_peak = detect_local_peak(symbol, sell_date, window=20, prominence_pct=8.0)
+    try:
+        metrics = compute_forward_mfe_and_drawdown(symbol, sell_date, window_days)
+        is_peak = detect_local_peak(symbol, sell_date, window=20, prominence_pct=8.0)
 
-    mfe = metrics.get("mfe_pct") or 0.0
-    max_dd = metrics.get("max_drawdown_pct") or 0.0
+        mfe = metrics.get("mfe_pct") or 0.0
+        max_dd = metrics.get("max_drawdown_pct") or 0.0
 
-    # Avoided drop score (positive contribution)
-    avoided_drop = max(0.0, -max_dd) * 1.2   # reward avoiding big drops
+        avoided_drop = max(0.0, -max_dd) * 1.2
+        missed_gain = max(0.0, mfe) * 0.9
+        profit_component = (realized_gain_pct or 0.0) * 0.5
+        vol_penalty = min(15.0, abs(mfe - max_dd) * 0.15)
 
-    # Missed gain penalty
-    missed_gain = max(0.0, mfe) * 0.9
+        quality = avoided_drop - missed_gain + profit_component - vol_penalty
+        quality = max(-100.0, min(100.0, quality))
 
-    # Realized profit component (if provided)
-    profit_component = (realized_gain_pct or 0.0) * 0.5
-
-    # Simple volatility penalty (placeholder - can be improved with historical vol)
-    vol_penalty = min(15.0, abs(mfe - max_dd) * 0.15)
-
-    quality = avoided_drop - missed_gain + profit_component - vol_penalty
-    quality = max(-100.0, min(100.0, quality))
-
-    return {
-        "quality_score": round(quality, 1),
-        "mfe_pct": metrics.get("mfe_pct"),
-        "max_drawdown_pct": metrics.get("max_drawdown_pct"),
-        "avoided_drop_score": round(avoided_drop, 1),
-        "missed_gain_score": round(missed_gain, 1),
-        "is_near_local_peak": is_peak,
-    }
+        return {
+            "quality_score": round(quality, 1),
+            "mfe_pct": metrics.get("mfe_pct"),
+            "max_drawdown_pct": metrics.get("max_drawdown_pct"),
+            "avoided_drop_score": round(avoided_drop, 1),
+            "missed_gain_score": round(missed_gain, 1),
+            "is_near_local_peak": is_peak,
+        }
+    except Exception:
+        # Fail gracefully
+        return {
+            "quality_score": None,
+            "mfe_pct": None,
+            "max_drawdown_pct": None,
+            "avoided_drop_score": None,
+            "missed_gain_score": None,
+            "is_near_local_peak": False,
+        }

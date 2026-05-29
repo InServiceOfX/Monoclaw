@@ -982,34 +982,40 @@ def transaction_grading(
         return {"error": "Transactions master not found"}
 
     graded = []
-    with open(tx_master) as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            action = row.get("Action", "").strip().lower()
-            if action != "sell":
-                continue
-            sym = row.get("Symbol", "").strip()
-            if symbol and sym.upper() != symbol.upper():
-                continue
-            try:
-                sell_date = row.get("Date", "")
-                gain_str = row.get("Amount", "0").replace("$", "").replace(",", "")
-                realized_gain = float(gain_str) if gain_str else None
-            except Exception:
-                continue
+    try:
+        with open(tx_master) as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                action = row.get("Action", "").strip().lower()
+                if action != "sell":
+                    continue
+                sym = row.get("Symbol", "").strip()
+                if symbol and sym.upper() != symbol.upper():
+                    continue
+                try:
+                    sell_date = row.get("Date", "")
+                    gain_str = row.get("Amount", "0").replace("$", "").replace(",", "")
+                    realized_gain = float(gain_str) if gain_str else None
+                except Exception:
+                    continue
 
-            score = calculate_sell_quality(sym, sell_date, realized_gain_pct=realized_gain)
-            graded.append({
-                "date": sell_date,
-                "symbol": sym,
-                "action": "Sell",
-                "quality_score": score["quality_score"],
-                "mfe_pct": score["mfe_pct"],
-                "max_drawdown_pct": score["max_drawdown_pct"],
-                "near_local_peak": score["is_near_local_peak"],
-            })
-            if len(graded) >= limit:
-                break
+                score = calculate_sell_quality(sym, sell_date, realized_gain_pct=realized_gain)
+                if score.get("quality_score") is None:
+                    continue
+
+                graded.append({
+                    "date": sell_date,
+                    "symbol": sym,
+                    "action": "Sell",
+                    "quality_score": score["quality_score"],
+                    "mfe_pct": score["mfe_pct"],
+                    "max_drawdown_pct": score["max_drawdown_pct"],
+                    "near_local_peak": score["is_near_local_peak"],
+                })
+                if len(graded) >= limit:
+                    break
+    except Exception as e:
+        return {"error": str(e)}
 
     return {
         "graded_sells": graded,
@@ -1027,21 +1033,24 @@ def grading_summary():
 
     scores = []
     peak_sells = 0
-    with open(tx_master) as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            if row.get("Action", "").strip().lower() != "sell":
-                continue
-            sym = row.get("Symbol", "").strip()
-            try:
-                sell_date = row.get("Date", "")
-                score = calculate_sell_quality(sym, sell_date)
-                if score["quality_score"] is not None:
-                    scores.append(score["quality_score"])
-                if score.get("is_near_local_peak"):
-                    peak_sells += 1
-            except Exception:
-                continue
+    try:
+        with open(tx_master) as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if row.get("Action", "").strip().lower() != "sell":
+                    continue
+                sym = row.get("Symbol", "").strip()
+                try:
+                    sell_date = row.get("Date", "")
+                    score = calculate_sell_quality(sym, sell_date)
+                    if score.get("quality_score") is not None:
+                        scores.append(score["quality_score"])
+                    if score.get("is_near_local_peak"):
+                        peak_sells += 1
+                except Exception:
+                    continue
+    except Exception as e:
+        return {"error": str(e)}
 
     if not scores:
         return {"error": "No scored sells found"}
@@ -1118,20 +1127,23 @@ def grading_by_symbol():
     from collections import defaultdict
     symbol_data: dict[str, list] = defaultdict(list)
 
-    with open(tx_master) as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            if row.get("Action", "").strip().lower() != "sell":
-                continue
-            sym = row.get("Symbol", "").strip()
-            if not sym:
-                continue
-            try:
-                score_data = calculate_sell_quality(sym, row.get("Date", ""))
-                if score_data["quality_score"] is not None:
-                    symbol_data[sym].append(score_data)
-            except Exception:
-                continue
+    try:
+        with open(tx_master) as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if row.get("Action", "").strip().lower() != "sell":
+                    continue
+                sym = row.get("Symbol", "").strip()
+                if not sym:
+                    continue
+                try:
+                    score_data = calculate_sell_quality(sym, row.get("Date", ""))
+                    if score_data.get("quality_score") is not None:
+                        symbol_data[sym].append(score_data)
+                except Exception:
+                    continue
+    except Exception as e:
+        return {"error": str(e)}
 
     results = []
     for sym, scores in symbol_data.items():
