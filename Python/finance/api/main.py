@@ -17,6 +17,7 @@ from .price_fetcher import get_prices
 from .schwab_parser import parse_positions_csv, parse_rgl_csv, parse_transactions_csv
 from .monte_carlo import Holding, run_monte_carlo
 from .doi import DOIInputs, DOIWeights, compute_doi
+from . import price_history
 
 BASE_DIR = Path(os.environ.get("SCHWAB_BASE_DIR", "~/.openclaw/workspace/Data/Private/finance/schwab-brokerage")).expanduser()
 _EARNINGS_CACHE: dict[str, tuple[float, dict]] = {}
