@@ -966,7 +966,7 @@ def recommendations_report(days: int = Query(default=90, ge=1, le=3650)):
     }
 
 
-# ── Transaction Grading (Phase 3) ────────────────────────────────────────────
+# ── Transaction Grading (Phase 4) ────────────────────────────────────────────
 
 from .price_history import calculate_sell_quality
 
@@ -1014,5 +1014,47 @@ def transaction_grading(
     return {
         "graded_sells": graded,
         "count": len(graded),
+        "generated_at": datetime.now().isoformat(),
+    }
+
+
+@app.get("/grading/summary")
+def grading_summary():
+    """Aggregate Trader Score and key statistics (Phase 4)."""
+    tx_master = BASE_DIR / "transactions" / "Joint_Tenant_Transactions_MASTER.csv"
+    if not tx_master.exists():
+        return {"error": "Transactions master not found"}
+
+    scores = []
+    peak_sells = 0
+    with open(tx_master) as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            if row.get("Action", "").strip().lower() != "sell":
+                continue
+            sym = row.get("Symbol", "").strip()
+            try:
+                sell_date = row.get("Date", "")
+                score = calculate_sell_quality(sym, sell_date)
+                if score["quality_score"] is not None:
+                    scores.append(score["quality_score"])
+                if score.get("is_near_local_peak"):
+                    peak_sells += 1
+            except Exception:
+                continue
+
+    if not scores:
+        return {"error": "No scored sells found"}
+
+    import statistics
+    median_score = statistics.median(scores)
+    avg_score = statistics.mean(scores)
+
+    return {
+        "trader_score": round(median_score, 1),
+        "avg_quality_score": round(avg_score, 1),
+        "total_sells_scored": len(scores),
+        "sells_near_local_peak": peak_sells,
+        "pct_near_peak": round(peak_sells / len(scores) * 100, 1) if scores else 0,
         "generated_at": datetime.now().isoformat(),
     }
