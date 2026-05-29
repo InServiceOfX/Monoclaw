@@ -966,7 +966,7 @@ def recommendations_report(days: int = Query(default=90, ge=1, le=3650)):
     }
 
 
-# ── Transaction Grading (Phase 2) ────────────────────────────────────────────
+# ── Transaction Grading (Phase 3) ────────────────────────────────────────────
 
 from .price_history import calculate_sell_quality
 
@@ -974,13 +974,45 @@ from .price_history import calculate_sell_quality
 @app.get("/transactions/grading")
 def transaction_grading(
     symbol: Optional[str] = Query(None),
-    limit: int = Query(50, ge=1, le=500),
+    limit: int = Query(100, ge=1, le=1000),
 ):
-    """Return graded sell transactions with timing quality scores."""
-    # Placeholder: in real implementation we would load from MASTER transactions CSV
-    # and compute scores. For now return example structure.
+    """Return graded sell transactions with timing quality scores (Phase 3)."""
+    tx_master = BASE_DIR / "transactions" / "Joint_Tenant_Transactions_MASTER.csv"
+    if not tx_master.exists():
+        return {"error": "Transactions master not found"}
+
+    graded = []
+    with open(tx_master) as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            action = row.get("Action", "").strip().lower()
+            if action != "sell":
+                continue
+            sym = row.get("Symbol", "").strip()
+            if symbol and sym.upper() != symbol.upper():
+                continue
+            try:
+                sell_date = row.get("Date", "")
+                gain_str = row.get("Amount", "0").replace("$", "").replace(",", "")
+                realized_gain = float(gain_str) if gain_str else None
+            except Exception:
+                continue
+
+            score = calculate_sell_quality(sym, sell_date, realized_gain_pct=realized_gain)
+            graded.append({
+                "date": sell_date,
+                "symbol": sym,
+                "action": "Sell",
+                "quality_score": score["quality_score"],
+                "mfe_pct": score["mfe_pct"],
+                "max_drawdown_pct": score["max_drawdown_pct"],
+                "near_local_peak": score["is_near_local_peak"],
+            })
+            if len(graded) >= limit:
+                break
+
     return {
-        "status": "phase2_stub",
-        "message": "calculate_sell_quality ready. Full backfill coming in next iteration.",
-        "example": calculate_sell_quality("AAPL", "2026-04-15", realized_gain_pct=12.5),
+        "graded_sells": graded,
+        "count": len(graded),
+        "generated_at": datetime.now().isoformat(),
     }
