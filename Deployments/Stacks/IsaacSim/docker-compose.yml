@@ -20,11 +20,12 @@ services:
               # Desktop: GPU 1 = RTX 3060 12GB (GPU 0 = GTX 980 Ti, no RT cores)
               # Laptop:  GPU 0 = RTX 3070 8GB  (change GPU_ID=0 in .env)
               device_ids: ["${GPU_ID:-1}"]
-              capabilities: [gpu, compute, utility, graphics]
+              capabilities: [gpu, compute, utility, graphics, display, video]
     environment:
       - ACCEPT_EULA=Y
       - PRIVACY_CONSENT=Y
       - DISPLAY=${DISPLAY:-:0}
+      - NVIDIA_DRIVER_CAPABILITIES=all
       # Isaac Sim bundles its own ROS 2 Humble libs at this path.
       # Without LD_LIBRARY_PATH pointing here, librmw_cyclonedds_cpp.so is not
       # found even though RMW_IMPLEMENTATION is set, and the bridge fails with:

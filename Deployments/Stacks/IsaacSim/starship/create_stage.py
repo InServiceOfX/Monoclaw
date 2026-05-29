@@ -52,7 +52,7 @@ SPAWN_ALTITUDE  = 1_000.0       # m — Starship starts here (free-float, no gro
 CAPSULE_Y_OFFSET = 25.0   # capsule centre relative to Starship prim origin
 CAPSULE_RADIUS   = 4.5    # m
 CAPSULE_HEIGHT   = 44.0   # m (cylinder section only, not counting hemispheres)
-MASS_KG          = 130_000.0
+MASS_KG          = 830_000.0
 
 # ── Isaac Sim Python path
 sys.path.insert(0, "/isaac-sim/kit/python/bin")

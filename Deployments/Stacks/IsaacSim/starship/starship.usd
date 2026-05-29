@@ -69,13 +69,15 @@ def Xform "World"
     }
 
     def Xform "Starship" (
-        apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+        apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
         customData = {
             string ros2_topic_namespace = "starship"
         }
     )
     {
-        float physics:mass = 130000
+        float physics:mass = 830000
+        float physxRigidBody:angularDamping = 10.0
+        float physxRigidBody:linearDamping = 0.05
         double3 xformOp:translate = (0, 1000, 0)
         uniform token[] xformOpOrder = ["xformOp:translate"]
 

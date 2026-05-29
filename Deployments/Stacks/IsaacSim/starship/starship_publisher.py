@@ -297,8 +297,7 @@ class StarshipPublisher:
             eng_msg.data = json.dumps(state)
             self._pub_engine.publish(eng_msg)
 
-        # ── Spin rclpy once (non-blocking) ────────────────────────────────
-        rclpy.spin_once(self._node, timeout_sec=0.0)
+        # rclpy spinning handled by the controller's dedicated spin thread
 
     def _handle_reset(self, _req, response):
         """Service handler: sets the pending_reset flag for main thread."""
