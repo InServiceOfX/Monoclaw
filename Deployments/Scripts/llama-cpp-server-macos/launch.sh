@@ -102,19 +102,33 @@ fi
 
 # ── build server args via Python ─────────────────────────────────────────────
 eval "$("$VENV_PYTHON" - "$CONFIG_FILE" "$PROFILE_FILE" <<'PYEOF'
-import sys, yaml, shlex
+import json
+import os
+from pathlib import Path
+import sys
+import yaml
+import shlex
 
 cfg = yaml.safe_load(open(sys.argv[1])) or {}
 prof = yaml.safe_load(open(sys.argv[2])) or {}
 
 srv_cfg = cfg.get("server", {})
 binary = srv_cfg.get("binary", "llama-server")
+models_dir = cfg.get("models_dir", "")
 
-# Model path: profile takes precedence, must be absolute
+# Model path: profile takes precedence. Absolute paths are used as-is; relative
+# paths are resolved against models_dir from config.yml.
 model_path = prof.get("model_path", "")
 if not model_path:
     print('echo "Error: No model_path in profile"; exit 1')
     sys.exit(0)
+model_path = os.path.expandvars(os.path.expanduser(str(model_path)))
+if not os.path.isabs(model_path):
+    if not models_dir:
+        print('echo "Error: Relative model_path requires models_dir in config.yml"; exit 1')
+        sys.exit(0)
+    base = Path(os.path.expandvars(os.path.expanduser(str(models_dir))))
+    model_path = str(base / model_path)
 
 # Server host/port: profile overrides config
 srv_prof = prof.get("server", {})
@@ -128,6 +142,12 @@ def add(flag, key, src=prof):
     val = src.get(key)
     if val is not None and val != "":
         server_args.extend([flag, str(val)])
+
+def add_bool(flag_on, flag_off, key):
+    val = prof.get(key)
+    if val is None:
+        return
+    server_args.append(flag_on if val else flag_off)
 
 add("-ngl", "n_gpu_layers")
 add("-c", "ctx_size")
@@ -165,6 +185,8 @@ if prof.get("mlock"):
     server_args.append("--mlock")
 add("--prio", "priority")
 add("--poll", "poll")
+add("--prio-batch", "priority_batch")
+add("--poll-batch", "poll_batch")
 if prof.get("no_mmap"):
     server_args.append("--no-mmap")
 if prof.get("jinja") is not None:
@@ -172,10 +194,13 @@ if prof.get("jinja") is not None:
         server_args.append("--jinja")
     else:
         server_args.append("--no-jinja")
+add_bool("--cont-batching", "--no-cont-batching", "cont_batching")
 
 # RoPE
 add("--rope-scaling", "rope_scaling")
+add("--rope-scale", "rope_scale")
 add("--rope-freq-base", "rope_freq_base")
+add("--rope-freq-scale", "rope_freq_scale")
 
 # API key
 api_key = prof.get("api_key")
@@ -191,11 +216,36 @@ if mmproj:
 ct = prof.get("chat_template")
 if ct:
     server_args.extend(["--chat-template", ct])
+ct_kwargs = prof.get("chat_template_kwargs")
+if ct_kwargs:
+    if isinstance(ct_kwargs, (dict, list)):
+        ct_kwargs = json.dumps(ct_kwargs, separators=(",", ":"))
+    server_args.extend(["--chat-template-kwargs", str(ct_kwargs)])
 
 # Alias
 alias = prof.get("alias")
 if alias:
     server_args.extend(["-a", alias])
+
+# Speculative decoding
+if prof.get("spec_default"):
+    server_args.append("--spec-default")
+
+# Server tuning
+add("--timeout", "timeout")
+add("--threads-http", "threads_http")
+add("--cache-ram", "cache_ram")
+add("--ctx-checkpoints", "ctx_checkpoints")
+add("--checkpoint-min-step", "checkpoint_min_step")
+add_bool("--cache-prompt", "--no-cache-prompt", "cache_prompt")
+add_bool("--cache-idle-slots", "--no-cache-idle-slots", "cache_idle_slots")
+add_bool("--warmup", "--no-warmup", "warmup")
+
+# Escape hatch for newly-added llama-server flags.
+extra_args = prof.get("extra_args") or []
+if isinstance(extra_args, str):
+    extra_args = shlex.split(extra_args)
+server_args.extend(str(arg) for arg in extra_args)
 
 # Emit shell vars
 print(f'LLAMA_BINARY={shlex.quote(binary)}')

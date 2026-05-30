@@ -13,5 +13,5 @@ server:
   port: 8080
 
 # Base directory for model files.
-# Profiles reference model_path relative to this, or use absolute paths.
+# Profiles can reference model_path relative to this, or use absolute paths.
 models_dir: /Users/ernestyeung/.cache/huggingface/hub
