@@ -225,6 +225,10 @@ dist/
 **/*.bbl
 **/*.blg
 
+# llama-cpp-server-macos — local machine config (use .example files as templates)
+Deployments/Scripts/llama-cpp-server-macos/config.yml
+Deployments/Scripts/llama-cpp-server-macos/profiles/*.yml
+
 # macOS Finder noise
 .DS_Store
 **/.DS_Store
