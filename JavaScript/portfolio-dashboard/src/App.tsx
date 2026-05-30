@@ -12,6 +12,7 @@ import DOI from "./pages/DOI";
 import Earnings from "./pages/Earnings";
 import Recommendations from "./pages/Recommendations";
 import TradeQuality from "./pages/TradeQuality";
+import Workflows from "./pages/Workflows";
 
 const qc = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 30000 } } });
 
@@ -36,6 +37,7 @@ export default function App() {
                 <Tabs.Tab value="earnings">Earnings</Tabs.Tab>
                 <Tabs.Tab value="recommendations">Recs</Tabs.Tab>
                 <Tabs.Tab value="quality">Trade Quality</Tabs.Tab>
+                <Tabs.Tab value="workflows">Workflows</Tabs.Tab>
               </Tabs.List>
             </Tabs>
           </Group>
@@ -52,6 +54,7 @@ export default function App() {
           {tab === "earnings" && <Earnings />}
           {tab === "recommendations" && <Recommendations />}
           {tab === "quality" && <TradeQuality />}
+          {tab === "workflows" && <Workflows />}
         </AppShell.Main>
       </AppShell>
     </QueryClientProvider>

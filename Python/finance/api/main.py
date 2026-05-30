@@ -32,6 +32,8 @@ app.add_middleware(
         "http://127.0.0.1:5173",
         "http://localhost:5174",
         "http://127.0.0.1:5174",
+        "http://localhost:5175",
+        "http://127.0.0.1:5175",
     ],
     allow_methods=["GET"],
     allow_headers=["*"],
@@ -241,6 +243,83 @@ def _portfolio_cash_totals() -> tuple[float, float]:
 @app.get("/health")
 def health():
     return {"status": "ok", "base_dir": str(BASE_DIR)}
+
+
+@app.get("/workflows/status")
+def workflows_status():
+    """Report freshness of master CSVs, download logs, and last outlook run."""
+    from pathlib import Path
+    import os
+
+    def file_info(path: Path) -> dict:
+        if not path.exists():
+            return {"exists": False}
+        stat = path.stat()
+        return {
+            "exists": True,
+            "modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+            "size_bytes": stat.st_size,
+        }
+
+    def row_count(path: Path) -> int | None:
+        if not path.exists():
+            return None
+        with open(path) as f:
+            return sum(1 for _ in f) - 1
+
+    def log_dates(path: Path, keys: dict) -> dict:
+        if not path.exists():
+            return {"exists": False}
+        try:
+            data = json.loads(path.read_text())
+            return {alias: data.get(key) for alias, key in keys.items()}
+        except Exception:
+            return {"exists": True, "parse_error": True}
+
+    outlook_path = Path("/tmp/outlook.json")
+    outlook_info = file_info(outlook_path)
+    if outlook_path.exists():
+        try:
+            outlook_data = json.loads(outlook_path.read_text())
+            outlook_info["as_of"] = outlook_data.get("as_of")
+        except Exception:
+            pass
+
+    return {
+        "masters": {
+            "positions": {
+                **file_info(BASE_DIR / "positions" / "master-positions.csv"),
+                "rows": row_count(BASE_DIR / "positions" / "master-positions.csv"),
+            },
+            "balances": {
+                **file_info(BASE_DIR / "balances" / "master-balances.csv"),
+                "rows": row_count(BASE_DIR / "balances" / "master-balances.csv"),
+            },
+            "rgl_summary": {
+                **file_info(BASE_DIR / "realized-gain-loss" / "Joint_Tenant_GainLoss_Realized_Summary_MASTER.csv"),
+                "rows": row_count(BASE_DIR / "realized-gain-loss" / "Joint_Tenant_GainLoss_Realized_Summary_MASTER.csv"),
+            },
+            "rgl_details": {
+                **file_info(BASE_DIR / "realized-gain-loss" / "Joint_Tenant_GainLoss_Realized_Details_MASTER.csv"),
+                "rows": row_count(BASE_DIR / "realized-gain-loss" / "Joint_Tenant_GainLoss_Realized_Details_MASTER.csv"),
+            },
+            "transactions": {
+                **file_info(BASE_DIR / "transactions" / "Joint_Tenant_Transactions_MASTER.csv"),
+                "rows": row_count(BASE_DIR / "transactions" / "Joint_Tenant_Transactions_MASTER.csv"),
+            },
+        },
+        "download_logs": {
+            "transactions": log_dates(
+                BASE_DIR / "transactions" / "download-log.json",
+                {"last_data_point": "last_data_point", "next_download_start": "next_download_start"},
+            ),
+            "rgl": log_dates(
+                BASE_DIR / "realized-gain-loss" / "download-log.json",
+                {"last_closed_date": "last_closed_date", "next_download_start": "next_download_start"},
+            ),
+        },
+        "outlook": outlook_info,
+    }
 
 
 @app.get("/positions/current")
@@ -1215,5 +1294,120 @@ def grading_by_symbol():
         "total_sells": total_sells,
         "candidates_scanned": min(total_sells, 300),
         "provisional_skipped": provisional_skipped,
+        "generated_at": datetime.now().isoformat(),
+    }
+
+
+@app.get("/grading/patterns")
+def grading_patterns():
+    """Rule-based patterns and corrections derived from trade quality history."""
+    from collections import defaultdict
+
+    try:
+        scored_sells, total_sells, provisional_skipped = _graded_sells(limit=None, max_candidates=300)
+    except Exception as e:
+        return {"error": str(e)}
+
+    symbol_data: dict[str, list] = defaultdict(list)
+    for sell in scored_sells:
+        symbol_data[sell["symbol"]].append(sell)
+
+    _, pos_rows = _current_positions_from_csv()
+    current_holdings = {
+        r.get("Symbol", "").strip()
+        for r in pos_rows
+        if _is_security_position(r)
+    }
+
+    patterns = []
+
+    for sym, sells in symbol_data.items():
+        if len(sells) < 2:
+            continue
+        avg_q = sum(s["quality_score"] for s in sells) / len(sells)
+        avg_mfe = sum((s.get("mfe_pct") or 0) for s in sells) / len(sells)
+        avg_dd = sum((s.get("max_drawdown_pct") or 0) for s in sells) / len(sells)
+        still_held = sym in current_holdings
+
+        if avg_q < -10 and avg_mfe > 15:
+            patterns.append({
+                "symbol": sym,
+                "type": "sells_too_early",
+                "severity": "high" if avg_q < -25 else "medium",
+                "still_held": still_held,
+                "sells": len(sells),
+                "avg_quality": round(avg_q, 1),
+                "avg_mfe": round(avg_mfe, 1),
+                "message": f"You consistently sell {sym} too early — it rallies avg {avg_mfe:.0f}% after your sells.",
+                "correction": f"Consider trailing stops or wider targets on {sym}."
+                    + (f" You still hold {sym} — don't rush to trim." if still_held else ""),
+            })
+        elif avg_q < -5 and avg_mfe > 8:
+            patterns.append({
+                "symbol": sym,
+                "type": "sells_too_early",
+                "severity": "low",
+                "still_held": still_held,
+                "sells": len(sells),
+                "avg_quality": round(avg_q, 1),
+                "avg_mfe": round(avg_mfe, 1),
+                "message": f"{sym} tends to run after you sell — avg {avg_mfe:.0f}% MFE post-sell.",
+                "correction": f"Hold {sym} a bit longer or scale out in smaller lots."
+                    + (f" You still hold {sym}." if still_held else ""),
+            })
+        elif avg_q > 15:
+            patterns.append({
+                "symbol": sym,
+                "type": "good_timing",
+                "severity": "none",
+                "still_held": still_held,
+                "sells": len(sells),
+                "avg_quality": round(avg_q, 1),
+                "avg_mfe": round(avg_mfe, 1),
+                "message": f"Strong sell timing on {sym} — avg quality {avg_q:.0f}.",
+                "correction": "Keep doing what you're doing.",
+            })
+        elif avg_q > 5:
+            patterns.append({
+                "symbol": sym,
+                "type": "decent_timing",
+                "severity": "none",
+                "still_held": still_held,
+                "sells": len(sells),
+                "avg_quality": round(avg_q, 1),
+                "avg_mfe": round(avg_mfe, 1),
+                "message": f"Decent timing on {sym} — avg quality {avg_q:.0f}.",
+                "correction": "Solid execution, minor room to improve.",
+            })
+
+    all_scores = [s["quality_score"] for s in scored_sells]
+    all_mfe = [s.get("mfe_pct") or 0 for s in scored_sells]
+
+    early_sellers = [p for p in patterns if p["type"] == "sells_too_early"]
+    early_still_held = [p for p in early_sellers if p["still_held"]]
+    good_timers = [p for p in patterns if p["type"] in ("good_timing", "decent_timing")]
+
+    summary = {
+        "total_patterns": len(patterns),
+        "early_sell_count": len(early_sellers),
+        "early_sell_still_held": [p["symbol"] for p in early_still_held],
+        "good_timing_count": len(good_timers),
+        "overall_avg_quality": round(sum(all_scores) / len(all_scores), 1) if all_scores else None,
+        "overall_avg_mfe": round(sum(all_mfe) / len(all_mfe), 1) if all_mfe else None,
+        "top_correction": early_still_held[0]["correction"] if early_still_held else (
+            early_sellers[0]["correction"] if early_sellers else "No major patterns detected."
+        ),
+    }
+
+    patterns.sort(key=lambda p: (
+        0 if p["type"] == "sells_too_early" and p["still_held"] else
+        1 if p["type"] == "sells_too_early" else
+        2 if p["type"] == "good_timing" else 3,
+        p["avg_quality"],
+    ))
+
+    return {
+        "patterns": patterns,
+        "summary": summary,
         "generated_at": datetime.now().isoformat(),
     }

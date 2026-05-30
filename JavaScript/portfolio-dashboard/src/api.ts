@@ -423,6 +423,35 @@ export interface GradingBySymbolResponse {
   error?: string;
 }
 
+export interface GradingPattern {
+  symbol: string;
+  type: "sells_too_early" | "good_timing" | "decent_timing";
+  severity: "high" | "medium" | "low" | "none";
+  still_held: boolean;
+  sells: number;
+  avg_quality: number;
+  avg_mfe: number;
+  message: string;
+  correction: string;
+}
+
+export interface GradingPatternsSummary {
+  total_patterns: number;
+  early_sell_count: number;
+  early_sell_still_held: string[];
+  good_timing_count: number;
+  overall_avg_quality: number | null;
+  overall_avg_mfe: number | null;
+  top_correction: string;
+}
+
+export interface GradingPatternsResponse {
+  patterns: GradingPattern[];
+  summary: GradingPatternsSummary;
+  generated_at: string;
+  error?: string;
+}
+
 export const api = {
   summary: () => get<PortfolioSummary>("/portfolio/summary"),
   positions: () => get<PositionsResponse>("/positions/current"),
@@ -462,6 +491,7 @@ export const api = {
     get<GradingTransactionsResponse>(`/transactions/grading?limit=${limit}&include_provisional=${includeProvisional}`),
   gradingTopBottom: (limit = 5) => get<GradingTopBottomResponse>(`/grading/top-bottom?limit=${limit}`),
   gradingBySymbol: () => get<GradingBySymbolResponse>("/grading/by-symbol"),
+  gradingPatterns: () => get<GradingPatternsResponse>("/grading/patterns"),
   recommendations: (days = 90) =>
     get<RecommendationsReport>(`/recommendations/report?days=${days}`),
 };
