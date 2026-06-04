@@ -24,7 +24,8 @@ services:
     environment:
       - ACCEPT_EULA=Y
       - PRIVACY_CONSENT=Y
-      - DISPLAY=${DISPLAY:-:0}
+      # No DISPLAY — headless mode uses EGL (GPU direct), not X11.
+      # Setting DISPLAY would cause open_stage() to crash when X auth is denied.
       - NVIDIA_DRIVER_CAPABILITIES=all
       # Isaac Sim bundles its own ROS 2 Humble libs at this path.
       # Without LD_LIBRARY_PATH pointing here, librmw_cyclonedds_cpp.so is not
@@ -42,8 +43,12 @@ services:
       # Optional: pre-load a USD scene on startup (e.g. the Starship stage)
       # Set in .env: ISAAC_SCENE_PATH=/isaac-sim/exts/starship/starship.usd
       - ISAAC_SCENE_PATH=${ISAAC_SCENE_PATH:-}
+      - TELEMETRY_UDP_HOST=${TELEMETRY_UDP_HOST:-}
+      - TELEMETRY_UDP_PORT=${TELEMETRY_UDP_PORT:-50505}
+      - TELEMETRY_HZ=${TELEMETRY_HZ:-100}
     volumes:
-      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      # No X11 socket mount — headless EGL does not need it, and its presence
+      # causes open_stage() to attempt unauthorized X connections and crash.
       # Persist shader cache so subsequent boots don't take 5 min
       - isaac-cache:/root/.cache/ov
       - isaac-data:/root/.local/share/ov/data

@@ -35,6 +35,8 @@ Environment variables:
 import json
 import os
 import queue
+import socket
+import struct
 import sys
 import threading
 import time
@@ -219,6 +221,8 @@ class _ControlHandler(BaseHTTPRequestHandler):
             })
         elif self.path == "/physics/gravity":
             self._send_json(dict(_physics_state))
+        elif self.path == "/telemetry/latest":
+            self._send_json(dict(_telem_state))
         else:
             self._send_json({"error": "not found"}, 404)
 
@@ -274,6 +278,114 @@ _server_thread = threading.Thread(
     target=_run_control_server, args=(control_port,), daemon=True
 )
 _server_thread.start()
+
+
+# ── UDP telemetry publisher ───────────────────────────────────────────────────
+# Reads /World/Starship rigid-body state each frame and sends a 64-byte
+# little-endian datagram to TELEMETRY_UDP_HOST:TELEMETRY_UDP_PORT.
+# Set TELEMETRY_UDP_HOST= to an IP address (e.g. TX2i LAN IP) to enable.
+# Leave empty to disable UDP output while still serving /telemetry/latest.
+#
+# Packet layout (little-endian, 64 bytes total):
+#   uint32  seq              4 B   monotonic packet counter
+#   float64 sim_time         8 B   simulation clock (seconds)
+#   float32 x, y, z         12 B   position (metres, USD Y-up)
+#   float32 qw,qx,qy,qz     16 B   orientation quaternion (w first)
+#   float32 vx,vy,vz        12 B   linear velocity (m/s)
+#   float32 wx,wy,wz        12 B   angular velocity (rad/s)
+
+_TELEM_HOST   = os.environ.get("TELEMETRY_UDP_HOST", "")
+_TELEM_PORT   = int(os.environ.get("TELEMETRY_UDP_PORT", "50505"))
+_TELEM_HZ     = float(os.environ.get("TELEMETRY_HZ", "100"))
+_TELEM_FMT    = "<Id13f"   # little-endian: uint32 + float64 + 13×float32
+
+_telem_sock: socket.socket | None = None
+if _TELEM_HOST:
+    _telem_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    print(f"[rosa] Telemetry UDP → {_TELEM_HOST}:{_TELEM_PORT} @ {_TELEM_HZ:.0f} Hz", flush=True)
+else:
+    print("[rosa] Telemetry UDP disabled — set TELEMETRY_UDP_HOST to enable", flush=True)
+    print("[rosa] /telemetry/latest HTTP endpoint available for local inspection", flush=True)
+
+_telem_seq: int = 0
+_telem_period: float = 1.0 / _TELEM_HZ
+_telem_last_send: float = 0.0
+
+# Written by main thread, read by HTTP handler — same race-tolerance as _diag.
+_telem_state: dict = {
+    "seq": 0, "sim_time": 0.0,
+    "x": 0.0, "y": 0.0, "z": 0.0,
+    "qw": 1.0, "qx": 0.0, "qy": 0.0, "qz": 0.0,
+    "vx": 0.0, "vy": 0.0, "vz": 0.0,
+    "wx": 0.0, "wy": 0.0, "wz": 0.0,
+    "prim_valid": False,
+    "udp_host": _TELEM_HOST or "(disabled)",
+    "udp_port": _TELEM_PORT,
+}
+
+
+def _update_telemetry() -> None:
+    """Sample /World/Starship, update _telem_state, send UDP packet if configured."""
+    global _telem_seq, _telem_last_send
+
+    now = time.monotonic()
+    if now - _telem_last_send < _telem_period:
+        return
+    _telem_last_send = now
+
+    try:
+        from pxr import Gf, UsdGeom
+        stage = omni.usd.get_context().get_stage()
+        if stage is None:
+            return
+
+        prim = stage.GetPrimAtPath("/World/Starship")
+        if not prim.IsValid():
+            _telem_state["prim_valid"] = False
+            return
+
+        # Position + orientation via world transform matrix
+        xform_cache = UsdGeom.XformCache()
+        mat   = xform_cache.GetLocalToWorldTransform(prim)
+        pos   = mat.ExtractTranslation()               # Gf.Vec3d
+        quat  = mat.ExtractRotation().GetQuaternion()  # Gf.Quaternion
+        qw    = float(quat.GetReal())
+        imag  = quat.GetImaginary()                    # Gf.Vec3d
+        qx, qy, qz = float(imag[0]), float(imag[1]), float(imag[2])
+
+        # Linear + angular velocity from PhysX USD attributes
+        vel_attr = prim.GetAttribute("physics:velocity")
+        ang_attr = prim.GetAttribute("physics:angularVelocity")
+        vel = vel_attr.Get() if vel_attr.IsValid() else Gf.Vec3f(0, 0, 0)
+        ang = ang_attr.Get() if ang_attr.IsValid() else Gf.Vec3f(0, 0, 0)
+
+        sim_t = float(_diag["sim_time"])
+        px, py, pz = float(pos[0]), float(pos[1]), float(pos[2])
+        vx, vy, vz = float(vel[0]), float(vel[1]), float(vel[2])
+        wx, wy, wz = float(ang[0]), float(ang[1]), float(ang[2])
+
+        _telem_state.update({
+            "seq": _telem_seq, "sim_time": sim_t,
+            "x": px, "y": py, "z": pz,
+            "qw": qw, "qx": qx, "qy": qy, "qz": qz,
+            "vx": vx, "vy": vy, "vz": vz,
+            "wx": wx, "wy": wy, "wz": wz,
+            "prim_valid": True,
+        })
+
+        if _telem_sock is not None:
+            pkt = struct.pack(_TELEM_FMT,
+                              _telem_seq, sim_t,
+                              px, py, pz,
+                              qw, qx, qy, qz,
+                              vx, vy, vz,
+                              wx, wy, wz)
+            _telem_sock.sendto(pkt, (_TELEM_HOST, _TELEM_PORT))
+
+        _telem_seq += 1
+
+    except Exception:
+        pass   # never crash the main loop for telemetry
 
 
 # ── Helpers for main-thread command execution ─────────────────────────────────
@@ -488,6 +600,7 @@ try:
                 break
 
         _update_diag()
+        _update_telemetry()
 
         # Apply Starship forces before physics step
         if _starship_controller is not None:
