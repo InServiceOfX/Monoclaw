@@ -167,6 +167,7 @@ starship_xform = UsdGeom.Xform.Define(stage, "/World/Starship")
 starship_xform.AddTranslateOp().Set(Gf.Vec3d(0, SPAWN_ALTITUDE, 0))
 
 UsdPhysics.RigidBodyAPI.Apply(starship_xform.GetPrim())
+PhysxSchema.PhysxRigidBodyAPI.Apply(starship_xform.GetPrim())
 
 mass_api = UsdPhysics.MassAPI.Apply(starship_xform.GetPrim())
 mass_api.CreateMassAttr(MASS_KG)

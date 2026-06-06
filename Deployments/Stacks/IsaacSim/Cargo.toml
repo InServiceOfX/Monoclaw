@@ -1,0 +1,3 @@
+[workspace]
+members = ["fsw_rx", "fsw_orin", "ground_station"]
+resolver = "2"

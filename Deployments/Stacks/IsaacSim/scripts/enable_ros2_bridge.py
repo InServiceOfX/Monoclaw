@@ -86,6 +86,8 @@ scene_path = os.environ.get("ISAAC_SCENE_PATH", "")
 if scene_path and os.path.isfile(scene_path):
     print(f"[rosa] Loading scene: {scene_path}")
     omni.usd.get_context().open_stage(scene_path)
+    # Ground plane kept intact — Starship rests on surface at y=1.5m.
+    # Use LIFTOFF command to launch; it will rise then fall back, triggering ALTITUDE_ABORT.
     for _ in range(30):
         app.update()
         time.sleep(0.1)
@@ -137,6 +139,9 @@ def _create_clock_omnigraph() -> bool:
 if _create_clock_omnigraph():
     for _ in range(10):
         app.update()
+
+# Ground plane intact — Starship on surface at y≈1.5m.
+# Demo: click LIFTOFF → Starship ascends → descends → ALTITUDE_ABORT fires.
 
 # ── Timeline: start playing so physics step ────────────────────────────────────
 import omni.timeline
@@ -263,6 +268,25 @@ class _ControlHandler(BaseHTTPRequestHandler):
                 return
             _cmd_queue.put({"type": "set_gravity", "body": body_name, "g": g})
             self._send_json({"status": "queued", "body": body_name, "g_m_s2": g})
+        elif self.path == "/starship/command":
+            # FSW command relay from Jetson: liftoff, abort, safe_mode
+            body = self._read_json_body()
+            action = body.get("action", "")
+            if action == "liftoff":
+                vel_y = float(body.get("velocity_y", 60.0))
+                _cmd_queue.put({"type": "starship_command", "action": "liftoff", "velocity_y": vel_y})
+                self._send_json({"status": "queued", "action": action, "velocity_y": vel_y})
+            elif action == "abort":
+                _cmd_queue.put({"type": "starship_command", "action": "abort"})
+                self._send_json({"status": "queued", "action": action})
+            elif action == "safe_mode":
+                _cmd_queue.put({"type": "starship_command", "action": "safe_mode"})
+                self._send_json({"status": "queued", "action": action})
+            elif action == "reset_position":
+                _cmd_queue.put({"type": "starship_command", "action": "reset_position"})
+                self._send_json({"status": "queued", "action": action})
+            else:
+                self._send_json({"error": f"unknown action: {action!r}"}, 400)
         else:
             self._send_json({"error": "not found"}, 404)
 
@@ -545,6 +569,44 @@ def _handle_cmd(cmd: dict) -> None:
                     print(f"[rosa] WARNING: /World/PhysicsScene not found — gravity unchanged")
         except Exception as exc:
             print(f"[rosa] set_gravity error: {exc}")
+    elif cmd_type == "starship_command":
+        action = cmd.get("action", "")
+        try:
+            from pxr import Gf
+            import omni.usd
+            stage = omni.usd.get_context().get_stage()
+            prim = stage.GetPrimAtPath("/World/Starship") if stage else None
+            if prim and prim.IsValid():
+                if action == "liftoff":
+                    vel_y = float(cmd.get("velocity_y", 60.0))
+                    # Try both physx and usd velocity attrs
+                    for attr_name in ("physxRigidBody:velocity", "physics:velocity"):
+                        attr = prim.GetAttribute(attr_name)
+                        if attr.IsValid():
+                            attr.Set(Gf.Vec3f(0.0, vel_y, 0.0))
+                    print(f"[rosa] LIFTOFF command: set vy={vel_y} m/s upward", flush=True)
+                elif action == "abort":
+                    # Zero velocity — emergency stop
+                    for attr_name in ("physxRigidBody:velocity", "physics:velocity"):
+                        attr = prim.GetAttribute(attr_name)
+                        if attr.IsValid():
+                            attr.Set(Gf.Vec3f(0.0, 0.0, 0.0))
+                    print("[rosa] ABORT command: zeroed velocity", flush=True)
+                elif action == "reset_position":
+                    # Teleport back to surface
+                    from pxr import UsdGeom
+                    xf = UsdGeom.Xformable(prim)
+                    ops = xf.GetOrderedXformOps()
+                    for op in ops:
+                        if "translate" in op.GetOpName():
+                            op.Set(Gf.Vec3d(0, 1.5, 0))
+                    for attr_name in ("physxRigidBody:velocity", "physics:velocity"):
+                        attr = prim.GetAttribute(attr_name)
+                        if attr.IsValid():
+                            attr.Set(Gf.Vec3f(0.0, 0.0, 0.0))
+                    print("[rosa] RESET command: Starship back to surface", flush=True)
+        except Exception as exc:
+            print(f"[rosa] starship_command error: {exc}", flush=True)
     elif cmd_type == "create_starship_stage":
         _create_starship_stage_inline()
     elif cmd_type == "load_scene":

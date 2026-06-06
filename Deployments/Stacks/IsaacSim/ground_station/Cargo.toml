@@ -1,0 +1,8 @@
+[package]
+name = "ground_station"
+version = "0.1.0"
+edition = "2021"
+description = "Starship Ground Station — mission control display for Jetson FSW AI uplink"
+
+[dependencies]
+serde_json = "1"

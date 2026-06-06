@@ -312,7 +312,7 @@ def _apply_force_torque(prim, force: Gf.Vec3f, torque: Gf.Vec3f) -> None:
     try:
         import omni.physx
         import carb
-        physx = omni.physx.get_physx_interface()
+        physx = omni.physx.get_physx_simulation_interface()
         prim_path_str = str(prim.GetPath())
         physx.apply_force_at_pos(
             prim_path_str,
