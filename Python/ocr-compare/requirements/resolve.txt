@@ -1,0 +1,8 @@
+# resolve.py conflict-resolver tier — pure-API + PDF rendering, no GPU, no torch.
+# Used to render conflicting equations to PNG and ask a vision model (xAI Grok,
+# or Claude Code via --manifest/--apply) to pick the correct LaTeX.
+openai>=2.0          # xAI Grok via OpenAI-compatible base_url
+anthropic>=0.100     # optional, for a Claude judge
+pypdfium2>=5.0       # page render + text layer (newer API ok here; not nougat's pin)
+pillow>=10.0
+tqdm>=4.60

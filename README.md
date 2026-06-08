@@ -10,6 +10,7 @@ See [PRIVACY.md](PRIVACY.md) before working with private local files.
 ## Structure
 - **Rust/**: Cargo crates
 - **Python/**: Poetry pkgs
+  - **Python/ocr-compare/**: local Nougat+Marker PDF→LaTeX OCR, reconciled (GPU)
 - **Cpp/**: CMake projects
 - **JavaScript/**: Static/web tools (HTML, JS, CSS)
 - **examples/**: Demos

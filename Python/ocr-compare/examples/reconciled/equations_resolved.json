@@ -1,0 +1,429 @@
+{
+  "summary": {
+    "agree": 14,
+    "conflict": 8,
+    "marker_only": 11,
+    "nougat_only": 16,
+    "nougat_dropped_ranges": [
+      [
+        20,
+        32
+      ],
+      [
+        36,
+        38
+      ]
+    ],
+    "nougat_repeated": {
+      "10": 4,
+      "11": 3,
+      "12": 4,
+      "13": 4,
+      "14": 4,
+      "15": 2,
+      "16": 2,
+      "17": 2
+    }
+  },
+  "equations": [
+    {
+      "tag": "1",
+      "status": "agree",
+      "nougat": "p_{\\alpha\\dot{\\alpha}}=\\lambda_{\\alpha}\\tilde{\\lambda}_{\\dot{\\alpha}}, \\tag{1}",
+      "marker": "p_{\\alpha\\dot{\\alpha}} = \\lambda_{\\alpha}\\tilde{\\lambda}_{\\dot{\\alpha}},\\tag{1}",
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "2",
+      "status": "conflict",
+      "nougat": "|i\\rangle=\\lambda_{i}=(1,z_{i}),\\qquad|i]=\\tilde{\\lambda}_{i}=\\omega_{i}(1, \\tilde{z}_{i}), \\tag{2}",
+      "marker": "|i\\rangle = \\lambda_i = (1, z_i), \\qquad |i\\rangle = \\tilde{\\lambda}_i = \\omega_i(1, \\tilde{z}_i), \\qquad (2)",
+      "nougat_repeated": 0,
+      "resolution": {
+        "verdict": "nougat",
+        "page": 2,
+        "confidence": "high",
+        "correct_latex": "|i\\rangle=\\lambda_{i}=(1,z_{i}),\\qquad|i]=\\tilde{\\lambda}_{i}=\\omega_{i}(1,\\tilde{z}_{i})",
+        "reasoning": "Second ket on the page is the square bracket |i]; Marker rendered it as |i\\rangle."
+      }
+    },
+    {
+      "tag": "3",
+      "status": "conflict",
+      "nougat": "\\langle ij\\rangle =\\langle\\lambda_{i}\\lambda_{j}\\rangle=\\epsilon_{\\alpha\\beta} \\lambda_{i}^{\\alpha}\\lambda_{j}^{\\beta}, \\tag{3}",
+      "marker": "\\langle ij\\rangle = \\langle \\lambda_i \\lambda_j \\rangle = \\epsilon_{\\alpha\\beta} \\lambda_i^{\\alpha} \\lambda_i^{\\beta}, \\tag{3}",
+      "nougat_repeated": 0,
+      "resolution": {
+        "verdict": "nougat",
+        "page": 2,
+        "confidence": "high",
+        "correct_latex": "\\langle ij\\rangle=\\langle\\lambda_i\\lambda_j\\rangle=\\epsilon_{\\alpha\\beta}\\lambda_i^{\\alpha}\\lambda_j^{\\beta}",
+        "reasoning": "Page shows distinct indices \\lambda_i^\\alpha\\lambda_j^\\beta with undotted (no-tilde) lambdas; Marker repeated index i."
+      }
+    },
+    {
+      "tag": "4",
+      "status": "agree",
+      "nougat": "[ij] =\\left[\\tilde{\\lambda}_{i}\\tilde{\\lambda}_{j}\\right]=\\epsilon_{ \\dot{\\alpha}\\dot{\\beta}}\\tilde{\\lambda}_{i}^{\\dot{\\alpha}}\\tilde{\\lambda}_{j} ^{\\dot{\\beta}}, \\tag{4}",
+      "marker": "[ij] = \\left[\\tilde{\\lambda}_i \\tilde{\\lambda}_j\\right] = \\epsilon_{\\dot{\\alpha}\\dot{\\beta}} \\tilde{\\lambda}_i^{\\dot{\\alpha}} \\tilde{\\lambda}_j^{\\dot{\\beta}}, \\tag{4}",
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "5",
+      "status": "conflict",
+      "nougat": "\\langle ij\\rangle=z_{ij},\\qquad[ij]=\\omega_{i}\\omega_{j}\\tilde{z}_{ij}, \\tag{5}",
+      "marker": "\\langle ij \\rangle = z_{ii}, \\qquad [ij] = \\omega_i \\omega_i \\tilde{z}_{ii}, \\qquad (5)",
+      "nougat_repeated": 0,
+      "resolution": {
+        "verdict": "nougat",
+        "page": 2,
+        "confidence": "high",
+        "correct_latex": "\\langle ij\\rangle=z_{ij},\\qquad[ij]=\\omega_i\\omega_j\\tilde{z}_{ij}",
+        "reasoning": "Subscripts are ij (z_{ij}, \\omega_i\\omega_j\\tilde z_{ij}); Marker read them all as ii."
+      }
+    },
+    {
+      "tag": "6",
+      "status": "nougat_only",
+      "nougat": "\\epsilon_{j}^{-}=\\sqrt{2}\\frac{|r\\rangle[j]}{[rj]},\\qquad\\epsilon_{k}^{+}= \\sqrt{2}\\frac{|k\\rangle[r]}{\\langle rk\\rangle}, \\tag{6}",
+      "marker": null,
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "7",
+      "status": "agree",
+      "nougat": "\\int\\delta(x)\\,\\mathrm{d}x=2\\pi,\\qquad\\frac{1}{x+i\\epsilon}-\\frac{1}{x-i \\epsilon}\\overset{\\epsilon\\to 0}{=}-i\\,\\delta(x). \\tag{7}",
+      "marker": "\\int \\delta(x) \\, \\mathrm{d}x = 2\\pi, \\qquad \\frac{1}{x + i\\epsilon} - \\frac{1}{x - i\\epsilon} \\stackrel{\\epsilon \\to 0}{=} -i \\, \\delta(x). \\quad (7)",
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "8",
+      "status": "agree",
+      "nougat": "\\mathcal{A}_{n}^{\\text{MHV}}=i\\frac{\\langle rs\\rangle^{4}}{\\langle 12 \\rangle\\langle 23\\rangle\\cdots\\langle n1\\rangle}\\,\\delta^{4}\\Bigg{(}\\sum_{k=1}^{ n}p_{k}\\Bigg{)}. \\tag{8}",
+      "marker": "\\mathcal{A}_n^{\\text{MHV}} = i \\frac{\\langle rs \\rangle^4}{\\langle 12 \\rangle \\langle 23 \\rangle \\cdots \\langle n1 \\rangle} \\, \\delta^4 \\Biggl( \\sum_{k=1}^n p_k \\Biggr). \\tag{8}",
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "9",
+      "status": "agree",
+      "nougat": "\\operatorname{PT}_{\\text{cyc}}=\\prod_{k=1}^{n}\\frac{[k,k+1]}{p_{k,k+1}^{2}+i \\epsilon}=\\prod_{k=1}^{n}\\frac{1}{z_{k,k+1}{+}i\\epsilon\\operatorname{sg}_{k,k +1}}, \\tag{9}",
+      "marker": "PT_{cyc} = \\prod_{k=1}^{n} \\frac{[k, k+1]}{p_{k,k+1}^2 + i\\epsilon} = \\prod_{k=1}^{n} \\frac{1}{z_{k,k+1} + i\\epsilon \\operatorname{sg}_{k,k+1}}, \\quad (9)",
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "10",
+      "status": "nougat_only",
+      "nougat": "\\operatorname{sg}_{ij}=\\operatorname{sg}\\Bigl{(}[\\tilde{\\lambda}_{i}\\tilde{ \\lambda}_{j}]\\Bigr{)} \\tag{10}",
+      "marker": null,
+      "nougat_repeated": 4
+    },
+    {
+      "tag": "11",
+      "status": "nougat_only",
+      "nougat": "\\mathcal{A}_{n}^{\\text{MHV}}=i\\langle rs\\rangle^{4}\\operatorname{PT}_{\\text{ cyc}}\\delta^{4}\\Bigg{(}\\sum_{k=1}^{n}p_{k}\\Bigg{)}. \\tag{11}",
+      "marker": null,
+      "nougat_repeated": 3
+    },
+    {
+      "tag": "12",
+      "status": "nougat_only",
+      "nougat": "\\operatorname{PT}_{1\\cdots n}=\\prod_{k=1}^{n-1}\\frac{[k,k+1]}{p_{k,k+1}^{2}+i \\epsilon}=\\prod_{k=1}^{n-1}\\frac{1}{z_{k,k+1}{+}i\\epsilon\\operatorname{sg}_{k,k +1}}. \\tag{12}",
+      "marker": null,
+      "nougat_repeated": 4
+    },
+    {
+      "tag": "13",
+      "status": "nougat_only",
+      "nougat": "\\langle ij\\rangle=0\\qquad\\forall\\,i,j\\in\\{1,\\ldots,n\\}. \\tag{13}",
+      "marker": null,
+      "nougat_repeated": 4
+    },
+    {
+      "tag": "14",
+      "status": "conflict",
+      "nougat": "\\epsilon_{1}^{-}=\\sqrt{2}\\frac{|r\\rangle\\langle 1|}{[r1]},\\qquad\\epsilon_{a}^{+} =\\sqrt{2}\\frac{|r\\rangle[a]}{\\langle ra\\rangle}\\qquad\\text{for $a\\geq 2$}, \\tag{14}",
+      "marker": "\\epsilon_1^- = \\sqrt{2} \\frac{|r]\\langle 1|}{[r1]}, \\qquad \\epsilon_a^+ = \\sqrt{2} \\frac{|r\\rangle[a|}{\\langle ra\\rangle} \\qquad \\text{for } a \\ge 2, \\quad (14)",
+      "nougat_repeated": 4,
+      "resolution": {
+        "verdict": "marker",
+        "page": 3,
+        "confidence": "high",
+        "correct_latex": "\\epsilon_1^-=\\sqrt{2}\\frac{|r]\\langle 1|}{[r1]},\\qquad\\epsilon_a^+=\\sqrt{2}\\frac{|r\\rangle[a|}{\\langle ra\\rangle}\\qquad\\text{for } a\\ge 2",
+        "reasoning": "First numerator is the square bracket |r]\\langle1| (not |r\\rangle); Marker matches, Nougat used an angle bracket."
+      }
+    },
+    {
+      "tag": "15",
+      "status": "agree",
+      "nougat": "\\qquad\\times\\delta^{2}\\Biggl{(}\\sum_{i=1}^{n}\\langle ri\\rangle \\tilde{\\lambda}_{i}\\Biggr{)}. \\tag{15}",
+      "marker": "\\times \\delta^{2} \\left( \\sum_{i=1}^{n} \\langle ri \\rangle \\tilde{\\lambda}_{i} \\right). \\tag{15}",
+      "nougat_repeated": 2
+    },
+    {
+      "tag": "16",
+      "status": "conflict",
+      "nougat": "\\mathcal{A}_{n}=i^{2-n}\\Big{|}\\frac{\\omega_{1}}{\\omega_{2}\\omega_{3}\\cdots \\omega_{n}}\\Big{|}A_{1\\cdots n}\\prod_{a=2}^{n}\\delta(z_{1a})\\,\\delta^{2} \\Biggl{(}\\sum_{i=1}^{n}\\sqrt{|\\omega_{i}|}\\tilde{\\lambda}_{i}\\Biggr{)}. \\tag{16}",
+      "marker": "\\mathcal{A}_n = i^{2-n} A_{1\\cdots n} \\prod_{a=2}^n \\delta(z_{1a}) \\, \\delta^2 \\left( \\sum_{i=1}^n \\tilde{\\lambda}_i \\right). \\tag{16}",
+      "nougat_repeated": 2,
+      "resolution": {
+        "verdict": "marker",
+        "page": 3,
+        "confidence": "high",
+        "correct_latex": "\\mathcal{A}_n=i^{2-n}A_{1\\cdots n}\\prod_{a=2}^n\\delta(z_{1a})\\,\\delta^2\\!\\left(\\sum_{i=1}^n\\tilde{\\lambda}_i\\right)",
+        "reasoning": "Printed eq (16) is the plain form with no \\omega prefactor or \\sqrt{|\\omega_i|}; Nougat copied the footnote-7 alternative."
+      }
+    },
+    {
+      "tag": "17",
+      "status": "nougat_only",
+      "nougat": "\\delta_{1\\cdots n}=i^{1-n}\\prod_{k=1}^{n-1}\\delta(z_{k,k+1}) \\tag{17}",
+      "marker": null,
+      "nougat_repeated": 2
+    },
+    {
+      "tag": "18",
+      "status": "agree",
+      "nougat": "\\bar{A}_{q}=1,\\qquad\\bar{A}_{qp}=0, \\tag{18}",
+      "marker": "\\bar{A}_q = 1, \\qquad \\bar{A}_{qp} = 0, \\tag{18}",
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "19",
+      "status": "agree",
+      "nougat": "\\bar{A}_{q\\cdots p}=-\\sum_{\\text{o.p.}}V_{\\tilde{\\lambda}_{S_{1}}\\cdots\\tilde{ \\lambda}_{S_{A}}}\\,\\prod_{a=1}^{A}\\bar{A}_{S_{a}}, \\tag{19}",
+      "marker": "\\bar{A}_{q\\cdots p} = -\\sum_{\\text{o.p.}} V_{\\tilde{\\lambda}_{S_1}\\cdots\\tilde{\\lambda}_{S_A}} \\prod_{a=1}^A \\bar{A}_{S_a}, \\tag{19}",
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "20",
+      "status": "marker_only",
+      "nougat": null,
+      "marker": "V_{\\tilde{\\lambda}_1 \\dots \\tilde{\\lambda}_n} = \\prod_{k=1}^{n-1} \\operatorname{sg}_{k,k+1} \\Theta\\left(-\\frac{\\left[\\tilde{\\lambda}_1 \\dots_k \\tilde{\\lambda}_{k+1} \\dots_m\\right]}{\\left[\\tilde{\\lambda}_k \\tilde{\\lambda}_{k+1}\\right]}\\right), \\quad (20)",
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "21",
+      "status": "marker_only",
+      "nougat": null,
+      "marker": "A_{1\\cdots n} = -\\sum_{\\text{o.p.}} \\widehat{PT}_{\\tilde{\\lambda}_{S_1}\\cdots\\tilde{\\lambda}_{S_A}} \\prod_{a=1}^A \\bar{A}_{S_a}, \\qquad (21)",
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "22",
+      "status": "marker_only",
+      "nougat": null,
+      "marker": "\\widehat{\\text{PT}}_{\\tilde{\\lambda}_1 \\dots \\tilde{\\lambda}_n} = V_{\\tilde{\\lambda}_1 \\dots \\tilde{\\lambda}_n} - \\bar{V}_{\\tilde{\\lambda}_1 \\dots \\tilde{\\lambda}_n}, \\tag{22}",
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "23",
+      "status": "marker_only",
+      "nougat": null,
+      "marker": "= \\sum_{j=1}^{n-1} \\frac{\\left[\\tilde{\\lambda}_{1\\cdots j}\\tilde{\\lambda}_{j+1\\cdots n}\\right]}{p_{1\\cdots n}^2 + i\\epsilon} PT_{1\\cdots j} PT_{j+1\\cdots n}, \\qquad (23)",
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "24",
+      "status": "marker_only",
+      "nougat": null,
+      "marker": "A_{12\\cdots n} = A_{2\\cdots n1}. (24)",
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "25",
+      "status": "marker_only",
+      "nougat": null,
+      "marker": "A_{12\\cdots n} = (-1)^n A_{n\\cdots 21}. (25)",
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "26",
+      "status": "marker_only",
+      "nougat": null,
+      "marker": "A_{12\\cdots n} + A_{13\\cdots n2} + A_{14\\cdots 23} + \\dots = 0. \\tag{26}",
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "27",
+      "status": "marker_only",
+      "nougat": null,
+      "marker": "A_{12345} + A_{12354} + A_{12435} + A_{14235} = 0. (27)",
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "28",
+      "status": "marker_only",
+      "nougat": null,
+      "marker": "\\lim_{\\omega_n \\to 0} A_{1\\cdots n} = \\frac{1}{2} (\\operatorname{sg}_{n-1,n} + \\operatorname{sg}_{n1}) A_{1\\cdots n-1}. \\tag{28}",
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "29",
+      "status": "marker_only",
+      "nougat": null,
+      "marker": "A_{123} = sg_{12}, (29)",
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "30",
+      "status": "marker_only",
+      "nougat": null,
+      "marker": "A_{1234} = \\frac{1}{2} (sg_{23} sg_{41} + sg_{12} sg_{34}); \\tag{30}",
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "33",
+      "status": "nougat_only",
+      "nougat": "\\omega_{1}<0,\\qquad\\omega_{a}>0,\\qquad a\\in\\{2,\\ldots,n\\}. \\tag{33}",
+      "marker": null,
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "34",
+      "status": "nougat_only",
+      "nougat": "\\mathsf{sg}_{ij}=\\mathsf{sg}\\,\\tilde{z}_{ij},\\qquad\\mathsf{sg}_{1j}=\\mathsf{ sg}\\,\\tilde{z}_{j1}\\qquad\\forall\\,i,j\\geq 2. \\tag{34}",
+      "marker": null,
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "35",
+      "status": "nougat_only",
+      "nougat": "A_{123}|_{\\mathcal{R}_{1}} =\\frac{1}{2}(\\mathsf{sg}_{12}+\\mathsf{sg}_{23}), \\tag{35}",
+      "marker": null,
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "39",
+      "status": "nougat_only",
+      "nougat": "A_{1\\cdots n}\\big{|}_{\\mathcal{R}_{1}}=\\frac{1}{2^{n-2}}\\prod_{m=2}^{n-1}\\big{(} \\mathsf{sg}_{m,m+1}+\\mathsf{sg}_{1,2\\cdots m}\\big{)}. \\tag{39}",
+      "marker": null,
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "40",
+      "status": "conflict",
+      "nougat": "V_{\\bar{\\lambda}_{2}\\cdots\\bar{\\lambda}_{n}}\\Big{|}_{\\mathcal{R}_{1}}=0, \\tag{40}",
+      "marker": "V_{\\tilde{\\lambda}_2 \\cdots \\tilde{\\lambda}_n} \\Big|_{\\mathcal{R}_1} = 0, \\tag{40}",
+      "nougat_repeated": 0,
+      "resolution": {
+        "verdict": "marker",
+        "page": 5,
+        "confidence": "high",
+        "correct_latex": "V_{\\tilde{\\lambda}_2\\cdots\\tilde{\\lambda}_n}\\Big|_{\\mathcal{R}_1}=0",
+        "reasoning": "Each spinor carries a tilde (\\tilde\\lambda); the bar appears on V (\\bar V) in the next line. Nougat put a bar on lambda."
+      }
+    },
+    {
+      "tag": "41",
+      "status": "nougat_only",
+      "nougat": "A_{1\\cdots n}\\big{|}_{\\mathcal{R}_{1}}=\\bar{V}_{\\bar{\\lambda}_{2}\\cdots\\bar{ \\lambda}_{n}}\\Big{|}_{\\mathcal{R}_{1}}. \\tag{41}",
+      "marker": null,
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "42",
+      "status": "agree",
+      "nougat": "V_{\\tilde{\\lambda}_{2}\\cdots\\tilde{\\lambda}_{n}}=0 \\tag{42}",
+      "marker": "V_{\\tilde{\\lambda}_2 \\cdots \\tilde{\\lambda}_n} = 0 \\tag{42}",
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "43",
+      "status": "agree",
+      "nougat": "\\tilde{\\lambda}_{L}=\\sum_{a=2}^{j}\\tilde{\\lambda}_{a}=\\Omega_{L}( 1,\\tilde{z}_{L}), \\tag{43}",
+      "marker": "\\tilde{\\lambda}_L = \\sum_{a=2}^{j} \\tilde{\\lambda}_a = \\Omega_L(1, \\tilde{z}_L), \\tag{43}",
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "44",
+      "status": "agree",
+      "nougat": "\\tilde{\\lambda}_{R}=\\sum_{a=j+1}^{n}\\tilde{\\lambda}_{a}=\\Omega_{ R}(1,\\tilde{z}_{R}), \\tag{44}",
+      "marker": "\\tilde{\\lambda}_R = \\sum_{a=j+1}^n \\tilde{\\lambda}_a = \\Omega_R(1, \\tilde{z}_R), \\tag{44}",
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "45",
+      "status": "agree",
+      "nougat": "\\left[\\tilde{\\lambda}_{R}\\tilde{\\lambda}_{L}\\right] =\\Omega_{L}\\Omega_{R}\\tilde{z}_{R,L}, \\tag{45}",
+      "marker": "\\left[\\tilde{\\lambda}_R \\tilde{\\lambda}_L\\right] = \\Omega_L \\Omega_R \\tilde{z}_{R,L},\\tag{45}",
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "46",
+      "status": "agree",
+      "nougat": "\\left[\\tilde{\\lambda}_{j+1}\\tilde{\\lambda}_{j}\\right] =\\omega_{j}\\omega_{j+1}\\tilde{z}_{j+1,j}. \\tag{46}",
+      "marker": "\\left[\\tilde{\\lambda}_{j+1}\\tilde{\\lambda}_{j}\\right] = \\omega_{j}\\omega_{j+1}\\tilde{z}_{j+1,j}.\\tag{46}",
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "47",
+      "status": "conflict",
+      "nougat": "V_{\\tilde{\\lambda}_{S_{1}}\\cdots\\tilde{\\lambda}_{S_{k}}}=0. \\tag{47}",
+      "marker": "V_{\\tilde{\\lambda}_{S_*} \\cdots \\tilde{\\lambda}_{S_*}} = 0. \\tag{47}",
+      "nougat_repeated": 0,
+      "resolution": {
+        "verdict": "nougat",
+        "page": 6,
+        "confidence": "high",
+        "correct_latex": "V_{\\tilde{\\lambda}_{S_1}\\cdots\\tilde{\\lambda}_{S_k}}=0",
+        "reasoning": "Subscripts read S_1 \\cdots S_k; Marker garbled them to S_*."
+      }
+    },
+    {
+      "tag": "48",
+      "status": "conflict",
+      "nougat": "\\left.\\bar{A}_{S}\\right|_{\\mathcal{R}_{1}}=0, \\tag{48}",
+      "marker": "\\bar{A}_S \\Big|_{\\mathcal{R}_1} = 0, \\tag{48}",
+      "nougat_repeated": 0,
+      "resolution": {
+        "verdict": "both_correct",
+        "page": 6,
+        "confidence": "high",
+        "correct_latex": "\\bar{A}_S\\big|_{\\mathcal{R}_1}=0",
+        "reasoning": "Both produce \\bar A_S restricted to R_1; the difference is only the delimiter macro (\\left.\\right| vs \\Big|)."
+      }
+    },
+    {
+      "tag": "49",
+      "status": "agree",
+      "nougat": "A_{1\\cdots n}=A_{2\\cdots n1}. \\tag{49}",
+      "marker": "A_{1\\cdots n} = A_{2\\cdots n1}. (49)",
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "50",
+      "status": "nougat_only",
+      "nougat": "A_{2\\cdots n1}\\Big{|}_{\\mathcal{R}_{1}}=-\\widehat{\\mathrm{PT}}_{\\tilde{ \\lambda}_{2}\\tilde{\\lambda}_{3}\\cdots\\tilde{\\lambda}_{n}}\\Big{|}_{\\mathcal{R} _{1}}. \\tag{50}",
+      "marker": null,
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "51",
+      "status": "nougat_only",
+      "nougat": "A_{1\\cdots n}\\Big{|}_{\\mathcal{R}_{1}}=A_{2\\cdots n1}\\Big{|}_{\\mathcal{R}_{1} }=\\bar{V}_{\\tilde{\\lambda}_{2}\\cdots\\tilde{\\lambda}_{n}}. \\tag{51}",
+      "marker": null,
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "52",
+      "status": "nougat_only",
+      "nougat": "\\bar{V}_{\\tilde{\\lambda}_{2}\\cdots\\tilde{\\lambda}_{n}}=\\prod_{n=2}^{n}\\mathrm{ sg}_{m,m+1}\\Theta\\Bigg{(}\\frac{\\left[\\tilde{\\lambda}_{2\\cdots m}\\tilde{ \\lambda}_{m+1\\cdots n}\\right]}{\\left[\\tilde{\\lambda}_{m}\\tilde{\\lambda}_{m+1} \\right]}\\Bigg{)}. \\tag{52}",
+      "marker": null,
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "53",
+      "status": "nougat_only",
+      "nougat": "\\bar{V}_{\\tilde{\\lambda}_{2}\\cdots\\tilde{\\lambda}_{n}}=\\prod_{m=2}^{n-1} \\mathrm{sg}_{m,m+1}\\Theta\\Bigg{(}\\frac{\\left[\\tilde{\\lambda}_{1}\\tilde{ \\lambda}_{2\\cdots m}\\right]}{\\left[\\tilde{\\lambda}_{m}\\tilde{\\lambda}_{m+1} \\right]}\\Bigg{)}. \\tag{53}",
+      "marker": null,
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "54",
+      "status": "nougat_only",
+      "nougat": "\\bar{V}_{\\tilde{\\lambda}_{2}\\cdots\\tilde{\\lambda}_{n}}=\\frac{1}{2^{n-2}}\\prod _{m=2}^{n-1}\\Bigl{(}\\mathrm{sg}_{m,m+1}+\\mathrm{sg}\\Bigl{(}\\left[\\tilde{ \\lambda}_{1}\\tilde{\\lambda}_{2\\cdots m}\\right]\\Bigr{)}\\Bigr{)}. \\tag{54}",
+      "marker": null,
+      "nougat_repeated": 0
+    }
+  ]
+}

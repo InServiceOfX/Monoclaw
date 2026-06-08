@@ -1,0 +1,5 @@
+# Marker (Datalab, marker-pdf) — complete-coverage PDF->markdown workhorse.
+# torch/torchvision are pre-installed from the CUDA wheel index by
+# scripts/setup_envs.sh BEFORE this file, so marker-pdf's torch dep resolves to
+# the +cu130 build already present. Marker pulls surya-ocr + transformers itself.
+marker-pdf==1.10.2

@@ -1,0 +1,11 @@
+# Nougat (Meta, arXiv-trained PDF->LaTeX) — direct pins, Python 3.10.
+# torch/torchvision are installed separately from the CUDA wheel index by
+# scripts/setup_envs.sh (see TORCH_SPEC / CUDA_INDEX there). Do NOT pin them here.
+#
+# These three pins are load-bearing: nougat-ocr 0.1.17 only works with the older
+# transformers/albumentations, and pypdfium2 4.x avoids an API break. Newer
+# versions crash at import or inference. See ../COMPARISON.md.
+nougat-ocr==0.1.17
+transformers==4.38.2
+albumentations==1.3.1
+pypdfium2==4.30.0

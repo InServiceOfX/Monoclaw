@@ -1,0 +1,17 @@
+# Heavy / machine-local artifacts — never commit.
+# Venvs and weights live OUTSIDE the repo by default (the Samsung disk), but
+# guard against anyone pointing them in here.
+venvs/
+venv-*/
+.venv/
+weights/
+# run_ocr.sh output (re-generatable)
+out/
+# local path overrides (copy from env.sh.example)
+scripts/env.sh
+
+# Reconciliation page renders are large + regenerable; keep text examples only.
+examples/reconciled/pages/
+
+__pycache__/
+*.pyc

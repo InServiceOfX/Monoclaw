@@ -1,0 +1,388 @@
+# Single-minus gluon tree amplitudes are nonzero
+
+Alfredo Guevara
+
+Institute for Advanced Study \({}^{2}\)OpenAI \({}^{3}\)Vanderbilt University \({}^{4}\)Cambridge University \({}^{5}\)Harvard University
+
+Alexandru Lupsasca
+
+Institute for Advanced Study \({}^{2}\)OpenAI \({}^{3}\)Vanderbilt University \({}^{4}\)Cambridge University \({}^{5}\)Harvard University
+
+David Skinner
+
+Institute for Advanced Study \({}^{2}\)OpenAI \({}^{3}\)Vanderbilt University \({}^{4}\)Cambridge University \({}^{5}\)Harvard University
+
+Andrew Strominger
+
+Department of Mathematics, University of California, Berkeley, CA 94720
+
+Kevin Weil
+
+Institute for Advanced Study \({}^{2}\)OpenAI \({}^{3}\)Vanderbilt University \({}^{4}\)Cambridge University \({}^{5}\)Harvard University
+
+###### Abstract
+
+Single-minus tree-level \(n\)-gluon scattering amplitudes are reconsidered. Often presumed to vanish, they are shown here to be nonvanishing for certain "half-collinear" configurations existing in Klein space or for complexified momenta. We derive a piecewise-constant closed-form expression for the decay of a single minus-helicity gluon into \(n-1\) plus-helicity gluons as a function of their momenta. This formula nontrivially satisfies multiple consistency conditions including Weinberg's soft theorem.
+
+The laws of physics are succinctly encoded in _scattering amplitudes_, which give the quantum probabilities for any given collection of incoming particles to collide and produce any given collection of outgoing particles. These amplitudes may be systematically derived from the Feynman diagram expansion, which perturbatively sums over all possible quantum processes. Theoretical results from the Feynman diagram expansion of the Standard Model agree with experiment to an unprecedented 14 decimal places [1; 2; 3].
+
+In practice, the computation of scattering amplitudes can be extremely difficult.1 Among other obstacles, the growth in the number of Feynman diagrams for an \(n\)-particle amplitude is faster than exponential in \(n\). However, despite this apparent complexity, cancellations lead in a variety of contexts to a very simple final answer. This indicates that our present understanding of the quantum laws of physics is seriously incomplete and that a more efficient formulation is needed. The last few decades have seen much effort in this direction and delivered promising insights; see, _e.g._, [4; 5; 6; 7; 8; 9; 10].
+
+Footnote 1: The aforementioned agreement between theory and experiment required over a half century of analytic and numerical work.
+
+A prominent example of this phenomenon arises in the tree-level color-ordered scattering of gluons--the particles that mediate the strong force and comprise Yang-Mills theory. Naively, the \(n\)-gluon scattering amplitude involves order \(n!\) terms. Famously, for the special case of MHV (maximally helicity violating) tree amplitudes, Parke and Taylor [11] gave a simple and beautiful, closed-form, single-term expression for all \(n\).
+
+By definition, \(n\)-gluon MHV amplitudes have 2 minus-helicity particles and \(n-2\) plus-helicity gluons, which for generic (complexified) kinematics at tree level is the maximally allowed number [4; 11; 12; 13; 14]. This gives them a privileged role in the theory, enabling their use as efficient building blocks for the full Yang-Mills theory.
+
+In general, \(n-2\) is actually _not_ the maximally allowed number of plus gluons. In this paper, we show that \(n-1\) plus (or "single-minus") amplitudes are in fact allowed2 with restricted "half-collinear" kinematics.3 The amplitude is divided into chambers whose walls are regions where sums of various subsets of the half-collinear momenta are orthogonal as described below. The (stripped) amplitudes are piecewise-constant integers in each chamber. The assignment of its value to each chamber is determined from the perturbative Berends-Giele recursion [15], which is equivalent to Feynman diagrams.
+
+Footnote 2: Witten [5] notes that single-minus amplitudes are supported at a point in twistor space; see also [6].
+
+Footnote 3: The half-collinear condition can be viewed as restricting the ingoing and outgoing momenta to a one-dimensional null circle on the celestial torus at the boundary of Klein space.
+
+Moreover, for the special kinematic region corresponding to single-minus decay into \(n-1\) plus, we give a simple formula for all \(n\). In this special region, the stripped amplitude only takes the values of \(+1\), \(-1\), or \(0\).
+
+The key formula (39) for the amplitude in this region was first conjectured by GPT-5.2 Pro and then proved by a new internal OpenAI model. The solution was checked by hand using the Berends-Giele recursion and was moreover shown to nontrivially obey the soft theorem, cyclicity, Kleiss-Kuijf, and U(1) decoupling identities--none of which are evident from direct inspection.
+
+The structural role of these single-minus amplitudes in Yang-Mills theory remains to be understood. We note that, while our expression is a dramatic simplification of the direct Feynman-diagram expression, it is entirely possible that a yet simpler expression may be obtained with a clever choice of analytic continuation, variables or basis, even outside the single-minus decay channel. We suspect that there are more interesting insights to come with our methodology and hope that this paper is a step on the road to a more complete understanding of the inner structure of scattering amplitudes.
+
+Single-minus amplitudes also arise in self-dual Yang-Mills theory (SDYM) [16], a restricted sector of Yang-Mills, and potentially resolve a puzzle therein. In general, the tree amplitudes of the Feynman expansion are thought to be equivalent to the fully nonlinear classical theory. However, on the one hand the classical solution space of SDYM is extremely nontrivial [17; 18; 19], while the tree diagrams were previously supposed to yield trivial two-point and three-point expressions. The latter seem insufficient to reproduce the former. Potentially, the single-minus tree amplitudes in SDYM found here resolve this tension.
+
+This paper is organized as follows. In Sec. I, we set up notation, describe the standard MHV amplitudes, explain how half-collinear single-minus amplitudes evade the usual no-go condition, and then derive the general Berends-Giele recursion relation. The solution passes various consistency checks, including the soft theorem, and we provide explicit formulas up to \(n=6\) points, where there are already 32 terms. In Sec. II, we restrict to a special kinematic channel denoted \(\mathcal{R}_{1}\) with one ingoing minus and \(n-1\) outgoing plus gluons. There, using various identities through \(n=6\), we find the answer can be expressed as a signed product of \(n-2\) projection operators. This motivates a guess for the all-\(n\) formula, which we verify directly via the Berends-Giele recursion. We derive a multi-\(\delta\)-function identity in App. A and give more details of the single-minus specialization of the Berends-Giele recursion in App. B.
+
+Further details of our analysis, including a longer general formula for the single-minus amplitude outside of \(\mathcal{R}_{1}\), will appear elsewhere. Our main result immediately leads to a number of extensions. The construction generalizes directly from gluon to graviton amplitudes and has a simple supersymmetrization. The results should transform under the \(S\)-algebra, the \(\mathcal{L}w_{1+\infty}\) algebra [20; 21], and their supersymmetric extensions. In the context of celestial holography, the Mellin transform of the amplitudes in some sectors is given by Lauricella functions. These results will be reported elsewhere.
+
+### Notation and useful identities
+
+This subsection defines our notation4 and presents several useful identities. We use spinor-helicity variables for massless momenta [13]
+
+Footnote 4: Our conventions are close to those of [5], except for a factor of 2 on the LHS of (2.7) therein.
+
+\[p_{\alpha\dot{\alpha}}=\lambda_{\alpha}\tilde{\lambda}_{\dot{\alpha}}, \tag{1}\]
+
+where \((\lambda,\tilde{\lambda})\) are _real_ spinors in \((2,2)\) Klein signature. As usual in the description of scattering, it is convenient to fix a suitable Lorentz and helicity frame to perform the calculation, which can be restored at the end. With the benefit of hindsight, we write
+
+\[|i\rangle=\lambda_{i}=(1,z_{i}),\qquad|i]=\tilde{\lambda}_{i}=\omega_{i}(1, \tilde{z}_{i}), \tag{2}\]
+
+with \(z_{i}\) and \(\tilde{z}_{i}\) real and independent. We use standard brackets for contracting helicity spinors,
+
+\[\langle ij\rangle =\langle\lambda_{i}\lambda_{j}\rangle=\epsilon_{\alpha\beta} \lambda_{i}^{\alpha}\lambda_{j}^{\beta}, \tag{3}\] \[[ij] =\left[\tilde{\lambda}_{i}\tilde{\lambda}_{j}\right]=\epsilon_{ \dot{\alpha}\dot{\beta}}\tilde{\lambda}_{i}^{\dot{\alpha}}\tilde{\lambda}_{j} ^{\dot{\beta}}, \tag{4}\]
+
+with \(p_{ij}^{2}=(p_{i}+p_{j})^{2}=\langle ij\rangle[ij]\). In our parameterization,
+
+\[\langle ij\rangle=z_{ij},\qquad[ij]=\omega_{i}\omega_{j}\tilde{z}_{ij}, \tag{5}\]
+
+where \(z_{ij}\equiv z_{i}-z_{j}\) and \(\tilde{z}_{ij}\equiv\tilde{z}_{i}-\tilde{z}_{j}\). We take our polarization vectors to be
+
+\[\epsilon_{j}^{-}=\sqrt{2}\frac{|r\rangle[j]}{[rj]},\qquad\epsilon_{k}^{+}= \sqrt{2}\frac{|k\rangle[r]}{\langle rk\rangle}, \tag{6}\]
+
+where \(|r\rangle\) and \(|r]\) are arbitrary reference spinors. We note that with our conventions (2) for fixing the little group frame, \(\epsilon^{\pm}\) has mass dimension \(\pm 1\), which will affect the mass dimensions of the amplitudes given below. To avoid proliferation of factors of \(2\pi\), we normalize all \(\delta\)-functions such that
+
+\[\int\delta(x)\,\mathrm{d}x=2\pi,\qquad\frac{1}{x+i\epsilon}-\frac{1}{x-i \epsilon}\overset{\epsilon\to 0}{=}-i\,\delta(x). \tag{7}\]
+
+Throughout this paper, we use the standard Feynman propagator \(1/(p^{2}+i\epsilon)\). Other prescriptions have been considered in Klein signature [22].
+
+To clarify our conventions, with our normalization, the \(n\)-point MHV (double-minus) color-ordered tree amplitude \(\mathcal{A}_{n}^{\text{MHV}}(1^{+},\ldots r^{-},\ldots s^{-},\ldots,n^{+})\) is
+
+\[\mathcal{A}_{n}^{\text{MHV}}=i\frac{\langle rs\rangle^{4}}{\langle 12 \rangle\langle 23\rangle\cdots\langle n1\rangle}\,\delta^{4}\Bigg{(}\sum_{k=1}^{ n}p_{k}\Bigg{)}. \tag{8}\]
+
+In fact, for full generality, we will need to be careful about the \(i\epsilon\) prescription. We therefore introduce the regularized Parke-Taylor factor
+
+\[\operatorname{PT}_{\text{cyc}}=\prod_{k=1}^{n}\frac{[k,k+1]}{p_{k,k+1}^{2}+i \epsilon}=\prod_{k=1}^{n}\frac{1}{z_{k,k+1}{+}i\epsilon\operatorname{sg}_{k,k +1}}, \tag{9}\]
+
+with \(n+1\equiv 1\), and where we have defined
+
+\[\operatorname{sg}_{ij}=\operatorname{sg}\Bigl{(}[\tilde{\lambda}_{i}\tilde{ \lambda}_{j}]\Bigr{)} \tag{10}\]
+
+in the frame (2).5 Here, \(\operatorname{sg}(x)=2\Theta(x)-1\) denotes the sign function and \(\Theta(x)\) is the step function. The MHV tree amplitude can then be written using \(\operatorname{PT}_{\text{cyc}}\) as
+
+Footnote 5: Without fixing a frame, we would take \(\operatorname{sg}_{ij}=\operatorname{sg}([ij]\langle ir\rangle\langle ir\rangle)\), where \(|r\rangle\) is any fixed reference spinor. In \(\mathcal{A}_{n}^{\text{MHV}}\), the difference in choices of \(|r\rangle\) can be absorbed by \(\epsilon\).
+
+\[\mathcal{A}_{n}^{\text{MHV}}=i\langle rs\rangle^{4}\operatorname{PT}_{\text{ cyc}}\delta^{4}\Bigg{(}\sum_{k=1}^{n}p_{k}\Bigg{)}. \tag{11}\]
+
+Away from walls where \(\langle k\ k{+}1\rangle=0\), we may ignore the \(i\epsilon\) prescription and (11) reduces to (8).
+
+It will also be useful to define an "incomplete" or "open chain" Parke-Taylor factor as
+
+\[\operatorname{PT}_{1\cdots n}=\prod_{k=1}^{n-1}\frac{[k,k+1]}{p_{k,k+1}^{2}+i \epsilon}=\prod_{k=1}^{n-1}\frac{1}{z_{k,k+1}{+}i\epsilon\operatorname{sg}_{k,k +1}}. \tag{12}\]
+
+This incomplete factor \(\operatorname{PT}_{1\cdots n}\) is what naturally appears in App. B inside the Berends-Giele recursion as the denominator of the off-shell current with momentum \(p_{1\cdots n}\): the cyclic factor is "opened" because one leg is off-shell.
+
+ Single-minus amplitudes
+
+In this section, we first explain why the standard argument that the single-minus \(n\)-particle tree amplitudes vanish in fact fails when all the external particles become collinear. We then present a recursion relation, derived in App. B, that determines these amplitudes for all \(n\).
+
+### The half-collinear regime
+
+The kinematic locus we call the _half-collinear regime_ is defined by
+
+\[\langle ij\rangle=0\qquad\forall\,i,j\in\{1,\ldots,n\}. \tag{13}\]
+
+In (2,2) signature, this is compatible with nonzero \([ij]\), unlike in Minkowski space.6 In the frame (2), this locus implies all \(z_{ij}=0\) but does not restrict the \(\omega_{i}\) or \(\tilde{z}_{i}\).
+
+Footnote 6: The half-collinear regime also makes sense for complex momenta. We believe single-minus amplitudes also exist with complex momenta; it would be interesting to understand their continuation.
+
+We will now show that single-minus tree amplitudes can be nonzero in the half-collinear regime. This can be demonstrated by exposing the "loophole" in the power-counting argument that single-minus amplitudes vanish. We choose polarization vectors for the \(n\) gluons as in (6)
+
+\[\epsilon_{1}^{-}=\sqrt{2}\frac{|r\rangle\langle 1|}{[r1]},\qquad\epsilon_{a}^{+} =\sqrt{2}\frac{|r\rangle[a]}{\langle ra\rangle}\qquad\text{for $a\geq 2$}, \tag{14}\]
+
+where \(|r]\) and \(|r\rangle\) are arbitrary reference spinors. Now, for generic kinematics, if we choose \(|r\rangle=|1\rangle\), then we find that all the polarization vectors are orthogonal. As such, the amplitude can be nonzero only if they are contracted with momenta in the numerator. Powers of momenta in the numerator appear only from vertices, and there are at most \(n-2\). These are insufficent to contract with all the polarization vectors. Hence, single-minus amplitudes vanish for generic kinematics.
+
+The loophole in the argument is that we cannot choose \(|r\rangle=|1\rangle\) if \(\langle 1a\rangle=0\) for any \(|a\rangle\), as the polarization vectors \(\epsilon_{a}^{+}\) would become singular. Therefore, we cannot conclude that the amplitude vanishes on the locus where \(\langle 1a\rangle=0\). In fact, the single-minus 3-point amplitude (also anti-MHV) is known to have a factor \(\delta(\langle 12\rangle)\delta(\langle 13\rangle)\) restricting to this locus. Moreover, it can be shown by induction that the \(n\)-point amplitude may only be supported when _all_\(\langle ij\rangle=0\).
+
+To express the fact that it is supported in the half-collinear regime, the single-minus tree-level \(n\)-gluon amplitude \(\mathcal{A}_{n}(1^{-},2^{+},\ldots,n^{+})\) can be written as
+
+\[\mathcal{A}_{n} =i^{2-n}\frac{\langle r1\rangle^{n+1}}{\langle r2\rangle\langle r 3\rangle\cdots\langle rn\rangle}A_{1\cdots n}\prod_{a=2}^{n}\delta(\langle 1 a\rangle)\] \[\qquad\times\delta^{2}\Biggl{(}\sum_{i=1}^{n}\langle ri\rangle \tilde{\lambda}_{i}\Biggr{)}. \tag{15}\]
+
+Here, we introduced the _stripped amplitude_\(A_{1\cdots n}\). The \(\delta\)-functions imposing \(\langle 1a\rangle=0\) simply ensure the full amplitude is supported only in the half-collinear regime, while the \(\delta\)-functions in \(\tilde{\lambda}\) enforce the remaining components of momentum conservation. The prefactor ensures that \(\mathcal{A}_{n}\) has the correct little-group scaling for a single-minus amplitude. The collinear \(\delta\)-functions ensure that this prefactor and the \(\tilde{\lambda}\)\(\delta\)-functions are independent of the reference spinor \(|r\rangle\), as long as it is chosen so that \(\langle r1\rangle\neq 0\).
+
+The interest is in the stripped amplitude \(A_{1\cdots n}\), which carries no helicity weight and depends only on kinematics. In the frame (2) and picking \(|r\rangle=(0,1)\), \(A_{1\cdots n}\) is a function only of \(\{\tilde{\lambda}_{i}\}\), and (15) becomes7
+
+Footnote 7: Some readers may find more intuitive an alternative expression, obtained in the frame \(\tilde{\lambda}\to\frac{1}{\sqrt{|\omega|}}\tilde{\lambda},\lambda\to\sqrt{| \omega|}\lambda\), which renders the polarizations (14) dimensionless and gives \(\mathcal{A}_{n}\) scaling as \(\omega^{-n}\):
+
+\[\mathcal{A}_{n}=i^{2-n}\Big{|}\frac{\omega_{1}}{\omega_{2}\omega_{3}\cdots \omega_{n}}\Big{|}A_{1\cdots n}\prod_{a=2}^{n}\delta(z_{1a})\,\delta^{2} \Biggl{(}\sum_{i=1}^{n}\sqrt{|\omega_{i}|}\tilde{\lambda}_{i}\Biggr{)}. \tag{16}\]
+
+We will sometimes use the shorthand
+
+\[\delta_{1\cdots n}=i^{1-n}\prod_{k=1}^{n-1}\delta(z_{k,k+1}) \tag{17}\]
+
+to denote these half-collinear \(\delta\)-functions.
+
+### The recursion relation
+
+The first main result of this paper is the recursion relation presented in (21) below. This relation determines all \(n\)-particle single-minus tree amplitudes. Solving it is equivalent to, but slightly simpler than, summing the Feynman diagrams for these amplitudes.
+
+For any ordered list \(S=(q,\ldots,p)\), we first define the list momentum \(\tilde{\lambda}_{S}=\sum_{i\in S}\tilde{\lambda}_{i}\) using the frame (2).8 We then define the _preamplitude_\(\bar{A}_{S}\) by taking
+
+Footnote 8: In a generic frame, \(\tilde{\lambda}_{S}=\sum_{i\in S}\tilde{\lambda}_{i}(ir)\) for any reference spinor \(|r\rangle\). The dependence of both this expression and the sign functions on \(|r\rangle\) drops out on the support of the collinear \(\delta\)-functions.
+
+\[\bar{A}_{q}=1,\qquad\bar{A}_{qp}=0, \tag{18}\]
+
+when \(|S|=1\) and \(|S|=2\), and extending recursively to \(|S|\geq 3\) via
+
+\[\bar{A}_{q\cdots p}=-\sum_{\text{o.p.}}V_{\tilde{\lambda}_{S_{1}}\cdots\tilde{ \lambda}_{S_{A}}}\,\prod_{a=1}^{A}\bar{A}_{S_{a}}, \tag{19}\]
+
+where the sum is over all ordered partitions of \((q\cdots p)=(S_{1}|S_{2}|\cdots|S_{A})\) into \(A\geq 3\) parts.
+
+[MISSING_PAGE_FAIL:4]
+
+Clearly a more concise formula is needed!
+
+## II Amplitudes in the first region
+
+This section presents the next main result of this paper: a simple formula for the \(n\)-point single-minus amplitudes (21) with partially restricted kinematics within the half-collinear regime.
+
+### Restricted kinematics within the half-collinear regime
+
+We define the kinematic region \(\mathcal{R}_{1}\) by the condition that, with \(\bar{\lambda}_{\dot{\alpha}}=\omega(1,\tilde{z})\), there exists at least one \(\mathsf{SO}(2,2)\) frame in which
+
+\[\omega_{1}<0,\qquad\omega_{a}>0,\qquad a\in\{2,\ldots,n\}. \tag{33}\]
+
+This region is fully consistent with the half-collinear regime where all \(\langle ij\rangle=0\) and further restricts the kinematics within that regime. Unlike in Minkowski signature, we note that in Klein signature, there is no invariant meaning to a particle having positive frequency. Nonetheless, \(\mathcal{R}_{1}\) is \(\mathsf{SO}(2,2)\)-invariant because we only ask that there exists _some_ frame in which (33) holds. Geometrically, it amounts to requiring that there exists some straight line through the origin in \(\mathbb{R}^{2}\) such that \(\bar{\lambda}_{1}\) lies on one side and all other \(\bar{\lambda}_{a}\) lie on the other. \(\mathcal{R}_{1}\) describes a single ingoing self-dual gluon decaying to \(n-1\) outgoing anti-self-dual gluons, where ingoing/outgoing refers to the frame in which the inequalities (33) hold.
+
+Interestingly, we will see that the amplitudes dramatically simplify in \(\mathcal{R}_{1}\), where certain sign functions become independent of the frequencies \(\omega_{k}\). In particular,
+
+\[\mathsf{sg}_{ij}=\mathsf{sg}\,\tilde{z}_{ij},\qquad\mathsf{sg}_{1j}=\mathsf{ sg}\,\tilde{z}_{j1}\qquad\forall\,i,j\geq 2. \tag{34}\]
+
+Note however that the \(\omega_{k}\) cannot be eliminated from expressions such as \(\mathsf{sg}_{2,34}\).
+
+### Concrete examples
+
+In region \(\mathcal{R}_{1}\), using (34), momentum conservation and spinor identities, one may show that the long expressions of the previous section dramatically simplify to
+
+\[A_{123}|_{\mathcal{R}_{1}} =\frac{1}{2}(\mathsf{sg}_{12}+\mathsf{sg}_{23}), \tag{35}\] \[A_{1234}|_{\mathcal{R}_{1}} =\frac{1}{4}(\mathsf{sg}_{12}+\mathsf{sg}_{23})(\mathsf{sg}_{3 4}+\mathsf{sg}_{41}),\] (36) \[A_{12345}|_{\mathcal{R}_{1}} =\frac{1}{8}(\mathsf{sg}_{12}+\mathsf{sg}_{23})\big{(}\mathsf{ sg}_{34}+\mathsf{sg}_{1,23}\big{)}\] (37) \[\qquad\qquad(\mathsf{sg}_{45}+\mathsf{sg}_{51}),\] \[A_{123456}|_{\mathcal{R}_{1}} =\frac{1}{16}(\mathsf{sg}_{12}+\mathsf{sg}_{23})\big{(}\mathsf{ sg}_{34}+\mathsf{sg}_{1,23}\big{)}\] (38) \[\big{(}\mathsf{sg}_{45}+\mathsf{sg}_{1,234}\big{)}(\mathsf{sg}_ {56}+\mathsf{sg}_{61}).\]
+
+This suggests the possibility that there may exist a shorter formula for all \(n\).
+
+### General formula
+
+A conjecture that extends the pattern (35)-(38) to all \(n\)-particle amplitudes in region \(\mathcal{R}_{1}\) is
+
+\[A_{1\cdots n}\big{|}_{\mathcal{R}_{1}}=\frac{1}{2^{n-2}}\prod_{m=2}^{n-1}\big{(} \mathsf{sg}_{m,m+1}+\mathsf{sg}_{1,2\cdots m}\big{)}. \tag{39}\]
+
+How sensible is this guess? Regarding requirements (24)-(28), the region \(\mathcal{R}_{1}\) is clearly not cyclically invariant, as it singles out particle 1. However, we can trivially construct a cyclically invariant answer by using cyclicity to extend (39) to other regions \(\mathcal{R}_{k}\) where only particle \(k\) has \(\omega_{k}<0\). The remaining four conditions, when combined with cyclicity, do impose quite nontrivial constraints within \(\mathcal{R}_{1}\). These constraints are all obeyed by our solution (39). In fact, in this form, it is direct to check the soft theorem (28) in the last label, and with some more work, in any other label but 1.
+
+The simplified form (21) has a simple interpretation: in \(\mathcal{R}_{1}\), each factor is \(\frac{1}{2}(\pm 1\pm 1)\in\{-1,0,1\}\), so \(A_{1\cdots n}|_{\mathcal{R}_{1}}\) is piecewise-constant and jumps across codimension-one walls where the relevant brackets change sign. The product form simply makes those walls explicit.
+
+The rest of this work is devoted to proving that the conjecture (39) is correct. The proof uses ideas from time-ordered perturbation theory and proceeds in three parts. First, one shows that in \(\mathcal{R}_{1}\),
+
+\[V_{\bar{\lambda}_{2}\cdots\bar{\lambda}_{n}}\Big{|}_{\mathcal{R}_{1}}=0, \tag{40}\]
+
+whilst \(\bar{V}_{\bar{\lambda}_{2}\cdots\bar{\lambda}_{n}}\) remains nonzero. Second, one must show that with (40), the recursion (21) collapses to become
+
+\[A_{1\cdots n}\big{|}_{\mathcal{R}_{1}}=\bar{V}_{\bar{\lambda}_{2}\cdots\bar{ \lambda}_{n}}\Big{|}_{\mathcal{R}_{1}}. \tag{41}\]
+
+Finally, one must show that in \(\mathcal{R}_{1}\), \(\bar{V}_{\bar{\lambda}_{2}\cdots\bar{\lambda}_{n}}\) reduces to our final formula (39). We briefly sketch each step below.
+
+Vanishing of \(V\)
+
+We wish to show that within \(\mathcal{R}_{1}\),
+
+\[V_{\tilde{\lambda}_{2}\cdots\tilde{\lambda}_{n}}=0 \tag{42}\]
+
+for \(n\geq 3\). This can be interpreted as a causality condition10 in \(\mathcal{R}_{1}\) in the frame in which (33) holds. Importantly, all the \(\omega\)'s appearing in this expression are positive. This will force at least one of the arguments of the \(\Theta\)-functions to be negative, implying (42). For each cut \(j\), write left- and right-partial sums as
+
+Footnote 10: It is very reminiscent of the largest-time equation in time-ordered perturbation theory [23].
+
+\[\tilde{\lambda}_{L}=\sum_{a=2}^{j}\tilde{\lambda}_{a}=\Omega_{L}( 1,\tilde{z}_{L}), \tag{43}\] \[\tilde{\lambda}_{R}=\sum_{a=j+1}^{n}\tilde{\lambda}_{a}=\Omega_{ R}(1,\tilde{z}_{R}), \tag{44}\]
+
+with \(\Omega_{L,R}>0\) and \(\tilde{z}_{L,R}\) weighted averages of the \(\tilde{z}\)'s on each side. Then
+
+\[\left[\tilde{\lambda}_{R}\tilde{\lambda}_{L}\right] =\Omega_{L}\Omega_{R}\tilde{z}_{R,L}, \tag{45}\] \[\left[\tilde{\lambda}_{j+1}\tilde{\lambda}_{j}\right] =\omega_{j}\omega_{j+1}\tilde{z}_{j+1,j}. \tag{46}\]
+
+Since \(\Omega_{L}\Omega_{R}>0\) and \(\omega_{j}\omega_{j+1}>0\), the sign of the ratio in the \(\Theta\)-factor in (20) is the sign of \(\tilde{z}_{R,L}/\tilde{z}_{j+1,j}\). A weighted-variance identity implies that as \(j\) runs from 2 to \(n\), there must be at least one cut \(j^{\star}\) for which \(\tilde{z}_{R,L}\) has the _same sign_ as the adjacent increment \(\tilde{z}_{j+1,j}\). For that \(j^{\star}\), the ratio is positive, so the corresponding factor \(\Theta(-\text{positive})=0\), and thus the whole product in (20) vanishes.
+
+#### iii.2.2 Collapsing the recursion
+
+We have in fact shown something slightly more general: for _every_ consecutive \(S\subset\{2,\dots,n\}\) with \(|S|\geq 2\),
+
+\[V_{\tilde{\lambda}_{S_{1}}\cdots\tilde{\lambda}_{S_{k}}}=0. \tag{47}\]
+
+Then, from (19), we find that on \(\mathcal{R}_{1}\),
+
+\[\left.\bar{A}_{S}\right|_{\mathcal{R}_{1}}=0, \tag{48}\]
+
+while singletons remain, \(\bar{A}_{i}=1\). This collapses the recursion. Using the cyclicity of the color-ordered amplitude, we may write
+
+\[A_{1\cdots n}=A_{2\cdots n1}. \tag{49}\]
+
+Now apply the recursion (21) to \(A_{2\cdots n1}\), _i.e._, partition the ordered set \((2,3,\dots,n)\). By (48), the only nonzero contribution is the all-singleton partition \((2|3|\cdots|n)\), so
+
+\[A_{2\cdots n1}\Big{|}_{\mathcal{R}_{1}}=-\widehat{\mathrm{PT}}_{\tilde{ \lambda}_{2}\tilde{\lambda}_{3}\cdots\tilde{\lambda}_{n}}\Big{|}_{\mathcal{R} _{1}}. \tag{50}\]
+
+But since \(V_{\tilde{\lambda}_{2}\cdots\tilde{\lambda}_{n}}=0\), we have \(\widehat{\mathrm{PT}}=V-\bar{V}=-\bar{V}\) for this list. Therefore,
+
+\[A_{1\cdots n}\Big{|}_{\mathcal{R}_{1}}=A_{2\cdots n1}\Big{|}_{\mathcal{R}_{1} }=\bar{V}_{\tilde{\lambda}_{2}\cdots\tilde{\lambda}_{n}}. \tag{51}\]
+
+This proves the collapse of the recursion (21) to (41).
+
+#### iii.2.3 Evaluating \(\bar{V}_{\tilde{\lambda}_{2}\cdots\tilde{\lambda}_{n}}\)
+
+Last but not least, we reorganize the vertex in terms of sign functions. Recall that \(\bar{V}_{\tilde{\lambda}_{2}\cdots\tilde{\lambda}_{n}}\) is defined as
+
+\[\bar{V}_{\tilde{\lambda}_{2}\cdots\tilde{\lambda}_{n}}=\prod_{n=2}^{n}\mathrm{ sg}_{m,m+1}\Theta\Bigg{(}\frac{\left[\tilde{\lambda}_{2\cdots m}\tilde{ \lambda}_{m+1\cdots n}\right]}{\left[\tilde{\lambda}_{m}\tilde{\lambda}_{m+1} \right]}\Bigg{)}. \tag{52}\]
+
+By momentum conservation, \(\tilde{\lambda}_{m+1\cdots n}=-\tilde{\lambda}_{1}-\tilde{\lambda}_{2\cdots m}\), and using the antisymmetry of the bracket, (52) becomes
+
+\[\bar{V}_{\tilde{\lambda}_{2}\cdots\tilde{\lambda}_{n}}=\prod_{m=2}^{n-1} \mathrm{sg}_{m,m+1}\Theta\Bigg{(}\frac{\left[\tilde{\lambda}_{1}\tilde{ \lambda}_{2\cdots m}\right]}{\left[\tilde{\lambda}_{m}\tilde{\lambda}_{m+1} \right]}\Bigg{)}. \tag{53}\]
+
+Using the relation between the sg and \(\Theta\) functions, one readily finds that
+
+\[\bar{V}_{\tilde{\lambda}_{2}\cdots\tilde{\lambda}_{n}}=\frac{1}{2^{n-2}}\prod _{m=2}^{n-1}\Bigl{(}\mathrm{sg}_{m,m+1}+\mathrm{sg}\Bigl{(}\left[\tilde{ \lambda}_{1}\tilde{\lambda}_{2\cdots m}\right]\Bigr{)}\Bigr{)}. \tag{54}\]
+
+Combining (51) with (54) recovers exactly our final result (39).
+
+#### iii.2.4 Acknowledgments
+
+We are grateful to Nima Arkani-Hamed, Freddy Cachazo, Juan Maldacena, Mark Spradlin and Anastasia Volovich for useful discussions. AL was supported in part by NSF grant AST-2307888, the NSF CAREER award PHY-2340457, and the Simons Foundation grant SFI-MPS-BH-00012593-09. AG acknowledges the Roger Dashen membership at the IAS, and additional support from DOE grant DE-SC0009988. AS & DS are supported in part by the Simons Collaboration for Celestial Holography. DS is also supported by the STFC (UK) grant ST/X000664/1. AS is supported by the Black Hole Initiative and DOE grant DE-SC/0007870, and is grateful for the hospitality of OpenAI where this project was completed.
+
+## Appendix A The master identity
+
+Consider the well-known identity
+
+\[\bigg{[}\frac{a_{1}}{(b_{2}+i\epsilon)}+\frac{a_{2}}{(b_{1}+i\epsilon)}\bigg{]} \delta(a_{1}b_{1}+a_{2}b_{2})=-\frac{i}{2}[\text{sg}(a_{1})+\text{sg}(a_{2})] \delta(b_{1})\delta(b_{2}), \tag{10}\]
+
+which readily follows from writing \(\frac{1}{b+i\epsilon}=\text{PV}\frac{1}{b}-\frac{i}{2}\delta(b)\), where the \(\delta\)-function is normalized as in (7). In this appendix, we use manipulations from time-ordered perturbation theory to derive a powerful generalization of this identity:
+
+\[\delta\Bigg{(}\!\sum_{k=1}^{n}a_{k}b_{k}\Bigg{)}\sum_{i=1}^{n} \frac{a_{i}}{\prod_{j\neq i}(b_{j}+i\epsilon)}\] \[=\frac{1}{(2i)^{n-1}}\Bigg{[}\sum_{i_{1}}\text{sg}(a_{i_{1}})+ \sum_{i_{1}<i_{2}<i_{3}}\text{sg}(a_{i_{1}}a_{i_{2}}a_{i_{3}})+\sum_{i_{1}< \cdots<i_{5}}\text{sg}(a_{i_{1}}a_{i_{2}}a_{i_{3}}a_{i_{4}}a_{i_{5}})+\ldots \Bigg{]}\prod_{i=1}^{n}\delta(b_{i}). \tag{11}\]
+
+For example, when \(n=3\), this generalizes the identity (10) to
+
+\[\text{LHS}=\delta\Bigg{(}\sum_{i=1}^{3}a_{i}b_{i}\Bigg{)}\bigg{[} \frac{a_{1}}{(b_{2}+i\epsilon)(b_{3}+i\epsilon)}+\frac{a_{2}}{(b_{1}+i \epsilon)(b_{3}+i\epsilon)}+\frac{a_{3}}{(b_{1}+i\epsilon)(b_{2}+i\epsilon)} \bigg{]} \tag{12}\] \[=\text{RHS}=-\frac{1}{4}[\text{sg}(a_{1})+\text{sg}(a_{2})+\text {sg}(a_{3})+\text{sg}(a_{1})\,\text{sg}(a_{2})\,\text{sg}(a_{3})]\delta(b_{ 1})\delta(b_{2})\delta(b_{3}). \tag{13}\]
+
+To establish the generalized identity (11), we prove its Fourier transform, that is, the corresponding identity in the time domain where we may think of the \(b_{i}\) as energies. We then have the following:
+
+\[\int\text{d}^{n}b\,e^{i\sum t_{k}b_{k}}\delta\Bigg{(}\!\sum_{k=1} ^{n}a_{k}b_{k}\Bigg{)}\sum_{i=1}^{n}\frac{a_{i}}{\prod_{j\neq i}(b_{j}+i \epsilon)}\] \[=\sum_{i=1}^{n}\int\text{d}\gamma\int\text{d}^{n}b\,e^{i\sum(t_{ k}-\gamma a_{k})b_{k}}\frac{a_{i}}{\prod_{j\neq i}(b_{j}+i\epsilon)}=(-2\pi i)^{n-1 }\sum_{i=1}^{n}\int_{-\infty}^{\infty}\text{d}\gamma\,\delta(t_{i}-\gamma a_ {i})a_{i}\prod_{j\neq i}\Theta(-t_{j}+\gamma a_{j}) \tag{14}\] \[=(-2\pi i)^{n-1}(2\pi)\int_{-\infty}^{\infty}\text{d}\gamma\sum_ {i=1}^{n}\frac{\partial}{\partial\gamma}\Theta(-t_{i}+\gamma a_{i})\prod_{j \neq i}\Theta(-t_{j}+\gamma a_{j})=(-2\pi i)^{n-1}(2\pi)\Bigg{[}\prod_{i=1}^{n }\Theta(-t_{i}+\gamma a_{i})\Bigg{]}_{\gamma=-\infty}^{\gamma=\infty}\] (15) \[=(-2\pi i)^{n-1}(2\pi)\Bigg{[}\prod_{i=1}^{n}\Theta(a_{i})-\prod_{ i=1}^{n}\Theta(-a_{i})\Bigg{]}. \tag{16}\]
+
+Finally, Fourier transforming in \(t_{i}\) yields
+
+\[\delta\Bigg{(}\!\sum_{k=1}^{n}a_{k}b_{k}\Bigg{)}\sum_{i=1}^{n}\frac{a_{i}}{ \prod_{j\neq i}(b_{j}+i\epsilon)}=i^{1-n}\prod_{i=1}^{n}\Theta(a_{i})\delta(b_ {i})-i^{1-n}\prod_{i=1}^{n}\Theta(-a_{i})\delta(b_{i}), \tag{17}\]
+
+which recovers the master identity after using \(\Theta(x)=\frac{1+\text{sg}(x)}{2}\).
+
+## Appendix B Derivation of recursion relation
+
+This appendix derives the Berends-Giele recursion relation [15] for the off-shell currents in Yang-Mills theory. In turn, this implies a recursion formula for the planar form factors of the theory.
+
+### Berends-Giele Recursion
+
+In QFT, \(n\)-point scattering amplitudes can be computed from form factors \(\mathcal{F}_{S}\) with one leg off-shell and \(n-1\) legs on-shell. For a color-ordered gluon amplitude, the ordering is inherited from the corresponding form factor.
+
+To avoid notational clutter, we have here taken the last particle to be negative helicity (as opposed to the first one in the main text). The final on-shell formula is insensitive to this choice. We thus write
+
+\[\mathcal{A}_{1\cdots n}=\lim_{p_{n}^{2}\to 0}-ip_{n}^{2}\,\mathcal{F}_{1\cdots n-1}\, \,\delta^{4}\!\left(\sum_{i=1}^{n}p_{i}\right),\qquad p_{n}=-\sum_{i=1}^{n-1}p _{i}. \tag{10}\]
+
+These planar coefficients satisfy the Berends-Giele (BG) recursion, equivalent to summing over Feynman diagrams with one leg off-shell. When the rest of the (on-shell) legs are plus-helicity gluons, it is known that this recursion is equal to the one in Self-Dual Yang-Mills theory (SDYM) [16, 24], which reads
+
+\[\mathcal{F}_{1\cdots m}=\frac{1}{p_{1\cdots m}^{2}+i\epsilon}\sum_{j=1}^{m-1} \Bigl{[}\tilde{\lambda}_{1\cdots j}\tilde{\lambda}_{j+1\cdots m}\Bigr{]} \mathcal{F}_{1\cdots j}\,\mathcal{F}_{j+1\cdots m}, \tag{11}\]
+
+where \(p_{1\cdots m}=\sum_{i=1}^{m}p_{i}\) and \(\tilde{\lambda}_{1\cdots m}=\sum_{i=1}^{m}\tilde{\lambda}_{i}\). This is essentially the equation of motion of the theory and determines its classical solutions.
+
+### General form factor
+
+The form factor recursion (11) is solved by means of our two-dimensional preamplitudes \(\bar{A}_{S}\) in (19), by "replacing one vertex by \(\mathrm{PT}\)" where \(\mathrm{PT}\) refers to the incomplete Parke-Taylor factor (12). Let \((S_{1}|\cdots|S_{A})\) be an ordered partition of the word \((1\cdots m)\), and write the block momenta \(K_{a}=\sum_{i\in S_{a}}\tilde{\lambda}_{i}\). We claim the solution to the recursion (11) is
+
+\[\mathcal{F}_{1\cdots m}=\sum_{\text{o.p.}}\mathrm{PT}_{K_{1}\cdots K_{A}}\, \prod_{a=1}^{A}\Big{(}\bar{A}_{S_{a}}\,\delta_{S_{a}}\Big{)}, \tag{12}\]
+
+where the sum is over all possible ordered partitions of \((1\cdots m)\) into \(A\) blocks \(S_{a}\), as well as over the number \(A=1,\ldots,m\) of blocks. As in the main text, \(\delta_{S_{a}}\) denotes the product of \(\delta(z_{i,i+1})\) internal to the block \(S_{a}\).
+
+To see this, we first establish (23), which we quote again here for the benefit of the reader:
+
+\[\mathrm{PT}_{1\cdots n}-\delta_{1\cdots n}\,V_{\tilde{\lambda}_{1}\cdots\tilde {\lambda}_{n}}=\sum_{j=1}^{n-1}\frac{\Bigl{[}\tilde{\lambda}_{1\cdots j} \tilde{\lambda}_{j+1\cdots n}\Bigr{]}}{p_{1\cdots n}^{2}+i\epsilon}\mathrm{PT }_{1\cdots j}\,\mathrm{PT}_{j+1\cdots n}. \tag{13}\]
+
+Away from the half-collinear regime, we have \(\delta_{1\cdots n}=0\), the \(i\epsilon\)'s on the RHS may be neglected, and this identity is a standard algebraic identity for Parke-Taylor factors. The \(i\epsilon\)'s are important in the half-collinear limit and the general identity (13) follows from (10) with the values
+
+\[a_{r}=-\Bigl{[}\tilde{\lambda}_{1\cdots r}\tilde{\lambda}_{r+1\cdots n}\Bigr{]} \prod_{\ell\neq r}\Bigl{[}\tilde{\lambda}_{\ell}\tilde{\lambda}_{\ell+1} \Bigr{]},\qquad b_{r}=p_{r,r+1}^{2}, \tag{14}\]
+
+for \(r=1,\ldots,n-1\), while \(a_{n}=\prod_{\ell}[\ell,\ell+1]\) and \(b_{n}=p_{1\ldots n}^{2}\).
+
+Next, we will verify (12) is a solution by inserting it into the RHS of (11). For each term in the sum over \(j\) in (11), we now have sums over all ordered partitions \((1\cdots j)=(L_{1}|\cdots|L_{B})\) and \((j+1\cdots m)=(R_{1}|\cdots|R_{C})\):
+
+\[\mathcal{F}_{1\cdots m}=\sum_{j=1}^{m-1}\sum_{\text{o.p.}}\frac{ \Bigl{[}\tilde{\lambda}_{1\cdots j}\,\tilde{\lambda}_{j+1\cdots m}\Bigr{]}}{p_ {1\cdots m}^{2}+i\epsilon}\,\mathrm{PT}_{L_{1}L_{2}\cdots L_{B}}\mathrm{PT}_{ R_{1}R_{2}\cdots R_{C}}\\ \times\tilde{A}_{L_{1}}\cdots\tilde{A}_{L_{B}}\tilde{A}_{R_{1}} \cdots\tilde{A}_{R_{C}}\delta_{L_{1}}\cdots\delta_{L_{B}}\delta_{R_{1}}\cdots \delta_{R_{C}}\,, \tag{15}\]
+
+where we have abused notation slightly, denoting both the set and its block momentum by the same letter \(L_{a}\) or \(R_{b}\). Note that \(\tilde{\lambda}_{1\cdots j}=\sum_{k}\tilde{\lambda}_{L_{k}}\) and \(\tilde{\lambda}_{j+1\cdots m}=\sum_{k}\tilde{\lambda}_{R_{k}}\). The second line depends only on the total partition \((S_{1}|\cdots|S_{A})=(L_{1}|\cdots|L_{B}|R_{1}|\cdots|R_{C})\), with \(A=B+C\), and does not know about the separation into "left" and "right". For a fixed such partition, the \(j\)-sum is exactly the PT recursion (13): it produces (i) a PT for the combined partition, and (ii) a contact term \(\delta\,V\).
+
+In equations, we have
+
+\[\mathcal{F}_{1\cdots m} =\sum_{\text{n.t.p.}}\bar{A}_{S_{1}}\cdots\bar{A}_{S_{A}}\delta_{S_{1 }}\cdots\delta_{S_{A}}\!\left(\sum_{B+C=A}\frac{\left[\tilde{\lambda}_{1\cdots j }\,\tilde{\lambda}_{j+1\cdots m}\right]}{p_{1\cdots m}^{2}+i\epsilon}\,\text{PT} _{L_{1}\cdots L_{B}}\text{PT}_{R_{1}\cdots R_{C}}\right) \tag{10}\] \[=\sum_{\text{n.t.p.}}\bar{A}_{S_{1}}\cdots\bar{A}_{S_{A}}\delta_{ S_{1}}\cdots\delta_{S_{A}}\text{PT}_{S_{1}S_{2}\cdots S_{A}}-\delta_{1\cdots m} \sum_{\text{n.t.p.}}\bar{A}_{S_{1}}\cdots\bar{A}_{S_{A}}V_{S_{1}S_{2}\cdots S_ {A}}\] (11) \[=\sum_{\text{n.t.p.}}\bar{A}_{S_{1}}\cdots\bar{A}_{S_{A}}\delta_{ S_{1}}\cdots\delta_{S_{A}}\text{PT}_{S_{1}S_{2}\cdots S_{A}}+\delta_{1\cdots m }\bar{A}_{1\cdots m}, \tag{12}\]
+
+where n.t.p. denotes nontrivial partitions (having more than one block). The PT piece reproduces the nontrivial \(A\)-block contribution on the LHS of (11). The contact piece \(\delta\,V\) precisely stitches blocks together by a \(V\)-vertex, and the resulting sum over nontrivial partitions is the recursion (19) for the preamplitudes. The final term in the third line is the missing 1-term partition, thus recovering (11).
+
+### LSZ Reduction
+
+The single-minus amplitude is obtained by putting the "last" leg on-shell, as in (10). On the support of the collinear \(\delta\)-functions inside each block of the form factor (11), every block momentum \(K_{a}\) is null. The only remaining singular factor is the PT term associated to adjacent channels. The on-shell limit of a PT factor is evaluated using the master identity in App. A, resulting in
+
+\[\lim_{p_{n}^{2}\to 0}p_{n}^{2}\,\text{PT}_{K_{1}\cdots K_{k}}\, \delta^{4}\!\left(\sum_{a=1}^{k}K_{a}+p_{n}\right)=\widehat{\text{PT}}_{K_{1} \cdots K_{k}}\delta_{1\cdots k,n}\delta^{2}\!\left(\sum_{j}\tilde{\lambda}_{j }\right)=(V_{K_{1}\cdots K_{k}}-\bar{V}_{K_{1}\cdots K_{k}})\delta_{1\cdots k,n}\delta^{2}\!\left(\sum_{j}\tilde{\lambda}_{j}\right)\!. \tag{13}\]
+
+After stripping off the universal momentum-conservation support (here, \(\sum_{i=1}^{n}\tilde{\lambda}_{i}=0\), so \(\tilde{\lambda}_{n}=-\sum_{i=1}^{n-1}\tilde{\lambda}_{i}\)), (11) and (13) yield, after some algebra, the final result (21):
+
+\[A_{1\cdots n}=-\sum_{\begin{subarray}{c}(1\cdots n-1)=S_{1}|\ldots|S_{k}\\ k\geq 1\end{subarray}}\widehat{\text{PT}}_{\tilde{\lambda}_{S_{1}}\cdots \tilde{\lambda}_{S_{k}}}\;\prod_{a=1}^{k}\bar{A}_{S_{a}}\,. \tag{14}\]
+
+## References
+
+* (1) T. Aoyama, T. Kinoshita, and M. Nio, "Revised and Improved Value of the QED Tenth-Order Electron Anomalous Magnetic Moment," _Phys. Rev. D_**97** no. 3, (2018) 036001, arXiv:1712.06060 [hep-ph].
+* (2) L. Morel, Z. Yao, P. Clade, and S. Guellati-Khelifa, "Determination of the fine-structure constant with an accuracy of 81 parts per trillion," _Nature_**588** no. 7836, (2020) 61-65.
+* (3) X. Fan, T. G. Myers, B. A. D. Sukra, and G. Gabrielse, "Measurement of the Electron Magnetic Moment," _Phys. Rev. Lett._**130** no. 7, (2023) 071801, arXiv:2209.13084 [physics.atom-ph].
+* (4) L. J. Dixon, "Calculating scattering amplitudes efficiently," in _Theoretical Advanced Study Institute in Elementary Particle Physics (TASI 95): QCD and Beyond_, pp. 539-584. 1, 1996. arXiv:hep-ph/9601359.
+* (5) E. Witten, "Perturbative gauge theory as a string theory in twistor space," _Commun. Math. Phys._**252** (2004) 189-258, arXiv:hep-th/0312171.
+* (6) R. Roiban, M. Spradlin, and A. Volovich, "On the tree level S matrix of Yang-Mills theory," _Phys. Rev. D_**70** (2004) 026009, arXiv:hep-th/0403190.
+* (7) Z. Bern, L. J. Dixon, and V. A. Smirnov, "Iteration of planar amplitudes in maximally supersymmetric Yang-Mills theory at three loops and beyond," _Phys. Rev. D_**72** (2005) 085001, arXiv:hep-th/0505205.
+* (8) R. Britto, F. Cachazo, B. Feng, and E. Witten, "Direct proof of tree-level recursion relation in Yang-Mills theory," _Phys. Rev. Lett._**94** (2005) 181602, arXiv:hep-th/0501052.
+* (9) N. Arkani-Hamed, J. L. Bourjaily, F. Cachazo, A. B. Goncharov, A. Postnikov, and J. Trnka, _Grassmannian Geometry of Scattering Amplitudes_. Cambridge University Press, 4, 2016. arXiv:1212.5605 [hep-th].
+* (10) N. Arkani-Hamed and J. Trnka, "The Amplituhedron," _JHEP_**10** (2014) 030, arXiv:1312.2007 [hep-th].
+* (11) S. J. Parke and T. R. Taylor, "An amplitude for n-gluon scattering," _Phys. Rev. Lett._**56** (1986) 2459-2460.
+* (12) M. T. Grisaru and H. N. Pendleton, "Some Properties of Scattering Amplitudes in Supersymmetric Theories," _Nucl. Phys. B_**124** (1977) 81-92.
+
+* (13) H. Elvang and Y.-t. Huang, "Scattering Amplitudes," arXiv:1308.1697 [hep-th].
+* (14) Z. Bern, L. J. Dixon, D. C. Dunbar, and D. A. Kosower, "One loop n point gauge theory amplitudes, unitarity and collinear limits," _Nucl. Phys. B_**425** (1994) 217-260, arXiv:hep-ph/9403226.
+* (15) F. A. Berends and W. T. Giele, "Recursive Calculations for Processes with n Gluons," _Nucl. Phys. B_**306** (1988) 759-808.
+* helicity QCD multi
+- gluon amplitudes," _Nucl. Phys. B_**484** (1997) 521-537, arXiv:hep-th/9605208.
+* (17) R. S. Ward and R. O. Wells, _Twistor Geometry and Field Theory_. Cambridge University Press, Cambridge, 1990.
+* (18) R. S. Ward, "On self-dual gauge fields," _Physics Letters A_**61** no. 2, (1977) 81-82.
+* (19) M. F. Atiyah, N. J. Hitchin, V. G. Drinfeld, and Y. I. Manin, "Construction of instantons," _Physics Letters A_**65** no. 3, (1978) 185-187.
+* (20) A. Guevara, E. Himwich, M. Pate, and A. Strominger, "Holographic symmetry algebras for gauge theory and gravity," _JHEP_**11** (2021) 152, arXiv:2103.03961 [hep-th].
+* (21) A. Strominger, "\(w_{1+\infty}\) Algebra and the Celestial Sphere: Infinite Towers of Soft Graviton, Photon, and Gluon Symmetries," _Phys. Rev. Lett._**127** no. 22, (2021) 221601, arXiv:2105.14346 [hep-th].
+* (22) N. Arkani-Hamed, F. Cachazo, C. Cheung, and J. Kaplan, "The S-Matrix in Twistor Space," _JHEP_**03** (2010) 110, arXiv:0903.2110 [hep-th].
+* (23) S. Caron-Huot, "Loops and trees," _JHEP_**05** (2011) 080, arXiv:1007.3224 [hep-ph].
+* (24) W. A. Bardeen, "Self-dual yang-mills theory, integrability and multiparton amplitudes," _Progress of Theoretical Physics Supplement_**123** (02, 1996) 1-8. [https://doi.org/10.1143/PTPS.123.1](https://doi.org/10.1143/PTPS.123.1).

@@ -1,0 +1,43 @@
+{
+  "_model": "claude-code (Sonnet 4.6, vision via Read tool)",
+  "2": {
+    "verdict": "nougat", "page": 2, "confidence": "high",
+    "correct_latex": "|i\\rangle=\\lambda_{i}=(1,z_{i}),\\qquad|i]=\\tilde{\\lambda}_{i}=\\omega_{i}(1,\\tilde{z}_{i})",
+    "reasoning": "Second ket on the page is the square bracket |i]; Marker rendered it as |i\\rangle."
+  },
+  "3": {
+    "verdict": "nougat", "page": 2, "confidence": "high",
+    "correct_latex": "\\langle ij\\rangle=\\langle\\lambda_i\\lambda_j\\rangle=\\epsilon_{\\alpha\\beta}\\lambda_i^{\\alpha}\\lambda_j^{\\beta}",
+    "reasoning": "Page shows distinct indices \\lambda_i^\\alpha\\lambda_j^\\beta with undotted (no-tilde) lambdas; Marker repeated index i."
+  },
+  "5": {
+    "verdict": "nougat", "page": 2, "confidence": "high",
+    "correct_latex": "\\langle ij\\rangle=z_{ij},\\qquad[ij]=\\omega_i\\omega_j\\tilde{z}_{ij}",
+    "reasoning": "Subscripts are ij (z_{ij}, \\omega_i\\omega_j\\tilde z_{ij}); Marker read them all as ii."
+  },
+  "14": {
+    "verdict": "marker", "page": 3, "confidence": "high",
+    "correct_latex": "\\epsilon_1^-=\\sqrt{2}\\frac{|r]\\langle 1|}{[r1]},\\qquad\\epsilon_a^+=\\sqrt{2}\\frac{|r\\rangle[a|}{\\langle ra\\rangle}\\qquad\\text{for } a\\ge 2",
+    "reasoning": "First numerator is the square bracket |r]\\langle1| (not |r\\rangle); Marker matches, Nougat used an angle bracket."
+  },
+  "16": {
+    "verdict": "marker", "page": 3, "confidence": "high",
+    "correct_latex": "\\mathcal{A}_n=i^{2-n}A_{1\\cdots n}\\prod_{a=2}^n\\delta(z_{1a})\\,\\delta^2\\!\\left(\\sum_{i=1}^n\\tilde{\\lambda}_i\\right)",
+    "reasoning": "Printed eq (16) is the plain form with no \\omega prefactor or \\sqrt{|\\omega_i|}; Nougat copied the footnote-7 alternative."
+  },
+  "40": {
+    "verdict": "marker", "page": 5, "confidence": "high",
+    "correct_latex": "V_{\\tilde{\\lambda}_2\\cdots\\tilde{\\lambda}_n}\\Big|_{\\mathcal{R}_1}=0",
+    "reasoning": "Each spinor carries a tilde (\\tilde\\lambda); the bar appears on V (\\bar V) in the next line. Nougat put a bar on lambda."
+  },
+  "47": {
+    "verdict": "nougat", "page": 6, "confidence": "high",
+    "correct_latex": "V_{\\tilde{\\lambda}_{S_1}\\cdots\\tilde{\\lambda}_{S_k}}=0",
+    "reasoning": "Subscripts read S_1 \\cdots S_k; Marker garbled them to S_*."
+  },
+  "48": {
+    "verdict": "both_correct", "page": 6, "confidence": "high",
+    "correct_latex": "\\bar{A}_S\\big|_{\\mathcal{R}_1}=0",
+    "reasoning": "Both produce \\bar A_S restricted to R_1; the difference is only the delimiter macro (\\left.\\right| vs \\Big|)."
+  }
+}
