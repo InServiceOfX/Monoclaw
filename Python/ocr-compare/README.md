@@ -32,7 +32,11 @@ COMPARISON.md           head-to-head findings on a real arXiv paper
 requirements/           pinned deps (*.txt) + exact freezes (*.lock.txt)
 scripts/
   setup_envs.sh         build the uv venvs (CUDA torch), configurable locations
-  run_ocr.sh            run marker+nougat on a PDF, then reconcile
+  run_ocr.sh            run marker+nougat on a (small) PDF, then reconcile
+  run_ocr_large.sh      same for BIG PDFs/books — chunked Marker (no OOM) + reconcile
+  marker_chunked.py     Marker driver: models loaded once, page-range chunks, capped VRAM
+  triage_conflicts.py   book-scale conflict triage: auto-resolve the ~95% cosmetic,
+                        rank the few that genuinely need a vision judge
   _paths.sh             shared env/path resolution (storage, weights, CUDA)
   env.sh.example        copy to env.sh to override paths locally
 samples/sample.pdf      10-pg arXiv test paper
@@ -58,6 +62,41 @@ scripts/run_ocr.sh samples/sample.pdf
 #                   --merged out/sample/reconciled/merged.md --outdir out/sample/reconciled
 #    Claude Code: same but --manifest, judge the PNGs, write verdicts.json, then --apply.
 ```
+
+## Large PDFs / books (665-page textbook tested)
+
+`marker_single` builds the whole document in memory and **OOMs on big PDFs**
+(~10 GB RSS killed a 665-page run on a 15 GB box). Use the chunked path instead:
+
+```bash
+# chunked Marker (models loaded once) + Nougat + reconcile, in one go:
+scripts/run_ocr_large.sh /path/to/Book.pdf --out /path/to/Book_dir
+#   -> Book_dir/<stem>.marker.md, Book_dir/nougat_out/<stem>.mmd, Book_dir/reconciled/
+
+# tune for your GPU (defaults fit 8 GB): pages/chunk + batch sizes
+MARKER_CHUNK=16 MARKER_REC_BATCH=8 scripts/run_ocr_large.sh Book.pdf --out Book_dir
+```
+
+A book yields **thousands** of equations and ~hundreds of "conflicts" — but ~95%
+are cosmetic (Nougat plain-TeX vs Marker LaTeX) or Nougat truncations, not real
+disagreements. **Triage before resolving** so you only vision-judge the few that
+matter:
+
+```bash
+scripts/triage_conflicts.py Book_dir/reconciled/equations.json Book_dir/reconciled
+#   -> auto_verdicts.json (cosmetic/garble/misaligned -> Marker backbone, auto)
+#   -> vision_todo.json  (the genuine "same eq, real symbol diff", ranked clearest-first)
+```
+
+Then render strips for the `vision_todo` tags and resolve them (Grok or Claude):
+make an `equations.json` where only those tags are `status:"conflict"`, run
+`resolve.py … --manifest`, judge each `pages/*.png`, write verdicts, merge into
+`auto_verdicts.json`, and `resolve.py … --apply` to emit `resolved.md`.
+
+> Lesson from the Srednicki run: **Nougat is unreliable on long scanned books**
+> (it dropped whole late chapters and truncates), so Marker is the authoritative
+> backbone — most resolutions come out "marker". Nougat's arXiv-trained edge only
+> showed up on the short clean arXiv sample.
 
 ## Storage / weight locations (configurable)
 

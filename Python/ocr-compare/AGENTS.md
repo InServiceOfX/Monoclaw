@@ -16,9 +16,14 @@ scripts/setup_envs.sh                 # builds uv venvs (CUDA torch). Subset: ..
 ## Run
 
 ```bash
+# small PDF (paper):
 scripts/run_ocr.sh PDF [--out DIR] [--only marker|nougat] [--no-reconcile]
+# BIG PDF (book): marker_single OOMs — use the chunked path:
+scripts/run_ocr_large.sh PDF --out DIR        # tune: MARKER_CHUNK, MARKER_REC_BATCH
 # pure-stdlib reconcile only, no venv:
 python3 combine.py NOUGAT.mmd MARKER.md OUTDIR/
+# triage book-scale conflicts before vision-resolving:
+scripts/triage_conflicts.py reconciled/equations.json reconciled/
 ```
 
 ## Hard assumptions
@@ -27,6 +32,9 @@ python3 combine.py NOUGAT.mmd MARKER.md OUTDIR/
   (`CUDA_INDEX`, default cu130), never CPU. Don't add CPU fallbacks.
 - **Open weights run locally**, downloaded once to `OCR_WEIGHTS_DIR`.
 - **8 GB VRAM**: marker and nougat run **sequentially**, not concurrently.
+- **Big PDFs OOM** under `marker_single` (whole-doc in RAM). Always use
+  `marker_chunked.py` / `run_ocr_large.sh` for books. Nougat is **unreliable on
+  long scanned books** (drops whole chapters, truncates) — Marker is the backbone.
 
 ## Conventions
 
