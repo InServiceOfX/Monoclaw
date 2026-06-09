@@ -178,7 +178,8 @@ def write_outputs(eqs, resolutions, merged_path, outdir, model_label):
              f"Model: {model_label}\n",
              "| eq | page | winner | conf | corrected LaTeX |",
              "|----|------|--------|------|-----------------|"]
-    for tag, v in sorted(resolutions.items(), key=lambda x: int(x[0])):
+    _tagkey = lambda t: tuple(int(p) for p in str(t).split("."))  # "1.10" sorts after "1.2"
+    for tag, v in sorted(resolutions.items(), key=lambda x: _tagkey(x[0])):
         latex = v["correct_latex"].replace("|", "\\|")
         lines.append(f"| ({tag}) | {v.get('page','?')} | **{v['verdict']}** | {v['confidence']} | `{latex}` |")
     open(os.path.join(outdir, "resolutions.md"), "w").write("\n".join(lines))
