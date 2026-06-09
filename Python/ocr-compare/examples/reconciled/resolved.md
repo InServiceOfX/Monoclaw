@@ -51,12 +51,12 @@ $$p_{\alpha\dot{\alpha}} = \lambda_{\alpha}\tilde{\lambda}_{\dot{\alpha}},\tag{1
 where  $(\lambda, \tilde{\lambda})$  are *real* spinors in (2,2) Klein signature. As usual in the description of scattering, it is convenient to fix a suitable Lorentz and helicity frame to perform the calculation, which can be restored at the end. With the benefit of hindsight, we write
 
 $$|i\rangle = \lambda_i = (1, z_i), \qquad |i\rangle = \tilde{\lambda}_i = \omega_i(1, \tilde{z}_i), \qquad (2)$$
-<!-- eq (2) ✓ RESOLVED → nougat (high): |i\rangle=\lambda_{i}=(1,z_{i}),\qquad|i]=\tilde{\lambda}_{i}=\omega_{i}(1,\tilde{z}_{i})  [Second ket on the page is the square bracket |i]; Marker rendered it as |i\rangle.] -->
+<!-- eq (2) ✓ RESOLVED → nougat (high): |i\rangle=\lambda_{i}=(1,z_{i}),\qquad|i]=\tilde{\lambda}_{i}=\omega_{i}(1,\tilde{z}_{i})  [Second ket is the square bracket |i], not |i\rangle as Marker has.] -->
 
 with  $z_i$  and  $\tilde{z}_i$  real and independent. We use standard brackets for contracting helicity spinors,
 
 $$\langle ij\rangle = \langle \lambda_i \lambda_j \rangle = \epsilon_{\alpha\beta} \lambda_i^{\alpha} \lambda_i^{\beta}, \tag{3}$$
-<!-- eq (3) ✓ RESOLVED → nougat (high): \langle ij\rangle=\langle\lambda_i\lambda_j\rangle=\epsilon_{\alpha\beta}\lambda_i^{\alpha}\lambda_j^{\beta}  [Page shows distinct indices \lambda_i^\alpha\lambda_j^\beta with undotted (no-tilde) lambdas; Marker repeated index i.] -->
+<!-- eq (3) ✓ RESOLVED → nougat (high): \langle ij\rangle=\langle\lambda_{i}\lambda_{j}\rangle=\epsilon_{\alpha\beta}\lambda_{i}^{\alpha}\lambda_{j}^{\beta}  [Last factor is \lambda_j^\beta (index j); Marker wrongly repeats i.] -->
 
 $$[ij] = \left[\tilde{\lambda}_i \tilde{\lambda}_j\right] = \epsilon_{\dot{\alpha}\dot{\beta}} \tilde{\lambda}_i^{\dot{\alpha}} \tilde{\lambda}_j^{\dot{\beta}}, \tag{4}$$
 <!-- eq (4) ✓ nougat+marker agree -->
@@ -64,7 +64,7 @@ $$[ij] = \left[\tilde{\lambda}_i \tilde{\lambda}_j\right] = \epsilon_{\dot{\alph
 with  $p_{ij}^2 = (p_i + p_j)^2 = \langle ij \rangle [ij]$ . In our parameterization,
 
 $$\langle ij \rangle = z_{ii}, \qquad [ij] = \omega_i \omega_i \tilde{z}_{ii}, \qquad (5)$$
-<!-- eq (5) ✓ RESOLVED → nougat (high): \langle ij\rangle=z_{ij},\qquad[ij]=\omega_i\omega_j\tilde{z}_{ij}  [Subscripts are ij (z_{ij}, \omega_i\omega_j\tilde z_{ij}); Marker read them all as ii.] -->
+<!-- eq (5) ✓ RESOLVED → nougat (high): \langle ij\rangle=z_{ij},\qquad[ij]=\omega_{i}\omega_{j}\tilde{z}_{ij}  [Indices are ij (z_{ij}, \omega_i\omega_j); Marker collapsed all to ii.] -->
 
 where  $z_{ij} \equiv z_i - z_j$  and  $\tilde{z}_{ij} \equiv \tilde{z}_i - \tilde{z}_j$ . We take our polarization vectors to be
 
@@ -130,7 +130,7 @@ In (2,2) signature, this is compatible with nonzero [ij], unlike in Minkowski sp
 We will now show that single-minus tree amplitudes can be nonzero in the half-collinear regime. This can be demonstrated by exposing the "loophole" in the power-counting argument that single-minus amplitudes vanish. We choose polarization vectors for the n gluons as in (6)
 
 $$\epsilon_1^- = \sqrt{2} \frac{|r]\langle 1|}{[r1]}, \qquad \epsilon_a^+ = \sqrt{2} \frac{|r\rangle[a|}{\langle ra\rangle} \qquad \text{for } a \ge 2, \quad (14)$$
-<!-- eq (14) ✓ RESOLVED → marker (high): \epsilon_1^-=\sqrt{2}\frac{|r]\langle 1|}{[r1]},\qquad\epsilon_a^+=\sqrt{2}\frac{|r\rangle[a|}{\langle ra\rangle}\qquad\text{for } a\ge 2  [First numerator is the square bracket |r]\langle1| (not |r\rangle); Marker matches, Nougat used an angle bracket.] -->
+<!-- eq (14) ✓ RESOLVED → both_wrong (high): \epsilon_1^-=\sqrt{2}\,\frac{|r]\langle 1|}{[r1]},\qquad\epsilon_a^+=\sqrt{2}\,\frac{|r\rangle[a]}{\langle ra\rangle}\qquad\text{for }a\ge2  [Page has |r]\langle1| (Marker right) AND |r\rangle[a] (Nougat right); neither candidate gets both.] -->
 
 where |r| and  $|r\rangle$  are arbitrary reference spinors. Now, for generic kinematics, if we choose  $|r\rangle = |1\rangle$ , then we find that all the polarization vectors are orthogonal. As such, the amplitude can be nonzero only if they are contracted with momenta in the numerator. Powers of momenta in the numerator appear only from vertices, and there are at most n-2. These are insufficent to contract with all the polarization vectors. Hence, single-minus amplitudes vanish for generic kinematics.
 
@@ -147,7 +147,7 @@ Here, we introduced the stripped amplitude  $A_{1\cdots n}$ . The  $\delta$ -fun
 The interest is in the stripped amplitude  $A_{1\cdots n}$ , which carries no helicity weight and depends only on kinematics. In the frame (2) and picking  $|r\rangle = (0,1)$ ,  $A_{1\cdots n}$  is a function only of  $\{\tilde{\lambda}_i\}$ , and (15) becomes<sup>7</sup>
 
 $$\mathcal{A}_n = i^{2-n} A_{1\cdots n} \prod_{a=2}^n \delta(z_{1a}) \, \delta^2 \left( \sum_{i=1}^n \tilde{\lambda}_i \right). \tag{16}$$
-<!-- eq (16) ✓ RESOLVED → marker (high): \mathcal{A}_n=i^{2-n}A_{1\cdots n}\prod_{a=2}^n\delta(z_{1a})\,\delta^2\!\left(\sum_{i=1}^n\tilde{\lambda}_i\right)  [Printed eq (16) is the plain form with no \omega prefactor or \sqrt{|\omega_i|}; Nougat copied the footnote-7 alternative.] -->
+<!-- eq (16) ✓ RESOLVED → marker (high): \mathcal{A}_n=i^{2-n}A_{1\cdots n}\prod_{a=2}^{n}\delta(z_{1a})\,\delta^{2}\!\left(\sum_{i=1}^{n}\tilde{\lambda}_{i}\right)  [No \omega prefactor or \sqrt{|\omega_i|}; Nougat hallucinated those extra factors.] -->
 
 We will sometimes use the shorthand
 
@@ -320,7 +320,7 @@ The rest of this work is devoted to proving that the conjecture (39) is correct.
 
 <span id="page-4-8"></span><span id="page-4-7"></span>
 $$V_{\tilde{\lambda}_2 \cdots \tilde{\lambda}_n} \Big|_{\mathcal{R}_1} = 0, \tag{40}$$
-<!-- eq (40) ✓ RESOLVED → marker (high): V_{\tilde{\lambda}_2\cdots\tilde{\lambda}_n}\Big|_{\mathcal{R}_1}=0  [Each spinor carries a tilde (\tilde\lambda); the bar appears on V (\bar V) in the next line. Nougat put a bar on lambda.] -->
+<!-- eq (40) ✓ RESOLVED → marker (high): V_{\tilde{\lambda}_2\cdots\tilde{\lambda}_n}\Big|_{\mathcal{R}_1}=0  [Subscript spinors are tilde (\tilde\lambda); Nougat misread as \bar\lambda.] -->
 
 whilst  $\bar{V}_{\tilde{\lambda}_2 \cdots \tilde{\lambda}_n}$  remains nonzero. Second, one must show that with (40), the recursion (21) collapses to become
 
@@ -361,12 +361,12 @@ Since  $\Omega_L\Omega_R > 0$  and  $\omega_j\omega_{j+1} > 0$ , the sign of the
 We have in fact shown something slightly more general: for *every* consecutive  $S \subset \{2, ..., n\}$  with  $|S| \ge 2$ ,
 
 $$V_{\tilde{\lambda}_{S_*} \cdots \tilde{\lambda}_{S_*}} = 0. \tag{47}$$
-<!-- eq (47) ✓ RESOLVED → nougat (high): V_{\tilde{\lambda}_{S_1}\cdots\tilde{\lambda}_{S_k}}=0  [Subscripts read S_1 \cdots S_k; Marker garbled them to S_*.] -->
+<!-- eq (47) ✓ RESOLVED → nougat (high): V_{\tilde{\lambda}_{S_1}\cdots\tilde{\lambda}_{S_k}}=0  [Subscripts are S_1 and S_k; Marker misread both as S_*.] -->
 
 Then, from (19), we find that on  $\mathcal{R}_1$ ,
 
 $$\bar{A}_S \Big|_{\mathcal{R}_1} = 0, \tag{48}$$
-<!-- eq (48) ✓ RESOLVED → both_correct (high): \bar{A}_S\big|_{\mathcal{R}_1}=0  [Both produce \bar A_S restricted to R_1; the difference is only the delimiter macro (\left.\right| vs \Big|).] -->
+<!-- eq (48) ✓ RESOLVED → both_correct (high): \bar{A}_S\big|_{\mathcal{R}_1}=0  [Identical content; only delimiter sizing (\left.\right| vs \Big|) differs.] -->
 
 while singletons remain,  $\bar{A}_i = 1$ . This collapses the recursion. Using the cyclicity of the color-ordered amplitude, we may write
 

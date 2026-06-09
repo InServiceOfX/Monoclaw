@@ -1,18 +1,12 @@
 {
   "summary": {
-    "agree": 14,
-    "conflict": 8,
-    "marker_only": 11,
-    "nougat_only": 16,
+    "agree": 28,
+    "conflict": 10,
+    "marker_only": 15,
+    "nougat_only": 0,
     "nougat_dropped_ranges": [
-      [
-        20,
-        32
-      ],
-      [
-        36,
-        38
-      ]
+      "20-32",
+      "36-38"
     ],
     "nougat_repeated": {
       "10": 4,
@@ -63,9 +57,9 @@
     },
     {
       "tag": "6",
-      "status": "nougat_only",
+      "status": "conflict",
       "nougat": "\\epsilon_{j}^{-}=\\sqrt{2}\\frac{|r\\rangle[j]}{[rj]},\\qquad\\epsilon_{k}^{+}= \\sqrt{2}\\frac{|k\\rangle[r]}{\\langle rk\\rangle}, \\tag{6}",
-      "marker": null,
+      "marker": "\\epsilon_j^- = \\sqrt{2} \\frac{|r]\\langle j|}{[rj]}, \\qquad \\epsilon_k^+ = \\sqrt{2} \\frac{|k]\\langle r|}{\\langle rk \\rangle},",
       "nougat_repeated": 0
     },
     {
@@ -91,30 +85,30 @@
     },
     {
       "tag": "10",
-      "status": "nougat_only",
+      "status": "agree",
       "nougat": "\\operatorname{sg}_{ij}=\\operatorname{sg}\\Bigl{(}[\\tilde{\\lambda}_{i}\\tilde{ \\lambda}_{j}]\\Bigr{)} \\tag{10}",
-      "marker": null,
+      "marker": "sg_{ij} = sg([\\tilde{\\lambda}_i \\tilde{\\lambda}_j])",
       "nougat_repeated": 4
     },
     {
       "tag": "11",
-      "status": "nougat_only",
+      "status": "agree",
       "nougat": "\\mathcal{A}_{n}^{\\text{MHV}}=i\\langle rs\\rangle^{4}\\operatorname{PT}_{\\text{ cyc}}\\delta^{4}\\Bigg{(}\\sum_{k=1}^{n}p_{k}\\Bigg{)}. \\tag{11}",
-      "marker": null,
+      "marker": "\\mathcal{A}_n^{\\text{MHV}} = i \\langle rs \\rangle^4 \\operatorname{PT}_{\\text{cyc}} \\delta^4 \\left( \\sum_{k=1}^n p_k \\right).",
       "nougat_repeated": 3
     },
     {
       "tag": "12",
-      "status": "nougat_only",
+      "status": "agree",
       "nougat": "\\operatorname{PT}_{1\\cdots n}=\\prod_{k=1}^{n-1}\\frac{[k,k+1]}{p_{k,k+1}^{2}+i \\epsilon}=\\prod_{k=1}^{n-1}\\frac{1}{z_{k,k+1}{+}i\\epsilon\\operatorname{sg}_{k,k +1}}. \\tag{12}",
-      "marker": null,
+      "marker": "PT_{1\\cdots n} = \\prod_{k=1}^{n-1} \\frac{[k, k+1]}{p_{k,k+1}^2 + i\\epsilon} = \\prod_{k=1}^{n-1} \\frac{1}{z_{k,k+1} + i\\epsilon \\operatorname{sg}_{k,k+1}}.",
       "nougat_repeated": 4
     },
     {
       "tag": "13",
-      "status": "nougat_only",
+      "status": "agree",
       "nougat": "\\langle ij\\rangle=0\\qquad\\forall\\,i,j\\in\\{1,\\ldots,n\\}. \\tag{13}",
-      "marker": null,
+      "marker": "\\langle ij \\rangle = 0 \\qquad \\forall i, j \\in \\{1, \\dots, n\\}.",
       "nougat_repeated": 4
     },
     {
@@ -140,9 +134,9 @@
     },
     {
       "tag": "17",
-      "status": "nougat_only",
+      "status": "agree",
       "nougat": "\\delta_{1\\cdots n}=i^{1-n}\\prod_{k=1}^{n-1}\\delta(z_{k,k+1}) \\tag{17}",
-      "marker": null,
+      "marker": "\\delta_{1\\cdots n} = i^{1-n} \\prod_{k=1}^{n-1} \\delta(z_{k,k+1})",
       "nougat_repeated": 2
     },
     {
@@ -237,31 +231,59 @@
       "nougat_repeated": 0
     },
     {
+      "tag": "31",
+      "status": "marker_only",
+      "nougat": null,
+      "marker": "A_{12345} = \\frac{1}{4} \\left[ sg_{51} sg_{34} sg_{2,34} + sg_{51} sg_{23} sg_{23,4} - sg_{51} sg_{2,34} sg_{23,4} + sg_{45} sg_{23} sg_{1,23} + sg_{45} sg_{12} sg_{12,3} - sg_{45} sg_{1,23} sg_{12,3} + sg_{51} sg_{45} sg_{12,34} + sg_{12} sg_{34} sg_{12,34} \\right],",
+      "nougat_repeated": 0
+    },
+    {
       "tag": "33",
-      "status": "nougat_only",
+      "status": "agree",
       "nougat": "\\omega_{1}<0,\\qquad\\omega_{a}>0,\\qquad a\\in\\{2,\\ldots,n\\}. \\tag{33}",
-      "marker": null,
+      "marker": "\\omega_1 < 0, \\qquad \\omega_a > 0, \\qquad a \\in \\{2, \\dots, n\\}.",
       "nougat_repeated": 0
     },
     {
       "tag": "34",
-      "status": "nougat_only",
+      "status": "agree",
       "nougat": "\\mathsf{sg}_{ij}=\\mathsf{sg}\\,\\tilde{z}_{ij},\\qquad\\mathsf{sg}_{1j}=\\mathsf{ sg}\\,\\tilde{z}_{j1}\\qquad\\forall\\,i,j\\geq 2. \\tag{34}",
-      "marker": null,
+      "marker": "\\operatorname{sg}_{ij} = \\operatorname{sg} \\tilde{z}_{ij}, \\quad \\operatorname{sg}_{1j} = \\operatorname{sg} \\tilde{z}_{j1} \\quad \\forall i, j \\ge 2.",
       "nougat_repeated": 0
     },
     {
       "tag": "35",
-      "status": "nougat_only",
+      "status": "agree",
       "nougat": "A_{123}|_{\\mathcal{R}_{1}} =\\frac{1}{2}(\\mathsf{sg}_{12}+\\mathsf{sg}_{23}), \\tag{35}",
-      "marker": null,
+      "marker": "A_{123}|_{\\mathcal{R}_1} = \\frac{1}{2}(\\mathrm{sg}_{12} + \\mathrm{sg}_{23}),",
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "36",
+      "status": "marker_only",
+      "nougat": null,
+      "marker": "A_{1234}|_{\\mathcal{R}_1} = \\frac{1}{4}(\\mathrm{sg}_{12} + \\mathrm{sg}_{23})(\\mathrm{sg}_{34} + \\mathrm{sg}_{41}),",
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "37",
+      "status": "marker_only",
+      "nougat": null,
+      "marker": "(sg_{45} + sg_{54}).",
+      "nougat_repeated": 0
+    },
+    {
+      "tag": "38",
+      "status": "marker_only",
+      "nougat": null,
+      "marker": "A_{123456}|_{\\mathcal{R}_1} = \\frac{1}{16} (sg_{12} + sg_{23}) (sg_{34} + sg_{1,23})",
       "nougat_repeated": 0
     },
     {
       "tag": "39",
-      "status": "nougat_only",
+      "status": "agree",
       "nougat": "A_{1\\cdots n}\\big{|}_{\\mathcal{R}_{1}}=\\frac{1}{2^{n-2}}\\prod_{m=2}^{n-1}\\big{(} \\mathsf{sg}_{m,m+1}+\\mathsf{sg}_{1,2\\cdots m}\\big{)}. \\tag{39}",
-      "marker": null,
+      "marker": "A_{1\\cdots n}\\big|_{\\mathcal{R}_1} = \\frac{1}{2^{n-2}} \\prod_{m=2}^{n-1} (\\operatorname{sg}_{m,m+1} + \\operatorname{sg}_{1,2\\cdots m}).",
       "nougat_repeated": 0
     },
     {
@@ -273,9 +295,9 @@
     },
     {
       "tag": "41",
-      "status": "nougat_only",
+      "status": "conflict",
       "nougat": "A_{1\\cdots n}\\big{|}_{\\mathcal{R}_{1}}=\\bar{V}_{\\bar{\\lambda}_{2}\\cdots\\bar{ \\lambda}_{n}}\\Big{|}_{\\mathcal{R}_{1}}. \\tag{41}",
-      "marker": null,
+      "marker": "A_{1\\cdots n}\\big|_{\\mathcal{R}_1} = \\bar{V}_{\\tilde{\\lambda}_2\\cdots\\tilde{\\lambda}_n}\\Big|_{\\mathcal{R}_1}.",
       "nougat_repeated": 0
     },
     {
@@ -336,37 +358,37 @@
     },
     {
       "tag": "50",
-      "status": "nougat_only",
+      "status": "agree",
       "nougat": "A_{2\\cdots n1}\\Big{|}_{\\mathcal{R}_{1}}=-\\widehat{\\mathrm{PT}}_{\\tilde{ \\lambda}_{2}\\tilde{\\lambda}_{3}\\cdots\\tilde{\\lambda}_{n}}\\Big{|}_{\\mathcal{R} _{1}}. \\tag{50}",
-      "marker": null,
+      "marker": "A_{2\\cdots n1}\\Big|_{\\mathcal{R}_1} = -\\widehat{PT}_{\\tilde{\\lambda}_2\\tilde{\\lambda}_3\\cdots\\tilde{\\lambda}_n}\\Big|_{\\mathcal{R}_1}.",
       "nougat_repeated": 0
     },
     {
       "tag": "51",
-      "status": "nougat_only",
+      "status": "agree",
       "nougat": "A_{1\\cdots n}\\Big{|}_{\\mathcal{R}_{1}}=A_{2\\cdots n1}\\Big{|}_{\\mathcal{R}_{1} }=\\bar{V}_{\\tilde{\\lambda}_{2}\\cdots\\tilde{\\lambda}_{n}}. \\tag{51}",
-      "marker": null,
+      "marker": "A_{1\\cdots n}\\Big|_{\\mathcal{R}_1} = A_{2\\cdots n1}\\Big|_{\\mathcal{R}_1} = \\bar{V}_{\\tilde{\\lambda}_2\\cdots\\tilde{\\lambda}_n}.",
       "nougat_repeated": 0
     },
     {
       "tag": "52",
-      "status": "nougat_only",
+      "status": "agree",
       "nougat": "\\bar{V}_{\\tilde{\\lambda}_{2}\\cdots\\tilde{\\lambda}_{n}}=\\prod_{n=2}^{n}\\mathrm{ sg}_{m,m+1}\\Theta\\Bigg{(}\\frac{\\left[\\tilde{\\lambda}_{2\\cdots m}\\tilde{ \\lambda}_{m+1\\cdots n}\\right]}{\\left[\\tilde{\\lambda}_{m}\\tilde{\\lambda}_{m+1} \\right]}\\Bigg{)}. \\tag{52}",
-      "marker": null,
+      "marker": "\\bar{V}_{\\tilde{\\lambda}_2 \\dots \\tilde{\\lambda}_n} = \\prod_{n=2}^n \\operatorname{sg}_{m,m+1} \\Theta\\left(\\frac{\\left[\\tilde{\\lambda}_2 \\dots m \\tilde{\\lambda}_{m+1 \\dots n}\\right]}{\\left[\\tilde{\\lambda}_m \\tilde{\\lambda}_{m+1}\\right]}\\right).",
       "nougat_repeated": 0
     },
     {
       "tag": "53",
-      "status": "nougat_only",
+      "status": "agree",
       "nougat": "\\bar{V}_{\\tilde{\\lambda}_{2}\\cdots\\tilde{\\lambda}_{n}}=\\prod_{m=2}^{n-1} \\mathrm{sg}_{m,m+1}\\Theta\\Bigg{(}\\frac{\\left[\\tilde{\\lambda}_{1}\\tilde{ \\lambda}_{2\\cdots m}\\right]}{\\left[\\tilde{\\lambda}_{m}\\tilde{\\lambda}_{m+1} \\right]}\\Bigg{)}. \\tag{53}",
-      "marker": null,
+      "marker": "\\bar{V}_{\\tilde{\\lambda}_{2}\\cdots\\tilde{\\lambda}_{n}} = \\prod_{m=2}^{n-1} \\operatorname{sg}_{m,m+1} \\Theta\\left(\\frac{\\left[\\tilde{\\lambda}_{1}\\tilde{\\lambda}_{2}\\cdots m\\right]}{\\left[\\tilde{\\lambda}_{m}\\tilde{\\lambda}_{m+1}\\right]}\\right).",
       "nougat_repeated": 0
     },
     {
       "tag": "54",
-      "status": "nougat_only",
+      "status": "agree",
       "nougat": "\\bar{V}_{\\tilde{\\lambda}_{2}\\cdots\\tilde{\\lambda}_{n}}=\\frac{1}{2^{n-2}}\\prod _{m=2}^{n-1}\\Bigl{(}\\mathrm{sg}_{m,m+1}+\\mathrm{sg}\\Bigl{(}\\left[\\tilde{ \\lambda}_{1}\\tilde{\\lambda}_{2\\cdots m}\\right]\\Bigr{)}\\Bigr{)}. \\tag{54}",
-      "marker": null,
+      "marker": "\\bar{V}_{\\tilde{\\lambda}_2 \\dots \\tilde{\\lambda}_n} = \\frac{1}{2^{n-2}} \\prod_{m=2}^{n-1} \\left( \\operatorname{sg}_{m,m+1} + \\operatorname{sg}\\left( \\left[ \\tilde{\\lambda}_1 \\tilde{\\lambda}_2 \\dots m \\right] \\right) \\right).",
       "nougat_repeated": 0
     }
   ]

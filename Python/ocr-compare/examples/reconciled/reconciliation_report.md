@@ -1,11 +1,11 @@
 # OCR Reconciliation Report
 
 - Nougat equations (tagged): 55
-- Marker equations (tagged): 33
-- **Agree (both match): 14**
-- **Conflict (need review): 8**
-- Marker-only (Nougat dropped): 11
-- Nougat-only (Marker missed numbering): 16
+- Marker equations (tagged): 53
+- **Agree (both match): 28**
+- **Conflict (need review): 10**
+- Marker-only (Nougat dropped): 15
+- Nougat-only (Marker missed numbering): 0
 - ⚠️ **Nougat tag-sequence gaps (likely dropped pages): 20-32, 36-38**
 - ⚠️ **Nougat repeated equations: (10)×4, (11)×3, (12)×4, (13)×4, (14)×4, (15)×2, (16)×2, (17)×2**
 
@@ -23,6 +23,10 @@
 - **nougat:** `\langle ij\rangle=z_{ij},\qquad[ij]=\omega_{i}\omega_{j}\tilde{z}_{ij}, \tag{5}`
 - **marker:** `\langle ij \rangle = z_{ii}, \qquad [ij] = \omega_i \omega_i \tilde{z}_{ii}, \qquad (5)`
 
+### eq (6)
+- **nougat:** `\epsilon_{j}^{-}=\sqrt{2}\frac{|r\rangle[j]}{[rj]},\qquad\epsilon_{k}^{+}= \sqrt{2}\frac{|k\rangle[r]}{\langle rk\rangle}, \tag{6}`
+- **marker:** `\epsilon_j^- = \sqrt{2} \frac{|r]\langle j|}{[rj]}, \qquad \epsilon_k^+ = \sqrt{2} \frac{|k]\langle r|}{\langle rk \rangle},`
+
 ### eq (14)
 - **nougat:** `\epsilon_{1}^{-}=\sqrt{2}\frac{|r\rangle\langle 1|}{[r1]},\qquad\epsilon_{a}^{+} =\sqrt{2}\frac{|r\rangle[a]}{\langle ra\rangle}\qquad\text{for $a\geq 2$}, \tag{14}`
 - **marker:** `\epsilon_1^- = \sqrt{2} \frac{|r]\langle 1|}{[r1]}, \qquad \epsilon_a^+ = \sqrt{2} \frac{|r\rangle[a|}{\langle ra\rangle} \qquad \text{for } a \ge 2, \quad (14)`
@@ -34,6 +38,10 @@
 ### eq (40)
 - **nougat:** `V_{\bar{\lambda}_{2}\cdots\bar{\lambda}_{n}}\Big{|}_{\mathcal{R}_{1}}=0, \tag{40}`
 - **marker:** `V_{\tilde{\lambda}_2 \cdots \tilde{\lambda}_n} \Big|_{\mathcal{R}_1} = 0, \tag{40}`
+
+### eq (41)
+- **nougat:** `A_{1\cdots n}\big{|}_{\mathcal{R}_{1}}=\bar{V}_{\bar{\lambda}_{2}\cdots\bar{ \lambda}_{n}}\Big{|}_{\mathcal{R}_{1}}. \tag{41}`
+- **marker:** `A_{1\cdots n}\big|_{\mathcal{R}_1} = \bar{V}_{\tilde{\lambda}_2\cdots\tilde{\lambda}_n}\Big|_{\mathcal{R}_1}.`
 
 ### eq (47)
 - **nougat:** `V_{\tilde{\lambda}_{S_{1}}\cdots\tilde{\lambda}_{S_{k}}}=0. \tag{47}`
@@ -57,3 +65,7 @@
 - (28) `\lim_{\omega_n \to 0} A_{1\cdots n} = \frac{1}{2} (\operatorname{sg}_{n-1,n} + \operatorname{sg}_{n1}) A_{1\cdots n-1}. \tag{28}`
 - (29) `A_{123} = sg_{12}, (29)`
 - (30) `A_{1234} = \frac{1}{2} (sg_{23} sg_{41} + sg_{12} sg_{34}); \tag{30}`
+- (31) `A_{12345} = \frac{1}{4} \left[ sg_{51} sg_{34} sg_{2,34} + sg_{51} sg_{23} sg_{23,4} - sg_{51} sg_{2,34} sg_{23,4} + sg_{45} sg_{23} sg_{1,23} + sg_{45} sg_{12} sg_{12,3} - sg_{45} sg_{1,23} sg_{12,3} + sg_{51} sg_{45} sg_{12,34} + sg_{12} sg_{34} sg_{12,34} \right],`
+- (36) `A_{1234}|_{\mathcal{R}_1} = \frac{1}{4}(\mathrm{sg}_{12} + \mathrm{sg}_{23})(\mathrm{sg}_{34} + \mathrm{sg}_{41}),`
+- (37) `(sg_{45} + sg_{54}).`
+- (38) `A_{123456}|_{\mathcal{R}_1} = \frac{1}{16} (sg_{12} + sg_{23}) (sg_{34} + sg_{1,23})`

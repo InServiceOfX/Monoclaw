@@ -1,43 +1,33 @@
 {
-  "_model": "claude-code (Sonnet 4.6, vision via Read tool)",
-  "2": {
-    "verdict": "nougat", "page": 2, "confidence": "high",
-    "correct_latex": "|i\\rangle=\\lambda_{i}=(1,z_{i}),\\qquad|i]=\\tilde{\\lambda}_{i}=\\omega_{i}(1,\\tilde{z}_{i})",
-    "reasoning": "Second ket on the page is the square bracket |i]; Marker rendered it as |i\\rangle."
-  },
-  "3": {
-    "verdict": "nougat", "page": 2, "confidence": "high",
-    "correct_latex": "\\langle ij\\rangle=\\langle\\lambda_i\\lambda_j\\rangle=\\epsilon_{\\alpha\\beta}\\lambda_i^{\\alpha}\\lambda_j^{\\beta}",
-    "reasoning": "Page shows distinct indices \\lambda_i^\\alpha\\lambda_j^\\beta with undotted (no-tilde) lambdas; Marker repeated index i."
-  },
-  "5": {
-    "verdict": "nougat", "page": 2, "confidence": "high",
-    "correct_latex": "\\langle ij\\rangle=z_{ij},\\qquad[ij]=\\omega_i\\omega_j\\tilde{z}_{ij}",
-    "reasoning": "Subscripts are ij (z_{ij}, \\omega_i\\omega_j\\tilde z_{ij}); Marker read them all as ii."
-  },
-  "14": {
-    "verdict": "marker", "page": 3, "confidence": "high",
-    "correct_latex": "\\epsilon_1^-=\\sqrt{2}\\frac{|r]\\langle 1|}{[r1]},\\qquad\\epsilon_a^+=\\sqrt{2}\\frac{|r\\rangle[a|}{\\langle ra\\rangle}\\qquad\\text{for } a\\ge 2",
-    "reasoning": "First numerator is the square bracket |r]\\langle1| (not |r\\rangle); Marker matches, Nougat used an angle bracket."
-  },
-  "16": {
-    "verdict": "marker", "page": 3, "confidence": "high",
-    "correct_latex": "\\mathcal{A}_n=i^{2-n}A_{1\\cdots n}\\prod_{a=2}^n\\delta(z_{1a})\\,\\delta^2\\!\\left(\\sum_{i=1}^n\\tilde{\\lambda}_i\\right)",
-    "reasoning": "Printed eq (16) is the plain form with no \\omega prefactor or \\sqrt{|\\omega_i|}; Nougat copied the footnote-7 alternative."
-  },
-  "40": {
-    "verdict": "marker", "page": 5, "confidence": "high",
-    "correct_latex": "V_{\\tilde{\\lambda}_2\\cdots\\tilde{\\lambda}_n}\\Big|_{\\mathcal{R}_1}=0",
-    "reasoning": "Each spinor carries a tilde (\\tilde\\lambda); the bar appears on V (\\bar V) in the next line. Nougat put a bar on lambda."
-  },
-  "47": {
-    "verdict": "nougat", "page": 6, "confidence": "high",
-    "correct_latex": "V_{\\tilde{\\lambda}_{S_1}\\cdots\\tilde{\\lambda}_{S_k}}=0",
-    "reasoning": "Subscripts read S_1 \\cdots S_k; Marker garbled them to S_*."
-  },
-  "48": {
-    "verdict": "both_correct", "page": 6, "confidence": "high",
-    "correct_latex": "\\bar{A}_S\\big|_{\\mathcal{R}_1}=0",
-    "reasoning": "Both produce \\bar A_S restricted to R_1; the difference is only the delimiter macro (\\left.\\right| vs \\Big|)."
-  }
+  "_model": "claude-code (opus-4.8, vision)",
+  "2": {"verdict": "nougat", "page": 2, "confidence": "high",
+        "correct_latex": "|i\\rangle=\\lambda_{i}=(1,z_{i}),\\qquad|i]=\\tilde{\\lambda}_{i}=\\omega_{i}(1,\\tilde{z}_{i})",
+        "reasoning": "Second ket is the square bracket |i], not |i\\rangle as Marker has."},
+  "3": {"verdict": "nougat", "page": 2, "confidence": "high",
+        "correct_latex": "\\langle ij\\rangle=\\langle\\lambda_{i}\\lambda_{j}\\rangle=\\epsilon_{\\alpha\\beta}\\lambda_{i}^{\\alpha}\\lambda_{j}^{\\beta}",
+        "reasoning": "Last factor is \\lambda_j^\\beta (index j); Marker wrongly repeats i."},
+  "5": {"verdict": "nougat", "page": 2, "confidence": "high",
+        "correct_latex": "\\langle ij\\rangle=z_{ij},\\qquad[ij]=\\omega_{i}\\omega_{j}\\tilde{z}_{ij}",
+        "reasoning": "Indices are ij (z_{ij}, \\omega_i\\omega_j); Marker collapsed all to ii."},
+  "6": {"verdict": "marker", "page": 2, "confidence": "high",
+        "correct_latex": "\\epsilon_j^-=\\sqrt{2}\\,\\frac{|r]\\langle j|}{[rj]},\\qquad\\epsilon_k^+=\\sqrt{2}\\,\\frac{|k]\\langle r|}{\\langle rk\\rangle}",
+        "reasoning": "Numerators use |r]\\langle j| and |k]\\langle r|; Nougat flipped the bracket types."},
+  "14": {"verdict": "both_wrong", "page": 3, "confidence": "high",
+         "correct_latex": "\\epsilon_1^-=\\sqrt{2}\\,\\frac{|r]\\langle 1|}{[r1]},\\qquad\\epsilon_a^+=\\sqrt{2}\\,\\frac{|r\\rangle[a]}{\\langle ra\\rangle}\\qquad\\text{for }a\\ge2",
+         "reasoning": "Page has |r]\\langle1| (Marker right) AND |r\\rangle[a] (Nougat right); neither candidate gets both."},
+  "16": {"verdict": "marker", "page": 3, "confidence": "high",
+         "correct_latex": "\\mathcal{A}_n=i^{2-n}A_{1\\cdots n}\\prod_{a=2}^{n}\\delta(z_{1a})\\,\\delta^{2}\\!\\left(\\sum_{i=1}^{n}\\tilde{\\lambda}_{i}\\right)",
+         "reasoning": "No \\omega prefactor or \\sqrt{|\\omega_i|}; Nougat hallucinated those extra factors."},
+  "40": {"verdict": "marker", "page": 5, "confidence": "high",
+         "correct_latex": "V_{\\tilde{\\lambda}_2\\cdots\\tilde{\\lambda}_n}\\Big|_{\\mathcal{R}_1}=0",
+         "reasoning": "Subscript spinors are tilde (\\tilde\\lambda); Nougat misread as \\bar\\lambda."},
+  "41": {"verdict": "marker", "page": 5, "confidence": "high",
+         "correct_latex": "A_{1\\cdots n}\\big|_{\\mathcal{R}_1}=\\bar{V}_{\\tilde{\\lambda}_2\\cdots\\tilde{\\lambda}_n}\\Big|_{\\mathcal{R}_1}",
+         "reasoning": "Subscript spinors are tilde; Nougat misread as \\bar\\lambda."},
+  "47": {"verdict": "nougat", "page": 6, "confidence": "high",
+         "correct_latex": "V_{\\tilde{\\lambda}_{S_1}\\cdots\\tilde{\\lambda}_{S_k}}=0",
+         "reasoning": "Subscripts are S_1 and S_k; Marker misread both as S_*."},
+  "48": {"verdict": "both_correct", "page": 6, "confidence": "high",
+         "correct_latex": "\\bar{A}_S\\big|_{\\mathcal{R}_1}=0",
+         "reasoning": "Identical content; only delimiter sizing (\\left.\\right| vs \\Big|) differs."}
 }
