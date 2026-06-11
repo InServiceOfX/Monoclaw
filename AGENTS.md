@@ -12,7 +12,21 @@ Python/       — Python projects (Poetry) and scripts
 Rust/         — Rust crates (Cargo)
 JavaScript/   — Web/frontend projects (Vite, React)
 Deployments/  — Docker configs, scripts, LLM serving infrastructure
+docs/         — Reference docs for agent/harness engineering patterns
 ```
+
+## Agent Loop & Harness Engineering
+
+If you are working on or improving how agents are designed, looped, or instructed
+in this repo (or any Ernest repo), read:
+
+- `docs/agent-loops/README.md` — entry point, one-sentence summary
+- `docs/agent-loops/harness-engineering-research.md` — full context: the why,
+  the evidence (OpenAI 1M LOC, Anthropic C compiler), key repos and papers
+- `docs/agent-loops/harness-implementation-guide.md` — concrete patterns with
+  working code: AGENTS.md ratchet, linter rules, post-edit hooks, spec.md
+- `docs/agent-loops/harness-for-this-repo.md` — what Ernest's repos already
+  have, what's missing, and the recommended build order
 
 ## Orientation Protocol (run this every session)
 
