@@ -24,7 +24,36 @@ scripts/run_ocr_large.sh PDF --out DIR        # tune: MARKER_CHUNK, MARKER_REC_B
 python3 combine.py NOUGAT.mmd MARKER.md OUTDIR/
 # triage book-scale conflicts before vision-resolving:
 scripts/triage_conflicts.py reconciled/equations.json reconciled/
+# vision-resolve the tier4 conflicts (render strips, then judge — see below):
+venvs/venv-resolve/bin/python resolve.py --pdf BOOK.pdf --eqs tier4.json \
+    --merged reconciled/merged.md --outdir reconciled/ --manifest
 ```
+
+## Vision-judging at book scale
+
+`resolve.py --manifest` renders each conflict to a strip at `scale=5.0`
+(~2161px wide). Don't feed those strips to an image-reading judge one-per-call or
+several-at-once: judges commonly **reject multi-image requests whose dimensions
+approach ~2000px** ("many-image" limit), so the naive "read each `pages/*.png`"
+loop stalls. A single *tall* image loads fine, so batch them:
+
+```bash
+# stack ~6 strips into one <=1500px-wide sheet each (tag burned into a header):
+venvs/venv-resolve/bin/python scripts/build_sheets.py reconciled/ 6
+# -> reconciled/sheets/sheet_NNN.png + reconciled/sheets_meta/sheet_NNN.json
+# read ONE sheet per call, compare nougat vs marker against the printed eq, then:
+scripts/record_verdicts.py reconciled/ batch.json   # appends to verdicts.json
+# when neither candidate is right, pass an explicit "latex" override in batch.json
+# finally, merge with auto_verdicts and apply:
+venvs/venv-resolve/bin/python resolve.py --eqs reconciled/equations.json \
+    --merged reconciled/merged.md --outdir reconciled/ --apply combined_verdicts.json
+```
+
+`--apply` rebuilds `resolved.md` fresh from `merged.md` and resolves ONLY the tags
+in the verdicts file passed — so apply the **union** of `auto_verdicts.json` +
+`verdicts.json`, not the vision pass alone. `merged.md` carries inline
+`⚠ CONFLICT` markers for the subset of conflicts that align to the Marker
+backbone; the rest are still resolved in `equations_resolved.json` (the contract).
 
 ## Hard assumptions
 

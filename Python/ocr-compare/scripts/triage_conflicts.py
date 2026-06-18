@@ -19,7 +19,9 @@ Writes (next to equations.json):
 Then render strips + judge tier4:
   # make an equations.json where only tier4 tags are 'conflict', then:
   resolve.py --pdf BOOK.pdf --eqs <that>.json --merged merged.md --outdir DIR --manifest
-  # read each pages/*.png, write verdicts, merge into auto_verdicts.json, resolve.py --apply
+  # batch strips into tall sheets (image judges reject multi-image reqs ~2000px):
+  build_sheets.py DIR 6   # read sheets/, then record_verdicts.py DIR batch.json
+  # finally apply the union of auto_verdicts.json + verdicts.json: resolve.py --apply
 
 Usage: triage_conflicts.py equations.json OUTDIR  [pure stdlib + combine.py]
 """

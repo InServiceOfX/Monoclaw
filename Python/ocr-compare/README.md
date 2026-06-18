@@ -90,8 +90,24 @@ scripts/triage_conflicts.py Book_dir/reconciled/equations.json Book_dir/reconcil
 
 Then render strips for the `vision_todo` tags and resolve them (Grok or Claude):
 make an `equations.json` where only those tags are `status:"conflict"`, run
-`resolve.py … --manifest`, judge each `pages/*.png`, write verdicts, merge into
+`resolve.py … --manifest`, judge the strips, write verdicts, merge into
 `auto_verdicts.json`, and `resolve.py … --apply` to emit `resolved.md`.
+
+For a **Claude Code judge**, don't read `pages/*.png` one-by-one — the strips are
+~2161px wide and image judges reject multi-image requests near ~2000px. Batch
+them into tall single-image contact sheets first:
+
+```bash
+scripts/build_sheets.py Book_dir/reconciled 6      # 6 strips/sheet, tag in header
+#   -> reconciled/sheets/sheet_NNN.png + sheets_meta/sheet_NNN.json
+# read one sheet per call, then record each batch of decisions:
+scripts/record_verdicts.py Book_dir/reconciled batch.json   # appends verdicts.json
+```
+
+`--apply` resolves only the tags in the file you pass and rebuilds `resolved.md`
+from `merged.md`, so apply the **union** of `auto_verdicts.json` + `verdicts.json`.
+`equations_resolved.json` is the complete contract; `resolved.md` only shows inline
+`⚠ CONFLICT`→`✓ RESOLVED` for conflicts that align to the Marker backbone.
 
 > Lesson from the Srednicki run: **Nougat is unreliable on long scanned books**
 > (it dropped whole late chapters and truncates), so Marker is the authoritative
