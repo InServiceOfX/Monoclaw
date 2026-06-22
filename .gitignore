@@ -229,6 +229,10 @@ dist/
 Deployments/Scripts/llama-cpp-server-macos/config.yml
 Deployments/Scripts/llama-cpp-server-macos/profiles/*.yml
 
+# Blender — auto-backup files (Blender writes .blend1 on every save; git tracks history)
+*.blend1
+*.blend2
+
 # macOS Finder noise
 .DS_Store
 **/.DS_Store
