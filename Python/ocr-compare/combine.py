@@ -18,11 +18,12 @@ Pure stdlib. Usage:
 import sys, re, json, os
 from collections import defaultdict, Counter
 
-# Equation numbers come in two flavors:
-#   - arXiv preprints: flat integers, e.g. \tag{12}        -> "12"
-#   - textbooks (e.g. Srednicki QFT): chapter.eq, \tag{2.1} -> "2.1"
-# This capture group accepts both; _tagkey sorts them correctly.
-_TAG = r"([0-9]+(?:\.[0-9]+)?)"
+# Equation numbers come in several flavors:
+#   - arXiv preprints: flat integers, e.g. \tag{12}              -> "12"
+#   - textbooks (e.g. Srednicki QFT): chapter.eq, \tag{2.1}      -> "2.1"
+#   - textbooks (e.g. Sidi Spacecraft): chapter.section.eq, \tag{2.1.2} -> "2.1.2"
+# This capture group accepts all three (up to 3 dotted parts); _tagkey sorts them.
+_TAG = r"([0-9]+(?:\.[0-9]+){0,2})"
 
 def _tagkey(t):
     """Sort key so '1.2' < '1.10' < '2.1' and bare ints still order naturally."""
@@ -51,7 +52,7 @@ def _norm(latex: str) -> str:
     operators) count as conflicts — font/sizing/spacing/punctuation do not."""
     s = latex
     s = re.sub(r"\\tag\{[^}]*\}", "", s)                 # \tag{N} / \tag{N.M}
-    s = re.sub(r"\(\d+(?:\.\d+)?\)\s*$", "", s)          # trailing (N) / (N.M)
+    s = re.sub(r"\(\d+(?:\.\d+){0,2}\)\s*$", "", s)      # trailing (N) / (N.M) / (N.M.K)
     s = re.sub(r"\\(?:phantom|hspace|vspace|label|qquad)\{[^}]*\}", "", s)
     s = re.sub(r"\\[dtc]frac", r"\\frac", s)             # tfrac/dfrac/cfrac -> frac
     s = re.sub(r"\\(?:cdots|ldots|dotsb|dotsc|dotsm|dotsi)", r"\\dots", s)  # all ellipses
