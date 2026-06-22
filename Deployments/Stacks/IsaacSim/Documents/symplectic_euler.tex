@@ -1,0 +1,456 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{mathtools}
+\usepackage{bm}
+\usepackage{hyperref}
+\usepackage{cleveref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+
+% ── Theorem environments ──────────────────────────────────────────────────────
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+
+% ── Notation shortcuts ────────────────────────────────────────────────────────
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\dd}{\,\mathrm{d}}
+\newcommand{\pderiv}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\ddt}{\frac{\mathrm{d}}{\mathrm{d}t}}
+\newcommand{\bq}{\mathbf{q}}
+\newcommand{\bp}{\mathbf{p}}
+\newcommand{\bv}{\mathbf{v}}
+\newcommand{\bF}{\mathbf{F}}
+\newcommand{\J}{\mathbf{J}}          % Jacobian
+\newcommand{\Omg}{\boldsymbol{\Omega}} % symplectic matrix
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  citecolor=blue,
+  urlcolor=blue,
+  pdftitle={Symplectic Euler Integration},
+  pdfauthor={Ernest Yeung},
+}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\title{%
+  \textbf{Symplectic Euler Integration}\\[4pt]
+  \large From Hamiltonian Mechanics to Real-Time Physics Simulation
+}
+\author{Ernest Yeung}
+\date{June 2026}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\bigskip
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Introduction}
+
+Physics engines such as NVIDIA PhysX (used inside Isaac Sim) must integrate
+Newton's equations of motion millions of times per second at a fixed timestep
+$h$.  Naive application of the simplest numerical integrator---explicit
+(forward) Euler---causes energy to grow without bound, producing bodies that
+accelerate spontaneously.  The standard remedy is the \emph{symplectic Euler}
+(also called \emph{semi-implicit Euler}) method, which is the unique first-order
+scheme that exactly preserves the geometric structure underlying Hamiltonian
+mechanics.
+
+This note derives that structure from first principles, proves that explicit
+Euler breaks it while symplectic Euler preserves it, connects the method to
+the classical generating-function theory of canonical transformations, and works
+out the exact discrete free-fall formula that emerges---the formula used to
+validate the PhysX integrator in the Starship IsaacSim test suite (see
+\texttt{tests/test\_t1\_free\_fall.py}).
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Hamiltonian Mechanics and the Symplectic Form}
+
+\subsection{Phase Space and Hamilton's Equations}
+
+Let $q \in \R^n$ denote generalised coordinates and $p \in \R^n$ the
+conjugate momenta.  The pair $(q, p)$ lives in the \emph{phase space}
+$T^*Q \cong \R^{2n}$.  Given a Hamiltonian $H : T^*Q \to \R$, the equations
+of motion are
+\begin{equation}\label{eq:hamilton}
+  \dot{q} = \pderiv{H}{p}, \qquad
+  \dot{p} = -\pderiv{H}{q}.
+\end{equation}
+These can be written compactly as $\dot{z} = \Omg^{-1} \nabla H(z)$, where
+$z = (q, p)^{\top}$ and
+\begin{equation}\label{eq:symplectic_matrix}
+  \Omg =
+  \begin{pmatrix} 0 & I_n \\ -I_n & 0 \end{pmatrix}
+  \in \R^{2n \times 2n}
+\end{equation}
+is the \emph{standard symplectic matrix} (satisfying
+$\Omg^{\top} = -\Omg$, $\Omg^2 = -I$).
+
+\subsection{The Symplectic 2-Form}
+
+On $T^*Q$ there is a canonical closed, non-degenerate 2-form
+\begin{equation}\label{eq:2form}
+  \omega = \sum_{i=1}^n \dd q_i \wedge \dd p_i.
+\end{equation}
+In coordinates, a linear map $\Phi : \R^{2n} \to \R^{2n}$ with matrix $M$
+is called \emph{symplectic} if it preserves $\omega$:
+\begin{equation}\label{eq:symplectic_condition}
+  M^{\top} \Omg\, M = \Omg.
+\end{equation}
+For $n=1$ this reduces to $\det(M) = 1$, i.e., the map preserves oriented
+area in the $(q, p)$-plane.
+
+\subsection{Liouville's Theorem}
+
+\begin{theorem}[Liouville]
+  The flow $\varphi_t$ of a Hamiltonian system \eqref{eq:hamilton} is
+  symplectic for all $t$: $(\varphi_t)^* \omega = \omega$.  In particular it
+  preserves the $2n$-dimensional phase-space volume $\dd q\, \dd p$.
+\end{theorem}
+
+\begin{proof}[Sketch]
+  Differentiating $M(t) = D\varphi_t(z_0)$ along the flow and using
+  $\dot{M} = JM$ where $J = \Omg^{-1} D^2 H$ is the linearised vector field
+  gives $\frac{\dd}{\dd t}(M^{\top}\Omg M) = 0$, so $M^{\top}\Omg M$ is
+  constant.  At $t=0$, $M(0) = I$ and $I^{\top}\Omg I = \Omg$, proving the
+  claim for all $t$.
+\end{proof}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Explicit Euler: Not Symplectic}
+
+\subsection{The Algorithm}
+
+For a particle of mass $m$ with Hamiltonian
+$H = \tfrac{p^2}{2m} + V(q)$ (one degree of freedom, $n=1$), Hamilton's
+equations are
+\begin{equation}
+  \dot{q} = \frac{p}{m}, \qquad \dot{p} = F(q) \coloneqq -V'(q).
+\end{equation}
+The \textbf{explicit (forward) Euler} discretisation uses state values from
+step $n$ to advance to step $n+1$:
+\begin{align}
+  p_{n+1} &= p_n + h\, F(q_n), \label{eq:euler_p}\\
+  q_{n+1} &= q_n + \frac{h}{m}\, p_n. \label{eq:euler_q}
+\end{align}
+Both updates use the \emph{old} values $(q_n, p_n)$.
+
+\subsection{Jacobian and Failure of Symplecticity}
+
+The Jacobian of the map $(q_n, p_n) \mapsto (q_{n+1}, p_{n+1})$ is
+\begin{equation}\label{eq:euler_jacobian}
+  \J_{\mathrm{expl}} =
+  \begin{pmatrix}
+    \partial q_{n+1}/\partial q_n & \partial q_{n+1}/\partial p_n \\
+    \partial p_{n+1}/\partial q_n & \partial p_{n+1}/\partial p_n
+  \end{pmatrix}
+  =
+  \begin{pmatrix}
+    1 & h/m \\
+    h F'(q_n) & 1
+  \end{pmatrix}.
+\end{equation}
+Its determinant is
+\begin{equation}\label{eq:euler_det}
+  \det(\J_{\mathrm{expl}}) = 1 - \frac{h^2}{m} F'(q_n).
+\end{equation}
+For any non-trivial potential ($F' \neq 0$) this differs from 1, so explicit
+Euler \emph{does not} satisfy the symplectic condition
+\eqref{eq:symplectic_condition}.
+
+\paragraph{Consequence.}
+For a harmonic oscillator with $F(q) = -kq$ (spring constant $k > 0$),
+$F'(q) = -k$, giving
+\[
+  \det(\J_{\mathrm{expl}}) = 1 + \frac{h^2 k}{m} > 1.
+\]
+Each step \emph{expands} phase-space area by the factor
+$1 + h^2 k/m > 1$, which compounds over $N$ steps to
+$(1 + h^2 k/m)^N \to \infty$.  This corresponds to spurious energy growth
+that makes explicit Euler numerically unstable for oscillatory systems at
+any fixed $h > 0$.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Symplectic Euler: Preserving the Structure}
+
+\subsection{The Algorithm}
+
+The \textbf{symplectic (semi-implicit) Euler} method updates momentum first
+using the old position, then updates position using the \emph{new} momentum:
+\begin{align}
+  p_{n+1} &= p_n + h\, F(q_n), \label{eq:symp_p}\\
+  q_{n+1} &= q_n + \frac{h}{m}\, p_{n+1}. \label{eq:symp_q}
+\end{align}
+The only difference from \eqref{eq:euler_p}--\eqref{eq:euler_q} is that
+\eqref{eq:symp_q} uses $p_{n+1}$ rather than $p_n$.
+
+\subsection{Jacobian and Proof of Symplecticity}
+
+Substituting \eqref{eq:symp_p} into \eqref{eq:symp_q}:
+\[
+  q_{n+1} = q_n + \frac{h}{m}(p_n + hF(q_n))
+           = q_n + \frac{h}{m}p_n + \frac{h^2}{m}F(q_n).
+\]
+The Jacobian is therefore
+\begin{equation}\label{eq:symp_jacobian}
+  \J_{\mathrm{symp}} =
+  \begin{pmatrix}
+    1 + \dfrac{h^2}{m}F'(q_n) & \dfrac{h}{m} \\[8pt]
+    h F'(q_n) & 1
+  \end{pmatrix}.
+\end{equation}
+
+\begin{proposition}\label{prop:symplectic}
+  The map \eqref{eq:symp_p}--\eqref{eq:symp_q} is symplectic, i.e.,
+  $\J_{\mathrm{symp}}^{\top}\Omg\,\J_{\mathrm{symp}} = \Omg$ (equivalently,
+  $\det(\J_{\mathrm{symp}}) = 1$).
+\end{proposition}
+
+\begin{proof}
+  Let $\alpha = h^2 F'(q_n)/m$, $\beta = h/m$, $\gamma = h F'(q_n)$,
+  so $\alpha = \beta\gamma$.  Then
+  \[
+    \J_{\mathrm{symp}} =
+    \begin{pmatrix} 1+\alpha & \beta \\ \gamma & 1 \end{pmatrix}.
+  \]
+  We verify the symplectic identity with $\Omg = \bigl(\begin{smallmatrix}0 &
+  1 \\ -1 & 0\end{smallmatrix}\bigr)$:
+  \[
+    \J^{\top}\Omg\J
+    = \begin{pmatrix} 1+\alpha & \gamma \\ \beta & 1 \end{pmatrix}
+      \begin{pmatrix} 0 & 1 \\ -1 & 0 \end{pmatrix}
+      \begin{pmatrix} 1+\alpha & \beta \\ \gamma & 1 \end{pmatrix}.
+  \]
+  First factor on the right:
+  \[
+    \begin{pmatrix} 1+\alpha & \gamma \\ \beta & 1 \end{pmatrix}
+    \begin{pmatrix} 0 & 1 \\ -1 & 0 \end{pmatrix}
+    =
+    \begin{pmatrix} -\gamma & 1+\alpha \\ -1 & \beta \end{pmatrix}.
+  \]
+  Then:
+  \begin{align*}
+    \J^{\top}\Omg\J
+    &=
+    \begin{pmatrix} -\gamma & 1+\alpha \\ -1 & \beta \end{pmatrix}
+    \begin{pmatrix} 1+\alpha & \beta \\ \gamma & 1 \end{pmatrix} \\
+    &=
+    \begin{pmatrix}
+      -\gamma(1+\alpha) + (1+\alpha)\gamma & -\gamma\beta + (1+\alpha) \\
+      -(1+\alpha) + \beta\gamma & -\beta + \beta
+    \end{pmatrix} \\
+    &=
+    \begin{pmatrix}
+      0 & 1 + \alpha - \gamma\beta \\
+      \beta\gamma - 1 - \alpha & 0
+    \end{pmatrix}.
+  \end{align*}
+  Since $\alpha = \beta\gamma$:
+  \[
+    1 + \alpha - \gamma\beta = 1 + \beta\gamma - \gamma\beta = 1,\quad
+    \beta\gamma - 1 - \alpha = \beta\gamma - 1 - \beta\gamma = -1.
+  \]
+  Therefore $\J^{\top}\Omg\J = \bigl(\begin{smallmatrix}0 & 1 \\ -1 &
+  0\end{smallmatrix}\bigr) = \Omg$. \qed
+\end{proof}
+
+\noindent The key cancellation $\alpha = \beta\gamma$ is the algebraic
+fingerprint of using $p_{n+1}$ in the position update: it makes the
+off-diagonal contributions to $\det$ cancel exactly.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Derivation from the Generating-Function Theory}
+
+\subsection{Type-2 Generating Functions}
+
+Canonical transformation theory \cite{Goldstein2002} classifies
+symplectomorphisms by the type of mixed-variable generating function
+$S_k$ used to define them.  A \emph{Type-2 generating function}
+$S_2(q, P)$ of old position $q$ and new momentum $P$ generates the
+transformation via
+\begin{equation}\label{eq:F2_relations}
+  p = \pderiv{S_2}{q},\qquad Q = \pderiv{S_2}{P},
+\end{equation}
+and any $S_2$ satisfying these relations produces a canonical (symplectic)
+map $(q, p) \mapsto (Q, P)$ by construction \cite{Hairer2006}.
+
+\subsection{Symplectic Euler from a Type-2 Function}
+
+Choose the generating function
+\begin{equation}\label{eq:S2}
+  S_2(q_n, p_{n+1}) = q_n \cdot p_{n+1} + h\, H(q_n, p_{n+1}).
+\end{equation}
+For $H = p^2/(2m) + V(q)$ this becomes
+\[
+  S_2(q_n, p_{n+1}) = q_n\, p_{n+1} + h\!\left[\frac{p_{n+1}^2}{2m} + V(q_n)\right].
+\]
+Applying \eqref{eq:F2_relations} with $q \leftarrow q_n$, $P \leftarrow p_{n+1}$,
+$p \leftarrow p_n$, $Q \leftarrow q_{n+1}$:
+\begin{align}
+  p_n &= \pderiv{S_2}{q_n} = p_{n+1} + h\, V'(q_n)
+       = p_{n+1} - h\, F(q_n),
+  \label{eq:gen_p}\\
+  q_{n+1} &= \pderiv{S_2}{p_{n+1}} = q_n + \frac{h}{m}\, p_{n+1}.
+  \label{eq:gen_q}
+\end{align}
+Solving \eqref{eq:gen_p} for $p_{n+1}$:
+\[
+  p_{n+1} = p_n + h\, F(q_n),
+\]
+which is exactly \eqref{eq:symp_p}.  Substituting into \eqref{eq:gen_q}
+recovers \eqref{eq:symp_q}.  Since every transformation generated by a
+Type-2 function is canonical (it satisfies \eqref{eq:symplectic_condition}
+by construction of the generating-function formalism), this provides an
+independent proof of \cref{prop:symplectic} and reveals the \emph{origin}
+of the method: symplectic Euler is the degree-1 truncation in $h$ of the
+exact flow map, approximated via $S_2$.
+
+\begin{remark}
+  The identity $S_2(q, P) = qP$ generates the identity transformation.
+  Adding $hH(q,P)$ as a correction gives a first-order approximation to the
+  exact flow, but one that \emph{exactly} preserves the symplectic structure
+  at every $h > 0$.
+\end{remark}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Modified Hamiltonian and Bounded Energy Error}
+
+A symplectic integrator does not conserve $H$ exactly; instead it exactly
+conserves a \emph{modified Hamiltonian} $\tilde H$ close to $H$
+\cite{Hairer2006,Leimkuhler2004}:
+\begin{equation}\label{eq:modified_H}
+  \tilde H(q,p) = H(q,p) + \frac{h}{2m}\,p\,V'(q) + \mathcal{O}(h^2).
+\end{equation}
+This is the key distinction from non-symplectic methods:
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Explicit Euler}: energy error grows \emph{monotonically} as
+    $(1+h^2 k/m)^N$ --- unbounded.
+  \item \textbf{Symplectic Euler}: energy error oscillates around a constant
+    of order $\mathcal{O}(h)$, bounded for all time.
+\end{itemize}
+The $\mathcal{O}(h)$ offset between $H$ and $\tilde H$ is why T1 sees an
+energy drift of $6\times 10^{-4}$ (bounded, not growing).
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Exact Discrete Solution: Free Fall}
+
+\subsection{Derivation}
+
+For vertical free fall $H = p^2/(2m) + mgz$, $F = -mg$, the symplectic
+Euler update becomes
+\begin{align}
+  v_{n+1} &= v_n - g h, \label{eq:ff_v}\\
+  z_{n+1} &= z_n + h\, v_{n+1} = z_n + h(v_n - gh). \label{eq:ff_z}
+\end{align}
+where $v_n = p_n/m$.  Telescoping \eqref{eq:ff_v}:
+\begin{equation}\label{eq:vn}
+  v_n = v_0 - n g h.
+\end{equation}
+Telescoping \eqref{eq:ff_z}:
+\begin{align}
+  z_n &= z_0 + h \sum_{k=1}^{n} v_k
+       = z_0 + h \sum_{k=1}^{n}(v_0 - k g h) \notag\\
+      &= z_0 + n v_0 h - g h^2 \sum_{k=1}^{n} k
+       = z_0 + n v_0 h - g h^2 \cdot \frac{n(n+1)}{2}. \label{eq:zn}
+\end{align}
+Setting $t = nh$ so that $n = t/h$:
+\begin{equation}\label{eq:zn_t}
+  \boxed{z(t) = z_0 + v_0 t - \tfrac{1}{2} g\, t\,(t + h).}
+\end{equation}
+
+\subsection{Comparison with Continuous Theory}
+
+The continuous solution is $z_{\mathrm{cont}}(t) = z_0 + v_0 t -
+\frac{1}{2}gt^2$.  Expanding \eqref{eq:zn_t}:
+\[
+  z(t) = z_{\mathrm{cont}}(t) - \frac{gh}{2}\,t.
+\]
+The discrete solution lags the continuous one by $\frac{1}{2}ght$, which is
+$\mathcal{O}(h)$ at each instant---confirming first-order accuracy.  At
+$t = 3\,\mathrm{s}$ and $h = 1/240\,\mathrm{s}$ (PhysX default), the lag is
+$\frac{1}{2}\times 9.81 \times \frac{1}{240} \times 3 \approx 0.061\,\mathrm{m}$,
+which exceeds the test tolerance of $0.01\,\mathrm{m}$ if the wrong
+(continuous) formula is used for comparison.  Using \eqref{eq:zn_t}
+reduces the residual to $< 10^{-4}\,\mathrm{m}$ (the test observes
+$0.0001\,\mathrm{m}$).
+
+\begin{table}[h]
+  \centering
+  \begin{tabular}{lcc}
+    \toprule
+    & Position formula & Area-preserving?\\
+    \midrule
+    Explicit Euler   & $z_0 + v_0 t - \frac{1}{2}g t^2$ & No\\
+    Symplectic Euler & $z_0 + v_0 t - \frac{1}{2}g\,t(t+h)$ & Yes\\
+    Continuous       & $z_0 + v_0 t - \frac{1}{2}g t^2$  & (exact)\\
+    \bottomrule
+  \end{tabular}
+  \caption{Free-fall position formulas for $n = t/h$ steps.}
+\end{table}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Summary}
+
+The chain of equivalences is:
+\[
+  \underbrace{\text{Type-2 generating function}}_{\text{canonical transformation}}
+  \;\Rightarrow\;
+  \underbrace{\text{symplectic map}}_{\J^{\top}\Omg\J = \Omg}
+  \;\Rightarrow\;
+  \underbrace{\text{area-preserving}}_{\det \J = 1}
+  \;\Rightarrow\;
+  \underbrace{\text{bounded energy error}}_{\tilde H = \text{const}}.
+\]
+The one-line algorithmic change---replace $p_n$ with $p_{n+1}$ in the
+position update---makes $\alpha = \beta\gamma$ cancel, flips an expanding
+map to an area-preserving one, and gives PhysX the energy stability it needs
+for real-time simulation.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\begin{thebibliography}{9}
+
+\bibitem{Hairer2006}
+E.~Hairer, C.~Lubich, and G.~Wanner,
+\textit{Geometric Numerical Integration: Structure-Preserving Algorithms for
+Ordinary Differential Equations}, 2nd~ed.,
+Springer Series in Computational Mathematics, vol.~31.
+Springer, Berlin, 2006.
+Chapter~VI covers symplectic integration; generating functions appear in
+\S~VI.5.
+
+\bibitem{Leimkuhler2004}
+B.~Leimkuhler and S.~Reich,
+\textit{Simulating Hamiltonian Dynamics}.
+Cambridge Monographs on Applied and Computational Mathematics, vol.~14.
+Cambridge University Press, Cambridge, 2004.
+
+\bibitem{Goldstein2002}
+H.~Goldstein, C.~Poole, and J.~Safko,
+\textit{Classical Mechanics}, 3rd~ed.
+Addison-Wesley, San Francisco, 2002.
+Generating functions of canonical transformations: Chapter~9.
+
+\bibitem{Lubich2006chap}
+E.~Hairer, G.~Wanner, and C.~Lubich,
+``Chapter~VI\@: Symplectic Integration of Hamiltonian Systems,''
+lecture notes, Universit\"{a}t T\"{u}bingen, 2006.
+Available: \url{https://na.uni-tuebingen.de/~lubich/chap6.pdf}.
+
+\bibitem{Brorson2024}
+S.~Brorson,
+``Symplectic integrators,''
+in \textit{Numerically Solving Ordinary Differential Equations},
+Mathematics LibreTexts, 2024.
+Available: \url{https://math.libretexts.org/Bookshelves/Differential_Equations/Numerically_Solving_Ordinary_Differential_Equations_(Brorson)/01:_Chapters/1.07:_Symplectic_integrators}.
+
+\end{thebibliography}
+
+\end{document}
