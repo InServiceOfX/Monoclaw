@@ -14,6 +14,10 @@ Run:
 import sys
 import math
 sys.path.insert(0, "/isaac-sim/tests")
+# SimulationApp hardcodes --/rtx/materialDb/syncLoads=True in its CLI args.
+# Without a nucleus server this causes a ~30-min connection-timeout stall.
+# Appending False overrides it (last arg wins in carb's config resolution).
+sys.argv += ["--/rtx/materialDb/syncLoads=False", "--/rtx/hydra/materialSyncLoads=False"]
 
 from isaacsim import SimulationApp
 app = SimulationApp({"headless": True, "anti_aliasing": 0,

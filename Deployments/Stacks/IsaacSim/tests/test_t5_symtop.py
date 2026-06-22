@@ -23,6 +23,7 @@ Run:
 import sys
 import math
 sys.path.insert(0, "/isaac-sim/tests")
+sys.argv += ["--/rtx/materialDb/syncLoads=False", "--/rtx/hydra/materialSyncLoads=False"]
 
 from isaacsim import SimulationApp
 app = SimulationApp({"headless": True, "anti_aliasing": 0,

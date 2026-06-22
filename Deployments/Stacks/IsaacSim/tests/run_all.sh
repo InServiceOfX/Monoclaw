@@ -56,16 +56,26 @@ for test in "${TESTS[@]}"; do
     echo "══════════════════════════════════════════════════"
     echo "  Running: $name"
     echo "══════════════════════════════════════════════════"
+    # Capture output while still streaming it to the terminal.
+    # Isaac Sim's python.sh can exit 0 even on unhandled Python exceptions, so we
+    # also require the explicit "PASS" sentinel in stdout to guard against false
+    # positives (e.g. ModuleNotFoundError at import time swallowed by python.sh).
+    TMPOUT=$(mktemp)
     set +e
-    docker compose run --rm --entrypoint "$PYTHON" isaac "$TEST_DIR/$test"
-    CODE=$?
+    docker compose run --rm --entrypoint "$PYTHON" isaac "$TEST_DIR/$test" 2>&1 | tee "$TMPOUT"
+    CODE=${PIPESTATUS[0]}
     set -e
-    if [ "$CODE" -eq 0 ]; then
+    if [ "$CODE" -eq 0 ] && grep -q " PASS" "$TMPOUT"; then
         PASS=$((PASS+1))
     else
         FAIL=$((FAIL+1))
-        ERRORS+=("$name (exit $CODE)")
+        if [ "$CODE" -eq 0 ]; then
+            ERRORS+=("$name (exit 0 but no PASS sentinel — likely import error)")
+        else
+            ERRORS+=("$name (exit $CODE)")
+        fi
     fi
+    rm -f "$TMPOUT"
 done
 
 echo ""
