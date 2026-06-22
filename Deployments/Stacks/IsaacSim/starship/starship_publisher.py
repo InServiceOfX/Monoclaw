@@ -20,8 +20,8 @@ Usage: called from enable_ros2_bridge.py once the Starship USD stage is loaded.
   # …
   pub.stop()
 
-Coordinate system: Y-up (Isaac Sim default)
-  Altitude = world-Y of the Starship prim (base at y=0 AGL).
+Coordinate system: Z-up (robotics / ROS REP-103 convention)
+  Altitude = world-Z of the Starship prim (base at z=0 AGL).
 """
 
 import json
@@ -201,8 +201,8 @@ class StarshipPublisher:
 
         pos = matrix.ExtractTranslation()   # Gf.Vec3d
 
-        # Altitude = Y world coord (Y-up, ground at y=0)
-        altitude_m = pos[1]
+        # Altitude = Z world coord (Z-up, ground at z=0)
+        altitude_m = pos[2]
 
         # Rotation quaternion — use ExtractRotationQuat() which returns GfQuatd
         # directly, avoiding the GfRotation intermediate (API varies by version)
@@ -270,10 +270,11 @@ class StarshipPublisher:
         imu_msg.angular_velocity.y = float(ang[1])
         imu_msg.angular_velocity.z = float(ang[2])
         # Linear accel ≈ (thrust − gravity) / mass  (crude; no per-axis)
+        # Z-up: net vertical acceleration is on the Z axis.
         thrust_accel = (self._engine_throttle * MAX_THRUST_N / DRY_MASS_KG)
         imu_msg.linear_acceleration.x = 0.0
-        imu_msg.linear_acceleration.y = thrust_accel - 9.81   # net vertical
-        imu_msg.linear_acceleration.z = 0.0
+        imu_msg.linear_acceleration.y = 0.0
+        imu_msg.linear_acceleration.z = thrust_accel - 9.81   # net vertical (Z-up)
         self._pub_imu.publish(imu_msg)
 
         # ── /starship/fuel_fraction (1 Hz: every 100 ticks) ──────────────

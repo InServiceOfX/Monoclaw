@@ -1,0 +1,53 @@
+services:
+  blender:
+    build:
+      context: .
+      args:
+        BLENDER_VERSION: ${BLENDER_VERSION:-4.2.3}
+    image: monoclaw/blender-starship:${BLENDER_VERSION:-4.2.3}
+    container_name: ${CONTAINER_NAME:-blender-starship}
+    stdin_open: true
+    tty: true
+    # Host network so the driver reaches Isaac's telemetry at localhost:8282
+    # (HTTP) or localhost:50505 (UDP). Isaac's stack is also network_mode: host.
+    network_mode: host
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              # Display GPU. Desktop: GPU 0 = GTX 980 Ti (drives Xorg / DISPLAY=:0).
+              # nvidia-smi/PCI order — this is the REVERSE of CUDA's enumeration,
+              # so 0 here is the 980 Ti, the card the monitor is plugged into.
+              device_ids: ["${BLENDER_GPU_ID:-0}"]
+              # `graphics` + `display` are what make OpenGL/EEVEE work in-container;
+              # the default compute,utility set has no GL and EEVEE fails.
+              capabilities: [gpu, compute, utility, graphics, display]
+    environment:
+      # X11 passthrough — Blender's window opens on the host X server (980 Ti).
+      - DISPLAY=${DISPLAY:-:0}
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      # Telemetry source: http (non-invasive poll, default) | udp (lowest latency)
+      - TELEM_SOURCE=${TELEM_SOURCE:-http}
+      - TELEM_HTTP_HOST=${TELEM_HTTP_HOST:-127.0.0.1}
+      - TELEM_HTTP_PORT=${TELEM_HTTP_PORT:-8282}
+      - TELEM_UDP_PORT=${TELEM_UDP_PORT:-50505}
+      - STARSHIP_USD=/work/starship/starship.usd
+      - STARSHIP_OBJECT=${STARSHIP_OBJECT:-Starship}
+      - DRIVER_FPS=${DRIVER_FPS:-60}
+    volumes:
+      # X11 socket + auth cookie — lets the container draw on the host display.
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${HOME}/.Xauthority:/root/.Xauthority:rw
+      # Scene assets come straight from the IsaacSim stack (single source of truth
+      # for starship.usd). Read-only — Blender imports, never writes back.
+      - ../IsaacSim/starship:/work/starship:ro
+      # Driver script hot-reload: edit on host, re-run without rebuilding.
+      - ./blender_starship_driver.py:/work/blender_starship_driver.py:ro
+      # Pre-baked scene (steel hull + Mars ground + lighting, EEVEE engine).
+      # Regenerate with ./bake_scene.sh after editing the IsaacSim USD.
+      - ./starship.blend:/work/starship.blend:ro
+    # Open the baked .blend (reliable — no import-at-startup flakiness), then run
+    # the driver. The driver finds the existing Starship object and skips import.
+    command: ["/work/starship.blend", "--python", "/work/blender_starship_driver.py"]

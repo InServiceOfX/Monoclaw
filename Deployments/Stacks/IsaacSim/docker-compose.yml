@@ -40,6 +40,9 @@ services:
       - OMNI_PASS=${OMNI_PASS:-admin}
       # headless | windowed | streaming
       - ISAAC_MODE=${ISAAC_MODE:-headless}
+      # 1 = physics-only headless (custom experience kit, RTX MDL warmup disabled).
+      # Avoids the GeForce headless boot hang; rendering is done in Blender.
+      - ISAAC_PHYSICS_ONLY=${ISAAC_PHYSICS_ONLY:-0}
       # Optional: pre-load a USD scene on startup (e.g. the Starship stage)
       # Set in .env: ISAAC_SCENE_PATH=/isaac-sim/exts/starship/starship.usd
       - ISAAC_SCENE_PATH=${ISAAC_SCENE_PATH:-}
@@ -54,11 +57,17 @@ services:
       - isaac-data:/root/.local/share/ov/data
       # Starship scene — edited on host, auto-picked up by Isaac
       - ./starship:/isaac-sim/exts/starship
+      # Physics-only experience kit, mounted into apps/ so its ${app}/../exts
+      # paths resolve like the stock kits. Used when ISAAC_PHYSICS_ONLY=1.
+      - ./starship/isaacsim.exp.physics.kit:/isaac-sim/apps/isaacsim.exp.physics.kit:ro
       # Script hot-reload: mount scripts so changes take effect on restart
       # without a full docker build cycle (the image COPY is overridden by these).
       - ./scripts/enable_ros2_bridge.py:/isaac-sim/scripts/enable_ros2_bridge.py:ro
       - ./scripts/start_isaac.sh:/usr/local/bin/start_isaac.sh:ro
       - ./scripts/load_starship_hook.py:/isaac-sim/scripts/load_starship_hook.py:ro
+      # Physics validation tests — run via:
+      #   docker exec isaac-sim /isaac-sim/python.sh /isaac-sim/tests/test_tN_xxx.py
+      - ./tests:/isaac-sim/tests:ro
     ports:
       # Isaac control API (rosa-isaac Rust tools) — host-networked, no mapping needed
       # but documented here for reference.

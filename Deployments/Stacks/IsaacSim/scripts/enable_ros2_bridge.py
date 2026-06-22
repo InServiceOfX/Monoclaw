@@ -57,6 +57,14 @@ CONFIG = {
     "headless_egl": True,
 }
 
+# Physics-only mode (ISAAC_PHYSICS_ONLY=1): use a custom experience kit that
+# disables the RTX MDL shader warmup. On headless GeForce (RTX 3060) the default
+# experience hangs at ~30s compiling MDL materials ('carb.tasking is likely
+# stuck'). We render in Blender, so Isaac needs only PhysX + USD here.
+if os.environ.get("ISAAC_PHYSICS_ONLY", "0").lower() in ("1", "true", "yes"):
+    CONFIG["experience"] = "/isaac-sim/apps/isaacsim.exp.physics.kit"
+    print("[rosa] PHYSICS-ONLY mode: MDL warmup disabled via custom experience kit", flush=True)
+
 print("[rosa] Starting Isaac Sim headless...", flush=True)
 app = SimulationApp(CONFIG)
 print("[rosa] SimulationApp ready — starting HTTP control server...", flush=True)
@@ -486,7 +494,7 @@ def _create_starship_stage_capsule_fallback() -> None:
         stage.SetDefaultPrim(world.GetPrim())
 
         physics_scene = UsdPhysics.Scene.Define(stage, "/World/PhysicsScene")
-        physics_scene.CreateGravityDirectionAttr(Gf.Vec3f(0.0, -1.0, 0.0))
+        physics_scene.CreateGravityDirectionAttr(Gf.Vec3f(0.0, 0.0, -1.0))   # Z-up
         physics_scene.CreateGravityMagnitudeAttr(9.81)
         physx_scene = PhysxSchema.PhysxSceneAPI.Apply(physics_scene.GetPrim())
         for attr_name in ("CreateGpuDynamicsEnabledAttr", "CreateEnableGPUDynamicsAttr"):
@@ -496,21 +504,21 @@ def _create_starship_stage_capsule_fallback() -> None:
                 break
 
         ground_xform = UsdGeom.Xform.Define(stage, "/World/GroundPlane")
-        ground_xform.AddTranslateOp().Set(Gf.Vec3d(0, -0.5, 0))
+        ground_xform.AddTranslateOp().Set(Gf.Vec3d(0, 0, -0.5))   # Z-up
         ground_cube = UsdGeom.Cube.Define(stage, "/World/GroundPlane/Geom")
         ground_cube.CreateSizeAttr(1.0)
-        ground_cube.AddScaleOp().Set(Gf.Vec3f(1000.0, 1.0, 1000.0))
+        ground_cube.AddScaleOp().Set(Gf.Vec3f(1000.0, 1000.0, 1.0))   # flat in X-Y
         ground_cube.CreateDisplayColorAttr([Gf.Vec3f(0.3, 0.3, 0.3)])
         UsdPhysics.CollisionAPI.Apply(ground_cube.GetPrim())
 
-        # Y=0 at engine plane; capsule centre at y=25 so base touches y=0.
+        # z=0 at engine plane; capsule centre at z=25 so base touches z=0 (Z-up).
         starship_xform = UsdGeom.Xform.Define(stage, "/World/Starship")
         starship_xform.AddTranslateOp().Set(Gf.Vec3d(0, 0, 0))
         capsule = UsdGeom.Capsule.Define(stage, "/World/Starship/Body")
         capsule.CreateRadiusAttr(4.5)
         capsule.CreateHeightAttr(44.0)
-        capsule.CreateAxisAttr("Y")
-        capsule.AddTranslateOp().Set(Gf.Vec3d(0, 25, 0))
+        capsule.CreateAxisAttr("Z")
+        capsule.AddTranslateOp().Set(Gf.Vec3d(0, 0, 25))
         capsule.CreateDisplayColorAttr([Gf.Vec3f(0.8, 0.8, 0.85)])
         UsdPhysics.RigidBodyAPI.Apply(starship_xform.GetPrim())
         UsdPhysics.CollisionAPI.Apply(capsule.GetPrim())
@@ -578,13 +586,15 @@ def _handle_cmd(cmd: dict) -> None:
             prim = stage.GetPrimAtPath("/World/Starship") if stage else None
             if prim and prim.IsValid():
                 if action == "liftoff":
-                    vel_y = float(cmd.get("velocity_y", 60.0))
+                    # JSON key stays "velocity_y" (Jetson/browser contract); applied
+                    # to the +Z (vertical) axis now that the stage is Z-up.
+                    vel_up = float(cmd.get("velocity_y", 60.0))
                     # Try both physx and usd velocity attrs
                     for attr_name in ("physxRigidBody:velocity", "physics:velocity"):
                         attr = prim.GetAttribute(attr_name)
                         if attr.IsValid():
-                            attr.Set(Gf.Vec3f(0.0, vel_y, 0.0))
-                    print(f"[rosa] LIFTOFF command: set vy={vel_y} m/s upward", flush=True)
+                            attr.Set(Gf.Vec3f(0.0, 0.0, vel_up))
+                    print(f"[rosa] LIFTOFF command: set vz={vel_up} m/s upward", flush=True)
                 elif action == "abort":
                     # Zero velocity — emergency stop
                     for attr_name in ("physxRigidBody:velocity", "physics:velocity"):
@@ -593,13 +603,13 @@ def _handle_cmd(cmd: dict) -> None:
                             attr.Set(Gf.Vec3f(0.0, 0.0, 0.0))
                     print("[rosa] ABORT command: zeroed velocity", flush=True)
                 elif action == "reset_position":
-                    # Teleport back to surface
+                    # Teleport back to surface (Z-up: altitude is Z)
                     from pxr import UsdGeom
                     xf = UsdGeom.Xformable(prim)
                     ops = xf.GetOrderedXformOps()
                     for op in ops:
                         if "translate" in op.GetOpName():
-                            op.Set(Gf.Vec3d(0, 1.5, 0))
+                            op.Set(Gf.Vec3d(0, 0, 1.5))
                     for attr_name in ("physxRigidBody:velocity", "physics:velocity"):
                         attr = prim.GetAttribute(attr_name)
                         if attr.IsValid():
@@ -683,7 +693,7 @@ try:
                         ops = xform.GetOrderedXformOps()
                         for op in ops:
                             if "translate" in op.GetOpName():
-                                op.Set(Gf.Vec3d(0, 25, 0))
+                                op.Set(Gf.Vec3d(0, 0, 25))
                         # Zero velocity via physics attrs
                         vel_attr = prim.GetAttribute("physics:velocity")
                         if vel_attr.IsValid():

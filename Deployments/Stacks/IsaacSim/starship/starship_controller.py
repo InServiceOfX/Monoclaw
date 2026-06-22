@@ -22,8 +22,8 @@ Usage: called from enable_ros2_bridge.py once the Starship USD stage is loaded.
   # …
   ctrl.stop()
 
-Force model (Y-up, Isaac Sim units = metres/kg):
-  - Main engine thrust: F_y = throttle × MAX_THRUST_N  (vertical, world-Y)
+Force model (Z-up, Isaac Sim units = metres/kg):
+  - Main engine thrust: F_z = throttle × MAX_THRUST_N  (vertical, world-Z)
   - Gimbal torque: T = gimbal_angle × I_moment  (approx.)
   - RCS impulse: per-step delta-v = impulse × RCS_FORCE_N × dt / mass
 """
@@ -168,25 +168,26 @@ class StarshipController:
             rcs_mf   = Gf.Vec3f(0.0, 0.0, 0.0)
             rcs_ma   = Gf.Vec3f(0.0, 0.0, 0.0)
 
-        # ── Main engine thrust (world-Y axis) ─────────────────────────────
+        # ── Main engine thrust (world-Z axis) ─────────────────────────────
         thrust_n   = throttle * MAX_THRUST_N
-        # Gimbal deflects thrust into X/Z:  pitch → X tilt, yaw → Z tilt
+        # Gimbal deflects thrust off the +Z vertical: pitch → X tilt, yaw → Y tilt.
         # Small-angle approx: sin(θ) ≈ θ
         pitch_rad = gimbal[0]
         yaw_rad   = gimbal[1]
         force_world = Gf.Vec3f(
             thrust_n * math.sin(pitch_rad),
-            thrust_n * math.cos(pitch_rad) * math.cos(yaw_rad),
             thrust_n * math.sin(yaw_rad),
+            thrust_n * math.cos(pitch_rad) * math.cos(yaw_rad),
         )
 
         # ── Gimbal torque (differential vector) ──────────────────────────
-        # Simple model: torque = gimbal_angle × thrust × moment_arm (5 m to CoM)
+        # Simple model: torque = gimbal_angle × thrust × moment_arm (5 m to CoM).
+        # Z-up standing body: yaw tilt → torque about X, pitch tilt → about Y.
         moment_arm = 5.0   # metres (engine plane to CoM)
         torque = Gf.Vec3f(
-            -thrust_n * moment_arm * math.sin(yaw_rad),   # roll-axis torque
-             0.0,                                          # yaw (handled by force offset)
-             thrust_n * moment_arm * math.sin(pitch_rad), # pitch-axis torque
+             thrust_n * moment_arm * math.sin(yaw_rad),   # about X (from yaw)
+            -thrust_n * moment_arm * math.sin(pitch_rad), # about Y (from pitch)
+             0.0,                                          # about Z (roll) — none
         )
 
         # ── RCS forces (applied in vehicle body frame) ────────────────────
@@ -277,7 +278,7 @@ class StarshipController:
             return
         altitude_m = UsdGeom.Xformable(prim) \
             .ComputeLocalToWorldTransform(Usd.TimeCode.Default()) \
-            .ExtractTranslation()[1]
+            .ExtractTranslation()[2]
         if altitude_m > 5.0:
             print(f"[starship_ctrl] refuel rejected: airborne at {altitude_m:.1f} m")
             return
@@ -305,24 +306,31 @@ def _apply_force_torque(prim, force: Gf.Vec3f, torque: Gf.Vec3f) -> None:
     """
     Apply a world-space force and torque to a PhysX rigid body prim.
 
-    Isaac Sim 4.x apply_force_at_pos signature:
-      (body_path: str, force: carb.Float3, pos: carb.Float3, mode: str='Force') -> None
-    mode='Force' applies a continuous world-space force; 'Impulse' for one-shot.
+    Isaac Sim 4.5 apply_force_at_pos signature (changed from 4.x):
+      (stage_id: int, body_path: int, force: carb.Float3, pos: carb.Float3,
+       mode: str='Force') -> None
+    body_path is the prim path encoded as an int via PhysicsSchemaTools.sdfPathToInt;
+    stage_id comes from the USD context. mode='Force' = continuous world-space force.
     """
     try:
         import omni.physx
+        import omni.usd
         import carb
+        from pxr import PhysicsSchemaTools
         physx = omni.physx.get_physx_simulation_interface()
-        prim_path_str = str(prim.GetPath())
+        stage_id = omni.usd.get_context().get_stage_id()
+        body_int = PhysicsSchemaTools.sdfPathToInt(str(prim.GetPath()))
         physx.apply_force_at_pos(
-            prim_path_str,
+            stage_id,
+            body_int,
             carb.Float3(float(force[0]), float(force[1]), float(force[2])),
             carb.Float3(0.0, 0.0, 0.0),  # at CoM
             "Force",                      # world-space continuous force
         )
         if torque.GetLength() > 0.01:
             physx.apply_torque(
-                prim_path_str,
+                stage_id,
+                body_int,
                 carb.Float3(float(torque[0]), float(torque[1]), float(torque[2])),
                 "Force",
             )

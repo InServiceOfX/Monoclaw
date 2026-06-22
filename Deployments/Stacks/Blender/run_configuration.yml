@@ -1,0 +1,43 @@
+# run_configuration.yml — for the InServiceOfX Rust `docker_runner`.
+#
+#   cd .../RustLibraries/docker_runner
+#   cargo run -- --config /path/to/Stacks/Blender/run_configuration.yml
+#
+# This is the SAME container as docker-compose.yml, expressed in the runner's
+# schema. Build the image first (compose build, or `docker build -t
+# monoclaw/blender-starship:4.2.3 .` in this dir).
+#
+# NOTE — one gap vs. compose: RunConfiguration has no `network` field, so this
+# runs on the default bridge network (not host). The driver therefore reaches
+# Isaac's telemetry via the docker bridge gateway (172.17.0.1 = the host) rather
+# than 127.0.0.1. If you'd rather use host networking (so 127.0.0.1 works and
+# UDP is simplest), add a `network: Option<String>` field to RunConfiguration /
+# build_run_command.rs — see the README "compose vs docker_runner" section.
+
+docker_image_name: monoclaw/blender-starship:4.2.3
+
+gpus: "device=0"   # GTX 980 Ti (display GPU), nvidia-smi/PCI order
+
+env:
+  DISPLAY: ":0"
+  NVIDIA_DRIVER_CAPABILITIES: "all"
+  STARSHIP_USD: "/work/starship/starship.usd"
+  STARSHIP_OBJECT: "Starship"
+  TELEM_SOURCE: "http"
+  TELEM_HTTP_HOST: "172.17.0.1"   # host, as seen from the bridge network
+  TELEM_HTTP_PORT: "8282"
+  DRIVER_FPS: "60"
+
+volumes:
+  - host_path: /tmp/.X11-unix
+    container_path: /tmp/.X11-unix
+  - host_path: ~/.Xauthority
+    container_path: /root/.Xauthority
+  - host_path: ~/.openclaw/workspace/workspace2/repos/Monoclaw/Deployments/Stacks/IsaacSim/starship
+    container_path: /work/starship
+  - host_path: ~/.openclaw/workspace/workspace2/repos/Monoclaw/Deployments/Stacks/Blender/blender_starship_driver.py
+    container_path: /work/blender_starship_driver.py
+
+command:
+  - --python
+  - /work/blender_starship_driver.py

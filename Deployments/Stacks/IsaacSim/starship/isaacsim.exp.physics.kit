@@ -1,0 +1,74 @@
+[package]
+title = "Isaac Sim Physics-Only (Starship)"
+description = """Base Isaac Sim experience with the RTX MDL shader warmup disabled.
+On headless GeForce (e.g. RTX 3060), the default base experience stalls during
+startup compiling MDL materials synchronously ('carb.tasking is likely stuck'
+at ~30s, never recovers). We render the scene in Blender, so Isaac needs only
+PhysX + USD — not compiled materials. This skips the warmup to boot fast."""
+version = "4.5.0"
+keywords = ["experience", "app", "usd", "isaacsim"]
+
+
+[dependencies]
+# Inherit the full base app so all isaacsim.core / physx / usd APIs our scripts
+# use (omni.usd, omni.physx, omni.isaac.core, omni.timeline, omni.graph) work.
+"isaacsim.exp.base" = {}
+
+
+[settings.app]
+name = "Isaac-Sim Physics-Only"
+version = "4.5.0"
+fastShutdown = true
+vulkan = true
+
+# isaacsim.exp.physics-4.5.0 is an optional UX convenience extension that
+# connects to the Omniverse nucleus server to fetch physics assets and viewport
+# presets.  Without a nucleus server in the container, it stalls for ~30 minutes
+# waiting for the connection to time out before the app loop can start.
+# PhysX itself is provided by omni.physx / omni.physx.foundation (loaded via
+# isaacsim.exp.base) and does NOT need this extension.
+[settings.app.exts."isaacsim.exp.physics"]
+enabled = false
+
+
+[settings.app.exts.folders]
+'++' = [
+    "${app}/../exts",
+    "${app}/../extscache",
+    "${app}/../extsPhysics",
+    "${app}/../extsUser",
+    "${app}/../extsDeprecated",
+]
+
+
+[settings]
+# --- THE FIX ---------------------------------------------------------------
+# Skip the synchronous MDL shader warmup that stalls headless RTX init on
+# GeForce. This is the 'carb.tasking is likely stuck' hang at ~30s.
+rtx.hydra.mdlMaterialWarmup = false
+
+# Don't present frames (headless, no swapchain). asyncInit=true lets the Kit
+# event loop drive RTX init rather than blocking the extension startup thread.
+renderer.asyncInit = true
+exts."omni.kit.renderer.core".present.enabled = false
+
+# Keep DLSS / NGX off (GeForce headless NGX context fails; we don't render here).
+rtx-transient.dlssg.enabled = false
+rtx.post.dlss.execMode = 0
+
+# --- STARTUP TIME FIX -------------------------------------------------------
+# SimulationApp passes --/rtx/materialDb/syncLoads=True and
+# --/rtx/hydra/materialSyncLoads=True as CLI args.  In a container without an
+# Omniverse nucleus server, RTX waits ~30 minutes for material DB connections
+# to time out.  Repeating the key as a later CLI-style override in the kit
+# doesn't help (CLI args win), so we also expose EXTRA_ARGS in _sim_utils.py
+# for tests to pass --/rtx/materialDb/syncLoads=False directly to SimulationApp.
+#
+# Workaround: nothing in this file can override CLI args; the fix lives in the
+# test entrypoint (see _sim_utils.py EXTRA_ARGS list).
+# -------------------------------------------------------------------------
+
+# Faster stage open/close, no OS-version nag.
+exts."omni.usd".locking.onClose = false
+foundation.verifyOsVersion.enabled = false
+physics.autoPopupSimulationOutputWindow = false
