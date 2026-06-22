@@ -237,3 +237,6 @@ Deployments/Scripts/llama-cpp-server-macos/profiles/*.yml
 .DS_Store
 **/.DS_Store
 
+
+# Jetson pinmux parse output — generated data, lives in Data/Public/embedded/NVIDIAJetsonOrinNano/output/
+Embedded/JetsonOrinNano/output/

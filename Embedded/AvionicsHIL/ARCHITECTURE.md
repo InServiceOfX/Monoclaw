@@ -83,7 +83,7 @@ The loop is closed: physics → sensors → flight computer → actuators → ph
 The agent has already converted all reference material into machine-readable form. This is the
 "the agent read everything" proof and the foundation every later act builds on:
 
-- **Jetson pinmux** → `Embedded/JetsonOrinNano/output/*.csv` (parsed from the NVIDIA pinmux XLSM + carrier spec).
+- **Jetson pinmux** → `Data/Public/embedded/NVIDIAJetsonOrinNano/output/*.csv` (parsed from the NVIDIA pinmux XLSM + carrier spec by `Embedded/JetsonOrinNano/parse_pdfs.py` + `parse_pinmux.py`).
 - **BeagleBone Black** schematic/SRM → `Data/Public/embedded/BeagleBoneBlack/` (+ parseable with the JetsonOrinNano venv tooling).
 - **Art of Electronics 3e** → `…/HorowitzHill-ArtOfElectronics3e/ocr-compare/reconciled/resolved.md` (OCR-reconciled, vision-verified equations).
 - **Parts bin** → `Data/Public/embedded/HomeElectronicsInventory/inventory.json` (vision-scanned).

@@ -4,13 +4,14 @@ Parse the NVIDIA Jetson Orin Nano/NX PDF documents into CSVs.
 
 Targets:
   - Jetson_Orin_NX_Orin_Nano_Pin_Function_Names_Guide_DA-11434-001_v1.0.pdf
-      → output/sodimm_connector_pins.csv   (pages 13-20: SODIMM↔SoC mapping)
-      → output/i2s_pins.csv                (pages 8-10: I2S signal table)
+      → <outdir>/sodimm_connector_pins.csv   (pages 13-20: SODIMM↔SoC mapping)
+      → <outdir>/i2s_pins.csv                (pages 8-10: I2S signal table)
   - Jetson-Orin-Nano-DevKit-Carrier-Board-Specification_SP-11324-001_v1.3.pdf
-      → output/devkit_carrier_tables.csv   (all substantial tables)
+      → <outdir>/devkit_carrier_tables.csv   (all substantial tables)
 
+Output default: Data/Public/embedded/NVIDIAJetsonOrinNano/output/
 Usage:
-    python parse_pdfs.py [--docsdir path/to/docs/] [--outdir output/]
+    python parse_pdfs.py [--docsdir path/to/docs/] [--outdir path/to/output/]
 """
 
 import argparse
@@ -159,7 +160,8 @@ def extract_carrier_tables(pdf_path: Path, outdir: Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--docsdir", default=str(DOCS_DEFAULT))
-    parser.add_argument("--outdir", default="output")
+    _out_default = DOCS_DEFAULT / "output"
+    parser.add_argument("--outdir", default=str(_out_default))
     args = parser.parse_args()
 
     docsdir = Path(args.docsdir)

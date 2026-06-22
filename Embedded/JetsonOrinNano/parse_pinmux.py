@@ -3,7 +3,9 @@
 Parse the NVIDIA Jetson Orin NX/Nano Pinmux Config Template (.xlsm) into CSVs.
 
 Usage:
-    python parse_pinmux.py [path/to/file.xlsm] [--outdir output/]
+    python parse_pinmux.py [path/to/file.xlsm] [--outdir path/to/output/]
+
+Output default: Data/Public/embedded/NVIDIAJetsonOrinNano/output/
 
 Outputs one CSV per sheet plus a combined summary of the chip-down template.
 """
@@ -158,7 +160,8 @@ def extract_ball_names_xml(xlsm_path: Path, outdir: Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("xlsm", nargs="?", default=str(XLSM_DEFAULT), help="Path to .xlsm file")
-    parser.add_argument("--outdir", default="output", help="Output directory for CSVs")
+    _out_default = XLSM_DEFAULT.parent / "output"
+    parser.add_argument("--outdir", default=str(_out_default), help="Output directory for CSVs")
     args = parser.parse_args()
 
     xlsm_path = Path(args.xlsm)
