@@ -1,0 +1,113 @@
+# AvionicsHIL — Hardware, Wiring & Safety
+
+Bench bill of materials, pin assignments, wiring, and safety. **Wiring instructions are
+written pin-by-pin and explicit** — the user is newer to hardware and asked for that style.
+Every `VERIFY` is a real unknown to confirm on the bench and record in STATUS.md.
+
+---
+
+## 1. Bill of materials (from the bench)
+
+| Item | Role | Source |
+|------|------|--------|
+| NVIDIA Jetson Orin Nano (DevKit) | DUT / flight computer | on hand |
+| BeagleBone Black Rev C1 | EGSE | on hand |
+| Desktop w/ RTX 3060 | Isaac physics | on hand |
+| Solderless breadboard (full + half) | analog front-end (Act 2) | `inventory.json` |
+| Inland breadboard PSU module (3.3/5 V) | bench power | `inventory.json` |
+| LM358N (dual op-amp) | sensor conditioning (Act 2) | `inventory.json` |
+| 10 kΩ thermistor (RS 271-110) or LM335Z | temperature sensor (Act 2) | `inventory.json` |
+| NTE resistors / ceramic caps (assorted) | filter + gain network (Act 2) | `inventory.json` |
+| 2× 4.7 kΩ resistor | I²C pull-ups (if I²C transport used) | from NTE assortment |
+| Jumper wires (M-M Dupont) | interconnect | `inventory.json` |
+
+**All logic is 3.3 V on both boards' expansion headers — no level shifter needed.**
+The Jetson Orin Nano 40-pin header is 3.3 V (carrier spec, Table 3-3 note 6). BBB P8/P9 GPIO are 3.3 V. **Never feed 5 V into a GPIO on either board.**
+
+## 2. Jetson Orin Nano 40-pin header (DUT side)
+
+Source of truth: `Embedded/JetsonOrinNano/output/sodimm_connector_pins.csv` and
+`devkit_carrier_tables.csv`. Standard 40-pin (J30) assignments used here:
+
+| 40-pin | Signal | Linux device (VERIFY) | Use here |
+|--------|--------|------------------------|----------|
+| 1 | 3.3 V | — | (do not power boards from this) |
+| 3 | I²C1_SDA | `/dev/i2c-7` (VERIFY) | I²C transport (upgrade) |
+| 5 | I²C1_SCL | `/dev/i2c-7` (VERIFY) | I²C transport (upgrade) |
+| 8 | UART1_TXD | `/dev/ttyTHS1` (VERIFY) | **sensor/cmd UART TX** |
+| 10 | UART1_RXD | `/dev/ttyTHS1` (VERIFY) | **sensor/cmd UART RX** |
+| 6, 9, 14, 20, 25, 30, 34, 39 | GND | — | common ground |
+
+`VERIFY`: run `ls /dev/ttyTHS*` and `i2cdetect -l` on the Jetson; the 40-pin UART/I²C device
+numbers depend on the device tree. Record the real numbers in STATUS.md and `config.yaml`.
+
+## 3. BeagleBone Black P9 header (EGSE side)
+
+Source of truth: `Data/Public/embedded/BeagleBoneBlack/BBB_SRM.pdf` (P8/P9 tables, pp. 84–86, 112).
+
+| P9 pin | Signal | Linux device (VERIFY) | Use here |
+|--------|--------|------------------------|----------|
+| 1, 2 | GND | — | common ground |
+| 3, 4 | 3.3 V | — | logic ref only |
+| 19 | I²C2_SCL | `/dev/i2c-2` (VERIFY) | I²C transport (upgrade) |
+| 20 | I²C2_SDA | `/dev/i2c-2` (VERIFY) | I²C transport (upgrade) |
+| 21 | UART2_TXD | `/dev/ttyO2` (VERIFY) | **sensor/cmd UART TX** |
+| 22 | UART2_RXD | `/dev/ttyO2` (VERIFY) | **sensor/cmd UART RX** |
+
+`VERIFY`: BBB UART/I²C need device-tree overlays enabled (`config-pin`, or `/boot/uEnv.txt`).
+Confirm with `config-pin -q P9.21`, `ls /dev/ttyO*`, `i2cdetect -y -r 2`.
+
+## 4. Wiring — UART link (MVP, do this first)
+
+UART is point-to-point, 3.3 V, **TX↔RX crossed**, with a common ground.
+
+```
+  Jetson 40-pin            BeagleBone Black P9
+  ─────────────            ───────────────────
+  pin 8  (UART TX)  ───────►  P9_22 (UART2 RX)
+  pin 10 (UART RX)  ◄───────  P9_21 (UART2 TX)
+  pin 6  (GND)      ────────  P9_1  (GND)        ← common ground REQUIRED
+```
+
+Step-by-step:
+1. Power both boards **off**.
+2. Jumper Jetson **pin 8** → BBB **P9_22**.
+3. Jumper Jetson **pin 10** → BBB **P9_21**.
+4. Jumper Jetson **pin 6** (GND) → BBB **P9_1** (GND).
+5. Power on. On each board, enable the UART (Jetson: usually on by default; BBB: `config-pin P9.21 uart; config-pin P9.22 uart`).
+6. Loopback sanity (optional): short the board's own TX↔RX and `echo`/`cat` to confirm the port works before connecting the two boards.
+
+This single link carries **both** the sensor frames (BBB→Jetson) and command frames
+(Jetson→BBB) — it is bidirectional. (If timing demands separation, add a second UART pair and
+split sensor vs command onto each; update `config.yaml`.)
+
+## 5. Wiring — I²C link (upgrade only, after slave-mode verified — see TASK-02)
+
+```
+  3.3 V ──[4.7kΩ]──┬──────────────── SDA  (Jetson pin 3  ── BBB P9_20)
+  3.3 V ──[4.7kΩ]──┼──┐
+                   │  └───────────── SCL  (Jetson pin 5  ── BBB P9_19)
+  GND ─────────────┴──────────────── GND  (Jetson pin 6  ── BBB P9_1)
+```
+- Jetson is **master**, BBB is **slave at 0x42**.
+- Two 4.7 kΩ pull-ups from 3.3 V to SDA and SCL (one each). Put them on the breadboard.
+- Do **not** also wire UART sensor frames if using I²C for sensors; pick one sensor transport.
+
+## 6. Wiring — Act 2 analog front-end (TASK-04 will finalize exact values)
+
+Conceptual chain (the agent computes exact R values from Art of Electronics + inventory):
+```
+  thermistor/LM335Z ──► LM358 (one half, non-inverting gain) ──► ADC input
+  (RC low-pass anti-alias filter between stage and ADC)
+```
+Powered from the Inland breadboard PSU (3.3 V rail). TASK-04 produces the full schematic,
+component values, and the pin-by-pin breadboard build.
+
+## 7. Safety rules (NON-NEGOTIABLE)
+
+1. **3.3 V logic only on GPIO.** Never connect 5 V (or the 5 V rails, pins 2/4) to any signal pin.
+2. **Common ground first.** Always connect grounds between boards before/with signal lines.
+3. **Power down before rewiring.** Both boards off when changing connections.
+4. **Check polarity** on electrolytic caps (Act 2) and the DC barrel/9 V connectors.
+5. **No bus contention.** On I²C, only one master (the Jetson). On UART, TX drives RX only.
+6. When unsure of a pin, re-derive it from the CSV/SRM — do not guess. Record what you confirmed.

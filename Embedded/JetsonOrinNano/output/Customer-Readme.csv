@@ -1,0 +1,31 @@
+col_0,Revision History,col_2,col_3
+1.2,Date,Revision,Description
+,2022-08-15 00:00:00,0.7,Draft
+,2022-08-18 00:00:00,0.71,Divide into separate DP and HDMI tabs
+,2022-10-19 00:00:00,0.8,Revise Copyright statement
+,2022-12-07 00:00:00,0.9,"Update ""Customer Usage"" and ""DevKit Usage"" entries for CSI, USB2, and HDMI
+Add PEX9 pinmux option to SODIMM pins 60/58/66/64"
+,2022-12-12 00:00:00,0.91,Change GPIO00 to GPIO mode
+,2022-12-14 00:00:00,0.92,"Configure QSPI_COMP for all tabs, no functional impact"
+,2023-01-26 00:00:00,1,Initial release
+,2023-02-09 00:00:00,1.01,"Changed ""3.3V Tolerance Enable"" property for HDMI_CEC from Disable to Enable. Please see ""Jetson Orin NX 16GB Hardware Errata"" for more details."
+,2023-03-17 00:00:00,1.02,Removed irrelevant pages for release and did minor cosmetic cleanup by removing text leftover is unused fields
+,2023-05-30 00:00:00,1.03,"Change SOC_GPIO29(FAN_TACH0) ""rerquiredInitial State"" from ""PD"" none"
+,2024-03-07 00:00:00,1.04,"Update ""Customer Usage"" entry for DP_AUX signals to ""DisplayPort Auxiliary Channel"". Correct HDMI_DDC_SCL and HDMI_DDC_SDA entries in the ""HDMI"" tab ""Customer Uasge"" column."
+,2025-11-18 00:00:00,1.1,"Add Quick Guide sheet.
+Add columns (BC, BD) to indicate internal PU/PD.
+Add column (BN) to indicate internal pin informations.
+Update the Ext PU/PD values.
+Update ""Pin Direction"" entry of UART0_TXD, UART0_RTS, UART1_TXD."
+,2026-02-12 00:00:00,1.2,The protection on the 3.3V Tolerance enable row has been updated.
+,README,,
+,This spreadsheet is a companion to the Jetson Orinproduct module and DevKit datasheet.  It is designed to help system designers specify the pinmux configuration for each new system design.,,
+,The only cells that need to be edited are the orange highlighted cells on the MPIO worksheet.,,
+,"This spreadsheet automatically highlights many kinds of pinmux configuration problem.  Errors are highlighted in pinkish-red on the MPIO, Signals, or Controllers worksheets.  This spreadsheet highlights the following problems:",,
+,,1) failure to select a pinmux option for a given ball,
+,,2) bringing out the same signal on more than one ball,
+,,3) bringing out signals from more than one interface for a single controller,
+,Notice,,
+,"ALL NVIDIA DESIGN SPECIFICATIONS, REFERENCE BOARDS, FILES, DRAWINGS, DIAGNOSTICS, LISTS, AND OTHER DOCUMENTS (TOGETHER AND SEPARATELY, “MATERIALS”) ARE BEING PROVIDED “AS IS.” NVIDIA MAKES NO WARRANTIES, EXPRESSED, IMPLIED, STATUTORY, OR OTHERWISE WITH RESPECT TO THE MATERIALS, AND EXPRESSLY DISCLAIMS ALL IMPLIED WARRANTIES OF NONINFRINGEMENT, MERCHANTABILITY, AND FITNESS FOR A PARTICULAR PURPOSE.
+Information furnished is believed to be accurate and reliable. However, NVIDIA Corporation assumes no responsibility for the consequences of use of such information or for any infringement of patents or other rights of third parties that may result from its use. No license is granted by implication or otherwise under any patent or patent rights of NVIDIA Corporation. Specifications mentioned in this publication are subject to change without notice. This publication supersedes and replaces all information previously supplied. NVIDIA Corporation products are not authorized for use as critical components in life support devices or systems without express written approval of NVIDIA Corporation.
+",,
