@@ -1,0 +1,23 @@
+isaac:
+  base_url: "http://192.168.86.91:8282"   # desktop eno1 — VERIFY via `ip addr` on desktop
+  poll_hz: 100
+
+bbb:
+  sensor_uart: "/dev/ttyO2"               # VERIFY: config-pin P9.21 uart && ls /dev/ttyO*
+  actuator_uart: "/dev/ttyO2"             # same port — full-duplex single link
+  baud: 115200
+  i2c_slave_enabled: false                # flip true only after slave support verified
+  i2c_addr: 0x42
+
+jetson:
+  sensor_uart: "/dev/ttyTHS1"             # CONFIRMED 2026-06-22: pinmux CSV + check_interfaces.py
+  actuator_uart: "/dev/ttyTHS1"
+  baud: 115200
+
+loop:
+  rate_hz: 50
+
+control:
+  target_touchdown_velocity_mps: -2.0
+  kp: 0.05
+  kd: 0.3
