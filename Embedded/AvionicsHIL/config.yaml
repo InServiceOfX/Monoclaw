@@ -3,8 +3,8 @@ isaac:
   poll_hz: 100
 
 bbb:
-  sensor_uart: "/dev/ttyO2"               # VERIFY: config-pin P9.21 uart && ls /dev/ttyO*
-  actuator_uart: "/dev/ttyO2"             # same port — full-duplex single link
+  sensor_uart: "/dev/ttyS2"               # CONFIRMED 2026-06-23: UART2=0x48024000=ttyS2 on kernel 5.10.168-ti-r68 (NOT ttyO2 — that was older kernels)
+  actuator_uart: "/dev/ttyS2"             # same port — full-duplex single link
   baud: 115200
   i2c_slave_enabled: false                # flip true only after slave support verified
   i2c_addr: 0x42
