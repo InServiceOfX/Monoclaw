@@ -5,8 +5,13 @@ Run inside Isaac Sim's Python only:
     /isaac-sim/python.sh /isaac-sim/tests/test_tN_xxx.py
 
 All coordinate systems are Z-up (same as the Starship stage).
-Angular velocity read from physxRigidBody:angularVelocity is in **world frame**
-(consistent with PxRigidBody::getAngularVelocity() in the C++ API).
+
+Angular velocity unit note (Isaac Sim 4.5 / USD Physics):
+  physics:angularVelocity is stored and read back in DEGREES/SECOND by PhysX,
+  even though all other quantities use SI units.  spawn_rigid_box() and
+  spawn_rigid_sphere() accept init_ang_vel in rad/s and convert to deg/s
+  before writing the attribute.  get_state() converts the read-back deg/s
+  back to rad/s so callers see consistent SI units throughout.
 """
 import math
 import sys
@@ -19,6 +24,9 @@ try:
 except ImportError:
     PhysxSchema = None
     _HAS_PHYSX = False
+
+_RAD2DEG = 180.0 / math.pi
+_DEG2RAD = math.pi / 180.0
 
 # SimulationApp config: physics-only kit avoids MDL warmup hang on GeForce headless.
 APP_CONFIG = {
@@ -39,12 +47,21 @@ EXTRA_ARGS = [
 
 
 def get_simulation_context(physics_dt: float = 1 / 240.0):
-    """Return a SimulationContext instance (tries new namespace first)."""
+    """Return a SimulationContext that respects the USD scene's gravity.
+
+    SimulationContext's default (set_defaults=True) overrides any gravity set
+    by setup_physics_scene() with 9.81 m/s².  set_defaults=False makes it
+    honour the UsdPhysics.Scene gravity set before this call.
+    """
     try:
         from isaacsim.core.api import SimulationContext
     except ImportError:
         from omni.isaac.core import SimulationContext
-    return SimulationContext(physics_dt=physics_dt, stage_units_in_meters=1.0)
+    return SimulationContext(
+        physics_dt=physics_dt,
+        stage_units_in_meters=1.0,
+        set_defaults=False,
+    )
 
 
 def start_sim(sim) -> None:
@@ -101,18 +118,28 @@ def spawn_rigid_sphere(stage, path: str,
     """Spawn a sphere rigid body. Inertia auto-computed from geometry + mass."""
     xform = UsdGeom.Xform.Define(stage, path)
     xform.AddTranslateOp().Set(Gf.Vec3d(*pos))
+    # xformOp:orient lets PhysX write the body's quaternion back to USD each step,
+    # so get_state() can read the correct rotation for body-frame transforms.
+    xform.AddOrientOp().Set(Gf.Quatf(1.0, 0.0, 0.0, 0.0))
 
     sphere = UsdGeom.Sphere.Define(stage, path + "/Shape")
     sphere.CreateRadiusAttr(radius)
 
     rb = UsdPhysics.RigidBodyAPI.Apply(xform.GetPrim())
     rb.CreateVelocityAttr(Gf.Vec3f(*init_lin_vel))
+    # physics:angularVelocity is in deg/s in Isaac Sim 4.5
     rb.CreateAngularVelocityAttr(Gf.Vec3f(0, 0, 0))
 
     mass_api = UsdPhysics.MassAPI.Apply(xform.GetPrim())
     mass_api.CreateMassAttr(mass)
 
     UsdPhysics.CollisionAPI.Apply(sphere.GetPrim())
+
+    # Do NOT apply PhysxRigidBodyAPI here: its presence changes default damping
+    # behaviour in ways that affect conservation tests.  PhysX defaults for
+    # UsdPhysics.RigidBodyAPI bodies are linearDamping=0, angularDamping=0.05.
+    # Sphere tests only check linear quantities so angular damping is irrelevant.
+
     return xform.GetPrim()
 
 
@@ -131,6 +158,8 @@ def spawn_rigid_box(stage, path: str,
     """
     xform = UsdGeom.Xform.Define(stage, path)
     xform.AddTranslateOp().Set(Gf.Vec3d(*pos))
+    # xformOp:orient lets PhysX write the body's quaternion back to USD each step.
+    xform.AddOrientOp().Set(Gf.Quatf(1.0, 0.0, 0.0, 0.0))
 
     box = UsdGeom.Cube.Define(stage, path + "/Shape")
     box.CreateSizeAttr(1.0)  # unit cube; scale via half_extents
@@ -140,7 +169,12 @@ def spawn_rigid_box(stage, path: str,
 
     rb = UsdPhysics.RigidBodyAPI.Apply(xform.GetPrim())
     rb.CreateVelocityAttr(Gf.Vec3f(*init_lin_vel))
-    rb.CreateAngularVelocityAttr(Gf.Vec3f(*init_ang_vel))
+    # physics:angularVelocity is in deg/s in Isaac Sim 4.5; convert from rad/s
+    rb.CreateAngularVelocityAttr(Gf.Vec3f(
+        init_ang_vel[0] * _RAD2DEG,
+        init_ang_vel[1] * _RAD2DEG,
+        init_ang_vel[2] * _RAD2DEG,
+    ))
 
     mass_api = UsdPhysics.MassAPI.Apply(xform.GetPrim())
     mass_api.CreateMassAttr(mass)
@@ -152,6 +186,12 @@ def spawn_rigid_box(stage, path: str,
     if _HAS_PHYSX:
         physx_rb = PhysxSchema.PhysxRigidBodyAPI.Apply(xform.GetPrim())
         physx_rb.CreateEnableGyroscopicForcesAttr(gyroscopic)
+        physx_rb.CreateLinearDampingAttr(0.0)
+        physx_rb.CreateAngularDampingAttr(0.0)
+        # SimulationContext overrides physics:scene gravity=0 with 9.81 m/s².
+        # Disable gravity per-body so boxes don't fall into the default ground plane
+        # and receive contact torques that corrupt angular dynamics tests.
+        physx_rb.CreateDisableGravityAttr(True)
 
     return xform.GetPrim()
 
@@ -189,7 +229,13 @@ def get_state(prim: "Usd.Prim") -> dict:
         return Gf.Vec3f(0, 0, 0)
 
     lin_vel = _read_vec(("physxRigidBody:velocity", "physics:velocity"))
-    ang_vel = _read_vec(("physxRigidBody:angularVelocity", "physics:angularVelocity"))
+    # physics:angularVelocity is in deg/s in Isaac Sim 4.5; convert to rad/s
+    ang_vel_deg = _read_vec(("physxRigidBody:angularVelocity", "physics:angularVelocity"))
+    ang_vel = Gf.Vec3f(
+        ang_vel_deg[0] * _DEG2RAD,
+        ang_vel_deg[1] * _DEG2RAD,
+        ang_vel_deg[2] * _DEG2RAD,
+    )
 
     return {"pos": pos, "quat": quat, "lin_vel": lin_vel, "ang_vel": ang_vel}
 

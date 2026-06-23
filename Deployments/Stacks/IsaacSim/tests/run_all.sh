@@ -60,10 +60,19 @@ for test in "${TESTS[@]}"; do
     # Isaac Sim's python.sh can exit 0 even on unhandled Python exceptions, so we
     # also require the explicit "PASS" sentinel in stdout to guard against false
     # positives (e.g. ModuleNotFoundError at import time swallowed by python.sh).
+    #
+    # 180-second timeout guards against the RTX MDL shader warmup hang that can
+    # occur at app.close() (same root cause as the startup PSO stall).
     TMPOUT=$(mktemp)
     set +e
-    docker compose run --rm --entrypoint "$PYTHON" isaac "$TEST_DIR/$test" 2>&1 | tee "$TMPOUT"
+    timeout 180s docker compose run --rm --entrypoint "$PYTHON" isaac "$TEST_DIR/$test" 2>&1 | tee "$TMPOUT"
     CODE=${PIPESTATUS[0]}
+    if [ "$CODE" -eq 124 ]; then
+        echo "  TIMEOUT: $name exceeded 180s — likely RTX PSO stall at shutdown"
+        CODE=2
+    fi
+    # Kill any container that outlived the timeout
+    docker compose down --remove-orphans --timeout 5 >/dev/null 2>&1 || true
     set -e
     if [ "$CODE" -eq 0 ] && grep -q " PASS" "$TMPOUT"; then
         PASS=$((PASS+1))

@@ -293,6 +293,20 @@ class _ControlHandler(BaseHTTPRequestHandler):
             elif action == "reset_position":
                 _cmd_queue.put({"type": "starship_command", "action": "reset_position"})
                 self._send_json({"status": "queued", "action": action})
+            elif action == "throttle":
+                # Continuous throttle+gimbal command from the Jetson FSW / BBB EGSE.
+                # Body: {"action":"throttle","value":0.0..1.0,
+                #        "gimbal_pitch":<rad>,"gimbal_yaw":<rad>}
+                value        = max(0.0, min(1.0, float(body.get("value", 0.0))))
+                gimbal_pitch = float(body.get("gimbal_pitch", 0.0))
+                gimbal_yaw   = float(body.get("gimbal_yaw", 0.0))
+                _cmd_queue.put({
+                    "type": "starship_command", "action": "throttle",
+                    "value": value, "gimbal_pitch": gimbal_pitch, "gimbal_yaw": gimbal_yaw,
+                })
+                self._send_json({"status": "queued", "action": action,
+                                 "value": value, "gimbal_pitch": gimbal_pitch,
+                                 "gimbal_yaw": gimbal_yaw})
             else:
                 self._send_json({"error": f"unknown action: {action!r}"}, 400)
         else:
@@ -602,6 +616,18 @@ def _handle_cmd(cmd: dict) -> None:
                         if attr.IsValid():
                             attr.Set(Gf.Vec3f(0.0, 0.0, 0.0))
                     print("[rosa] ABORT command: zeroed velocity", flush=True)
+                elif action == "throttle":
+                    value        = float(cmd.get("value", 0.0))
+                    gimbal_pitch = float(cmd.get("gimbal_pitch", 0.0))
+                    gimbal_yaw   = float(cmd.get("gimbal_yaw", 0.0))
+                    if _starship_controller is not None:
+                        _starship_controller.set_throttle_direct(
+                            value, gimbal_pitch, gimbal_yaw
+                        )
+                        print(f"[rosa] THROTTLE {value:.3f}  "
+                              f"pitch={gimbal_pitch:.4f}  yaw={gimbal_yaw:.4f}", flush=True)
+                    else:
+                        print("[rosa] WARNING: throttle command — no controller active", flush=True)
                 elif action == "reset_position":
                     # Teleport back to surface (Z-up: altitude is Z)
                     from pxr import UsdGeom

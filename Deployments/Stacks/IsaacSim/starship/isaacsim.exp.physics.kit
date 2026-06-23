@@ -57,16 +57,12 @@ rtx-transient.dlssg.enabled = false
 rtx.post.dlss.execMode = 0
 
 # --- STARTUP TIME FIX -------------------------------------------------------
-# SimulationApp passes --/rtx/materialDb/syncLoads=True and
-# --/rtx/hydra/materialSyncLoads=True as CLI args.  In a container without an
-# Omniverse nucleus server, RTX waits ~30 minutes for material DB connections
-# to time out.  Repeating the key as a later CLI-style override in the kit
-# doesn't help (CLI args win), so we also expose EXTRA_ARGS in _sim_utils.py
-# for tests to pass --/rtx/materialDb/syncLoads=False directly to SimulationApp.
-#
-# Workaround: nothing in this file can override CLI args; the fix lives in the
-# test entrypoint (see _sim_utils.py EXTRA_ARGS list).
-# -------------------------------------------------------------------------
+# Without an Omniverse nucleus server, the RTX material DB sync blocks ~30 min.
+# Tests use renderer="RayTracedLighting" + headless_egl=True (matching the
+# service config) which bypasses the PathTracing material-DB sync path.
+# These settings are belt-and-suspenders in case the renderer path still hits them.
+rtx.materialDb.syncLoads = false
+rtx.hydra.materialSyncLoads = false
 
 # Faster stage open/close, no OS-version nag.
 exts."omni.usd".locking.onClose = false

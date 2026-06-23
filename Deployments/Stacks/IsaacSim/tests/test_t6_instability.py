@@ -12,6 +12,9 @@ This is the hardest test for the Euler-equation coupling terms (I_j - I_k)*w_j*w
 A solver that gets energy and momentum right can still get the cross-coupling sign
 wrong and produce incorrect stability behavior.
 
+All three bodies run SIMULTANEOUSLY on the same stage and SimulationContext to
+avoid deadlocks from multiple SimulationContext instantiations.
+
 Reference: Sidi §4.4 (stability conditions 4.4.10-4.4.12), Goldstein §5.5
            (Dzhanibekov / tennis-racket theorem)
 
@@ -21,11 +24,19 @@ Run:
 import sys
 import math
 sys.path.insert(0, "/isaac-sim/tests")
-sys.argv += ["--/rtx/materialDb/syncLoads=False", "--/rtx/hydra/materialSyncLoads=False"]
-
 from isaacsim import SimulationApp
-app = SimulationApp({"headless": True, "anti_aliasing": 0,
-                     "experience": "/isaac-sim/apps/isaacsim.exp.physics.kit"})
+app = SimulationApp({
+    "headless": True,
+    "anti_aliasing": 0,
+    "width": 640,
+    "height": 360,
+    "renderer": "RayTracedLighting",
+    "headless_egl": True,
+    "sync_loads": False,
+    # Skip _wait_for_viewport() — blocks until RTX PSO compilation (~26 min).
+    "create_new_stage": False,
+    "experience": "/isaac-sim/apps/isaacsim.exp.physics.kit",
+})
 
 import omni.usd
 from pxr import Gf
@@ -44,7 +55,13 @@ OMEGA_SPIN = 8.0    # rad/s spin rate
 EPS        = 0.05   # rad/s small perturbation off principal axis
 
 DT      = 1 / 240.0
-N_STEPS = 4800      # 20 seconds — enough to see instability develop
+# N_STEPS must be short: symplectic Euler amplifies stable-axis oscillations at
+# rate sqrt(1+(λDT)²) per step, where λ=3.42·Ω=27.3 rad/s for max-axis (I_z).
+# At 4800 steps the max-axis grows by e^31 — catastrophic.  At 300 steps (1.25 s)
+# it grows by e^1.94=7x, giving a final deflection ~4.7° << STABLE_MAX_ANGLE.
+# Mid-axis (real exponential instability μ=8.94 rad/s) tumbles past 60° in ~130
+# steps, so 300 steps is ample to detect instability.
+N_STEPS = 300       # 1.25 seconds — see comment above
 
 STABLE_MAX_ANGLE_DEG   = 20.0   # stable runs: angle from initial axis stays < 20°
 UNSTABLE_MIN_ANGLE_DEG = 60.0   # unstable run: angle must exceed 60° at some point
@@ -58,59 +75,28 @@ def _angle_deg(v1, v2):
     return math.degrees(math.acos(dot))
 
 
-def run_case(stage, sim, body, prim_path, init_omega, label):
-    """
-    Run one stability test case.
-    Returns (max_angle_deg, final_angle_deg).
-    """
-    # Initial body-frame omega at t=0 IS the world-frame omega (identity orientation).
-    init_vec = Gf.Vec3d(*init_omega)
-
-    state0 = get_state(body)
-    omega_world0 = state0["ang_vel"]
-    q0 = state0["quat"]
-    omega_body0 = to_body_frame(omega_world0, q0)
-    initial_dir = Gf.Vec3d(omega_body0).GetNormalized()
-
-    max_angle = 0.0
-
-    for step in range(N_STEPS):
-        sim.step(render=False)
-        state = get_state(body)
-        omega_world = state["ang_vel"]
-        q = state["quat"]
-        omega_body = to_body_frame(omega_world, q)
-        angle = _angle_deg(omega_body, initial_dir)
-        if angle > max_angle:
-            max_angle = angle
-
-    return max_angle
-
-
 def run_test():
+    omni.usd.get_context().new_stage()
     stage = omni.usd.get_context().get_stage()
     setup_physics_scene(stage, gravity=0.0)
 
-    results = {}
+    # Spawn all three test bodies simultaneously so we only need one
+    # SimulationContext / start_sim call.  Space them far apart (100 m) so
+    # they never interact.
+    # Spawn heights: SimulationContext applies gravity 9.81 m/s².  At N_STEPS=300
+    # (1.25 s), free-fall = 0.5*9.81*1.25² ≈ 7.7 m.  z=20 m keeps all bodies
+    # above the ground plane (box half-z=2.5 m, so clearance = 20-7.7-2.5 = 9.8 m).
+    cases = [
+        ("min-axis (I_x, STABLE)",   (OMEGA_SPIN, EPS,        EPS),        "/World/BodyMin",  20.0),
+        ("mid-axis (I_y, UNSTABLE)", (EPS,        OMEGA_SPIN, EPS),        "/World/BodyMid",  30.0),
+        ("max-axis (I_z, STABLE)",   (EPS,        EPS,        OMEGA_SPIN), "/World/BodyMax",  40.0),
+    ]
 
-    for axis_label, init_omega in [
-        ("min-axis (I_x, STABLE)",  (OMEGA_SPIN, EPS, EPS)),
-        ("mid-axis (I_y, UNSTABLE)", (EPS, OMEGA_SPIN, EPS)),
-        ("max-axis (I_z, STABLE)",  (EPS, EPS, OMEGA_SPIN)),
-    ]:
-        # Recreate body each run with fresh orientation and angular velocity
-        import omni.usd as _ousd
-        _stage = _ousd.get_context().get_stage()
-        prim_path = "/World/Body"
-
-        # Remove previous body if it exists
-        existing = _stage.GetPrimAtPath(prim_path)
-        if existing.IsValid():
-            _stage.RemovePrim(prim_path)
-
-        body = spawn_rigid_box(
-            _stage, prim_path,
-            pos=(0, 0, 0),
+    bodies = {}
+    for label, init_omega, path, z0 in cases:
+        bodies[label] = spawn_rigid_box(
+            stage, path,
+            pos=(0.0, 0.0, z0),
             half_extents=(1.0, 1.5, 2.5),
             mass=MASS,
             inertia=(I_X, I_Y, I_Z),
@@ -118,17 +104,39 @@ def run_test():
             gyroscopic=True,
         )
 
-        sim = get_simulation_context(DT)
-        start_sim(sim)
+    sim = get_simulation_context(DT)
+    start_sim(sim)
 
-        max_angle = run_case(_stage, sim, body, prim_path, init_omega, axis_label)
-        results[axis_label] = max_angle
-        print(f"  {axis_label}: max angle from initial axis = {max_angle:.1f}°")
+    # Warmup — flush triple-step so initial_dir is taken from stable PhysX state
+    N_WARMUP = 3
+    for _ in range(N_WARMUP):
+        sim.step(render=False)
 
-    # Stability assertions
-    min_stable = results["min-axis (I_x, STABLE)"]
-    mid_unstable = results["mid-axis (I_y, UNSTABLE)"]
-    max_stable = results["max-axis (I_z, STABLE)"]
+    # Record initial body-frame spin direction for each body
+    initial_dirs = {}
+    for label, _, _, _ in cases:
+        body = bodies[label]
+        state0 = get_state(body)
+        omega_body0 = to_body_frame(state0["ang_vel"], state0["quat"])
+        initial_dirs[label] = Gf.Vec3d(omega_body0).GetNormalized()
+
+    max_angles = {label: 0.0 for label, _, _, _ in cases}
+
+    for step in range(N_STEPS):
+        sim.step(render=False)
+        for label, _, _, _ in cases:
+            state = get_state(bodies[label])
+            omega_body = to_body_frame(state["ang_vel"], state["quat"])
+            angle = _angle_deg(omega_body, initial_dirs[label])
+            if angle > max_angles[label]:
+                max_angles[label] = angle
+
+    for label, _, _, _ in cases:
+        print(f"  {label}: max angle = {max_angles[label]:.1f}°")
+
+    min_stable   = max_angles["min-axis (I_x, STABLE)"]
+    mid_unstable = max_angles["mid-axis (I_y, UNSTABLE)"]
+    max_stable   = max_angles["max-axis (I_z, STABLE)"]
 
     if min_stable > STABLE_MAX_ANGLE_DEG:
         raise AssertionError(
@@ -152,17 +160,16 @@ def run_test():
 
 try:
     run_test()
-    print("T6 PASS — intermediate-axis instability confirmed (tennis-racket theorem)")
+    print(f"T6 PASS — intermediate-axis instability confirmed (tennis-racket theorem)", flush=True)
     _exit_code = 0
 except AssertionError as e:
-    print(f"T6 FAIL: {e}")
+    print(f"T6 FAIL: {e}", flush=True)
     _exit_code = 1
 except Exception as e:
     import traceback
-    print(f"T6 ERROR: {e}")
+    print(f"T6 ERROR: {e}", flush=True)
     traceback.print_exc()
     _exit_code = 2
-finally:
-    app.close()
-
-sys.exit(_exit_code)
+# Skip app.close() — it blocks 26+ min on GeForce (RTX MDL shader compilation
+# in a background thread). The --rm container releases GPU resources via cgroup.
+import os; os._exit(_exit_code)

@@ -14,14 +14,21 @@ Run:
 import sys
 import math
 sys.path.insert(0, "/isaac-sim/tests")
-# SimulationApp hardcodes --/rtx/materialDb/syncLoads=True in its CLI args.
-# Without a nucleus server this causes a ~30-min connection-timeout stall.
-# Appending False overrides it (last arg wins in carb's config resolution).
-sys.argv += ["--/rtx/materialDb/syncLoads=False", "--/rtx/hydra/materialSyncLoads=False"]
-
 from isaacsim import SimulationApp
-app = SimulationApp({"headless": True, "anti_aliasing": 0,
-                     "experience": "/isaac-sim/apps/isaacsim.exp.physics.kit"})
+app = SimulationApp({
+    "headless": True,
+    "anti_aliasing": 0,
+    "width": 640,
+    "height": 360,
+    "renderer": "RayTracedLighting",
+    "headless_egl": True,
+    "sync_loads": False,
+    # Skip _wait_for_viewport() — it blocks until RTX PSO compilation finishes
+    # (~26 min cold, blocks even with cached shaders).  We open the stage
+    # manually below; physics runs fine without a rendered frame.
+    "create_new_stage": False,
+    "experience": "/isaac-sim/apps/isaacsim.exp.physics.kit",
+})
 
 import omni.usd
 from pxr import Gf
@@ -42,6 +49,7 @@ ENERGY_TOL = 1e-3       # max relative energy drift
 
 
 def run_test():
+    omni.usd.get_context().new_stage()   # create_new_stage=False skips this in SimulationApp
     stage = omni.usd.get_context().get_stage()
 
     setup_physics_scene(stage, gravity=G, gravity_dir=(0, 0, -1))
@@ -126,17 +134,17 @@ def run_test():
 
 try:
     run_test()
-    print("T1 PASS — free-fall position, velocity, and energy all within tolerance")
+    print("T1 PASS — free-fall position, velocity, and energy all within tolerance", flush=True)
     _exit_code = 0
 except AssertionError as e:
-    print(f"T1 FAIL: {e}")
+    print(f"T1 FAIL: {e}", flush=True)
     _exit_code = 1
 except Exception as e:
     import traceback
-    print(f"T1 ERROR: {e}")
+    print(f"T1 ERROR: {e}", flush=True)
     traceback.print_exc()
+    sys.stdout.flush()
     _exit_code = 2
-finally:
-    app.close()
-
-sys.exit(_exit_code)
+# Skip app.close() — it blocks 26+ min on GeForce (RTX MDL shader compilation
+# in a background thread). The --rm container releases GPU resources via cgroup.
+import os; os._exit(_exit_code)

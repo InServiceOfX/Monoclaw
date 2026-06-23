@@ -121,6 +121,21 @@ class StarshipController:
 
     # ── Public API ────────────────────────────────────────────────────────
 
+    def set_throttle_direct(
+        self,
+        throttle: float,
+        gimbal_pitch_rad: float = 0.0,
+        gimbal_yaw_rad: float = 0.0,
+    ) -> None:
+        """Set throttle and gimbal directly from the HTTP command path (no ROS needed)."""
+        with self._lock:
+            self._throttle = max(0.0, min(MAX_THROTTLE, throttle))
+            self._gimbal = Gf.Vec3f(
+                max(-0.26, min(0.26, gimbal_pitch_rad)),
+                max(-0.26, min(0.26, gimbal_yaw_rad)),
+                0.0,
+            )
+
     def start(self) -> None:
         if self._running:
             return

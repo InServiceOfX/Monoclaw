@@ -21,11 +21,19 @@ Run:
 import sys
 import math
 sys.path.insert(0, "/isaac-sim/tests")
-sys.argv += ["--/rtx/materialDb/syncLoads=False", "--/rtx/hydra/materialSyncLoads=False"]
-
 from isaacsim import SimulationApp
-app = SimulationApp({"headless": True, "anti_aliasing": 0,
-                     "experience": "/isaac-sim/apps/isaacsim.exp.physics.kit"})
+app = SimulationApp({
+    "headless": True,
+    "anti_aliasing": 0,
+    "width": 640,
+    "height": 360,
+    "renderer": "RayTracedLighting",
+    "headless_egl": True,
+    "sync_loads": False,
+    # Skip _wait_for_viewport() — blocks until RTX PSO compilation (~26 min).
+    "create_new_stage": False,
+    "experience": "/isaac-sim/apps/isaacsim.exp.physics.kit",
+})
 
 import omni.usd
 from pxr import Gf
@@ -73,6 +81,7 @@ def _frobenius_orth_error(R: Gf.Matrix3d) -> float:
 
 
 def run_test():
+    omni.usd.get_context().new_stage()   # create_new_stage=False skips this in SimulationApp
     stage = omni.usd.get_context().get_stage()
     setup_physics_scene(stage, gravity=0.0)
 
@@ -135,17 +144,16 @@ def run_test():
 
 try:
     run_test()
-    print("T8 PASS — quaternion norm and rotation matrix orthogonality maintained")
+    print(f"T8 PASS — quaternion norm and rotation matrix orthogonality maintained", flush=True)
     _exit_code = 0
 except AssertionError as e:
-    print(f"T8 FAIL: {e}")
+    print(f"T8 FAIL: {e}", flush=True)
     _exit_code = 1
 except Exception as e:
     import traceback
-    print(f"T8 ERROR: {e}")
+    print(f"T8 ERROR: {e}", flush=True)
     traceback.print_exc()
     _exit_code = 2
-finally:
-    app.close()
-
-sys.exit(_exit_code)
+# Skip app.close() — it blocks 26+ min on GeForce (RTX MDL shader compilation
+# in a background thread). The --rm container releases GPU resources via cgroup.
+import os; os._exit(_exit_code)
