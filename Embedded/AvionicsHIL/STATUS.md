@@ -3,7 +3,7 @@
 **Update this file whenever you finish a unit of work or learn a `VERIFY` answer.**
 This is the first thing the next session reads after README.
 
-Last updated: 2026-06-23 — by: claude-sonnet-4-6 — BBB EGSE running, cross-board UART link BLOCKED on physical wiring (open circuit).
+Last updated: 2026-06-25 — by: claude-sonnet-4-6 — TASK-03 desktop HIL PASS: 300 frames @ 50 Hz, FSW braked -15→-1.67 m/s, soft touchdown. Physical UART still blocked on wiring.
 
 ---
 
@@ -14,7 +14,7 @@ Last updated: 2026-06-23 — by: claude-sonnet-4-6 — BBB EGSE running, cross-b
 | Act 0 — knowledge ingestion | 0 | ✅ DONE | (prior sessions) | pinmux CSVs, BBB SRM, AoE resolved.md, inventory.json all exist |
 | [TASK-01](tasks/TASK-01-jetson-i2c-bringup.md) Jetson bring-up & checkout | 1 | 🟡 IN PROGRESS | claude-sonnet-4-6 / 2026-06-23 | /dev/ttyTHS1 confirmed; pin orientation confirmed; hardware path proven (break test); UART-LINK SKIPPED (cross-board wiring open circuit) |
 | [TASK-02](tasks/TASK-02-bbb-egse.md) BBB EGSE | 3 | 🔴 BLOCKED | claude-sonnet-4-6 / 2026-06-23 | EGSE running at 50 Hz (tx>2000), frames.py PASS, /dev/ttyS2 confirmed; blocked on physical wiring open circuit |
-| [TASK-03](tasks/TASK-03-jetson-fsw-hil.md) Jetson FSW + HIL close | 3 | ⬜ NOT STARTED | — | needs 01 + 02 |
+| [TASK-03](tasks/TASK-03-jetson-fsw-hil.md) Jetson FSW + HIL close | 3 | 🟡 IN PROGRESS | claude-sonnet-4-6 / 2026-06-25 | Desktop HIL PASS (pty loopback, no hardware): 300 frames 50 Hz, vz=-1.67 m/s touchdown. Blocked on physical UART wiring for on-hardware close. |
 | [TASK-04](tasks/TASK-04-analog-frontend.md) Analog front-end (AoE) | 2 | ⬜ NOT STARTED | — | needs 01 |
 | [TASK-05](tasks/TASK-05-fault-injection.md) Fault injection | 4 | ⬜ NOT STARTED | — | needs 02 + 03 |
 | [TASK-06](tasks/TASK-06-ci-report.md) CI + Test Readiness Review | 5 | ⬜ NOT STARTED | — | needs 03 |
