@@ -1,0 +1,16 @@
+{
+  "run_id": "2026-06-25T05:54:28Z",
+  "mode": "freefall_sim",
+  "frames_logged": 300,
+  "final_alt_m": 1.99,
+  "final_vz_mps": -1.67,
+  "soft_touchdown": true,
+  "tests": [
+    {
+      "id": "HIL-LAND-01",
+      "requirement": "soft touchdown |vz| < 2 m/s",
+      "status": "PASS",
+      "evidence": "final vz=-1.67 m/s"
+    }
+  ]
+}
