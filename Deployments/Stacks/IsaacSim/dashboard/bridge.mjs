@@ -19,7 +19,7 @@ import http from 'http';
 const UDP_PORT    = 55055;
 const WS_PORT     = 5174;
 const ISAAC_URL   = 'http://localhost:8282/telemetry/latest';
-const JETSON_IP   = '192.168.86.30';  // Jetson wired IP
+const JETSON_IP   = process.env.JETSON_IP ?? '192.168.86.34';
 const JETSON_CMD  = `http://${JETSON_IP}:8083/command`;
 const POLL_HZ     = 10;
 

@@ -629,18 +629,28 @@ def _handle_cmd(cmd: dict) -> None:
                     else:
                         print("[rosa] WARNING: throttle command — no controller active", flush=True)
                 elif action == "reset_position":
-                    # Teleport back to surface (Z-up: altitude is Z)
+                    # Stop physics, teleport to 1000m AGL, zero all velocity, replay.
+                    # Stopping the timeline flushes PhysX internal state so the
+                    # position/velocity writes actually take effect.
+                    timeline.stop()
+                    for _ in range(5):
+                        app.update()
                     from pxr import UsdGeom
                     xf = UsdGeom.Xformable(prim)
-                    ops = xf.GetOrderedXformOps()
-                    for op in ops:
+                    for op in xf.GetOrderedXformOps():
                         if "translate" in op.GetOpName():
-                            op.Set(Gf.Vec3d(0, 0, 1.5))
-                    for attr_name in ("physxRigidBody:velocity", "physics:velocity"):
+                            op.Set(Gf.Vec3d(0, 0, 1000.0))
+                    for attr_name in (
+                        "physxRigidBody:velocity", "physics:velocity",
+                        "physxRigidBody:angularVelocity", "physics:angularVelocity",
+                    ):
                         attr = prim.GetAttribute(attr_name)
                         if attr.IsValid():
                             attr.Set(Gf.Vec3f(0.0, 0.0, 0.0))
-                    print("[rosa] RESET command: Starship back to surface", flush=True)
+                    for _ in range(5):
+                        app.update()
+                    timeline.play()
+                    print("[rosa] RESET: Starship → 1000m AGL, velocity zeroed, sim resumed", flush=True)
         except Exception as exc:
             print(f"[rosa] starship_command error: {exc}", flush=True)
     elif cmd_type == "create_starship_stage":

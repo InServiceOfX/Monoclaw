@@ -21,7 +21,7 @@
   let telemetry = $state<Telemetry | null>(null);
   let decisions = $state<Decision[]>([]);
   let activeAlert = $state<string | null>(null);
-  let velocityHistory = $state<{ vy: number; y: number }[]>([]);
+  let velocityHistory = $state<{ vz: number; z: number }[]>([]);
   let alertTimeout: ReturnType<typeof setTimeout>;
   let cmdPending = $state(false);
   let cmdLastAck = $state<string | null>(null);
@@ -45,7 +45,7 @@
         if (msg.type === 'telemetry') {
           telemetry = msg.data;
           velocityHistory = [...velocityHistory.slice(-MAX_HISTORY + 1),
-            { vy: msg.data.vy, y: msg.data.y }];
+            { vz: msg.data.vz, z: msg.data.z }];
         } else if (msg.type === 'decision') {
           decisions = [msg.data as Decision, ...decisions.slice(0, 9)];
           activeAlert = msg.data.rule;
@@ -72,14 +72,14 @@
   }
 
   // SVG velocity graph
-  function makePolyline(history: { vy: number }[], w: number, h: number): string {
+  function makePolyline(history: { vz: number }[], w: number, h: number): string {
     if (history.length < 2) return '';
-    const min = Math.min(...history.map(h => h.vy));
-    const max = Math.max(...history.map(h => h.vy), 0.1);
+    const min = Math.min(...history.map(h => h.vz));
+    const max = Math.max(...history.map(h => h.vz), 0.1);
     const range = max - min || 1;
     return history.map((p, i) => {
       const x = (i / (history.length - 1)) * w;
-      const y = h - ((p.vy - min) / range) * h;
+      const y = h - ((p.vz - min) / range) * h;
       return `${x.toFixed(1)},${y.toFixed(1)}`;
     }).join(' ');
   }
@@ -149,28 +149,28 @@
     <!-- Gauges column -->
     <section class="gauges">
       <!-- Altitude -->
-      <div class="gauge" class:danger={telemetry && telemetry.y < 5}>
+      <div class="gauge" class:danger={telemetry && telemetry.z < 5}>
         <div class="g-label">ALTITUDE</div>
-        <div class="g-value" class:danger-val={telemetry && telemetry.y < 5}>
-          {(telemetry?.y ?? 0).toFixed(1)}
+        <div class="g-value" class:danger-val={telemetry && telemetry.z < 5}>
+          {(telemetry?.z ?? 0).toFixed(1)}
         </div>
         <div class="g-unit">metres AGL</div>
         <div class="g-bar">
           <div class="g-fill"
-            style="width:{Math.max(0, Math.min(100, ((telemetry?.y ?? 0) / 1000) * 100))}%"></div>
+            style="width:{Math.max(0, Math.min(100, ((telemetry?.z ?? 0) / 1000) * 100))}%"></div>
         </div>
       </div>
 
       <!-- Vertical velocity -->
-      <div class="gauge" class:danger={telemetry && telemetry.vy < -2}>
+      <div class="gauge" class:danger={telemetry && telemetry.vz < -2}>
         <div class="g-label">VERT VELOCITY</div>
-        <div class="g-value" class:danger-val={telemetry && telemetry.vy < -2}>
-          {(telemetry?.vy ?? 0).toFixed(2)}
+        <div class="g-value" class:danger-val={telemetry && telemetry.vz < -2}>
+          {(telemetry?.vz ?? 0).toFixed(2)}
         </div>
         <div class="g-unit">m/s</div>
         <div class="g-bar">
           <div class="g-fill vy"
-            style="width:{Math.min(100, Math.abs(telemetry?.vy ?? 0) / 10 * 100)}%"></div>
+            style="width:{Math.min(100, Math.abs(telemetry?.vz ?? 0) / 10 * 100)}%"></div>
         </div>
       </div>
 
