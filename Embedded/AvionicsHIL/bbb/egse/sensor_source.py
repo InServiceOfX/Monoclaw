@@ -80,7 +80,10 @@ class SensorSource:
             frame = self._injector.apply(frame)
             if frame is not None:
                 try:
-                    self._port.write(pack_sensor_frame(frame))
+                    raw = pack_sensor_frame(frame)
+                    for i in range(0, len(raw), 6):
+                        self._port.write(raw[i:i+6])
+                        time.sleep(0.001)
                     self.frames_sent += 1
                 except serial.SerialException as exc:
                     print(f"[sensor_source] UART write error: {exc}")

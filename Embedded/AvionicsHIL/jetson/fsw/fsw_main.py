@@ -124,7 +124,9 @@ def main():
                     gimbal_yaw_mrad=0,
                     flags=flags,
                 )
-                ser.write(pack_command_frame(cmd))
+                raw_cmd = pack_command_frame(cmd)
+                for _i in range(0, len(raw_cmd), 4):
+                    ser.write(raw_cmd[_i:_i+4])
 
                 # Telemetry log entry
                 elapsed = time.monotonic() - start_time

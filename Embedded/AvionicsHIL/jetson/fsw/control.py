@@ -50,7 +50,7 @@ def run_control(
     vz    = velocity_z_cms / 100.0        # cm/s → m/s
 
     # Landed detection — below threshold with near-zero velocity
-    if altitude_mm <= LANDED_ALT_MM and abs(vz) < 3.0:
+    if 0 < altitude_mm <= LANDED_ALT_MM and abs(vz) < 3.0:
         return ControlOutput(throttle=0.0, engine_enable=False, abort=False, landed=True)
 
     # Velocity error: positive → falling faster than target → need more thrust
