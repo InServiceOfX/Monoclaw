@@ -1,0 +1,48 @@
+{
+  "run_id": "2026-06-26T10:37:04Z",
+  "description": "Isaac Sim ↔ BBB EGSE ↔ Jetson FSW full closed-loop HIL landing burn",
+  "loop_rate_hz_measured": 11.42,
+  "fsw_rate_hz": 21.2,
+  "frames_rx": 2794,
+  "frames_bad": 0,
+  "egse_tx": 4826,
+  "egse_rx": 2794,
+  "egse_crc_errors": 0,
+  "duration_s": 130,
+  "final_alt_m": 1.983,
+  "final_vz_mps": -1.92,
+  "landed": true,
+  "soft_touchdown": true,
+  "trajectory_summary": "Smooth PD-controlled descent from 200m at steady vz≈-1.55 m/s (target -1.5 m/s). No oscillation. Touchdown at vz=-1.92 m/s after 130s.",
+  "tests": [
+    {
+      "id": "HIL-LAND-01",
+      "requirement": "soft touchdown |vz| < 2 m/s at altitude ≈ 0",
+      "status": "PASS",
+      "evidence": "final_vz=-1.92 m/s (|vz|=1.92 < 2.0); final_alt=1.983 m; landed=true"
+    },
+    {
+      "id": "HIL-LOOP-01",
+      "requirement": "closed loop running ≥ 60 s",
+      "status": "PASS",
+      "evidence": "FSW ran 130 s; 2794 sensor frames processed; 0 bad frames"
+    },
+    {
+      "id": "HIL-CTRL-01",
+      "requirement": "controlled (not ballistic) descent",
+      "status": "PASS",
+      "evidence": "vz held at -1.52 to -1.61 m/s from 200m to 9m; throttle 0.210-0.217 (just above hover 0.21)"
+    }
+  ],
+  "control_params": {
+    "target_touchdown_velocity_mps": -1.5,
+    "kd": 0.05,
+    "kp": 0.0,
+    "hover_throttle": 0.21
+  },
+  "stack": {
+    "isaac_sim": "physics-only headless, Mars gravity 3.72 m/s², z-up, spawn z=200m",
+    "egse": "BBB debian, /dev/ttyS2, 50 Hz sensor frames via USB-gadget 192.168.7.1:8282",
+    "fsw": "Jetson Orin Nano ubuntu orin@192.168.86.34, /dev/ttyTHS1, 115200 baud"
+  }
+}

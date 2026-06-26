@@ -77,7 +77,7 @@ def Xform "World"
     )
     {
         float physics:mass = 830000
-        double3 xformOp:translate = (0, 0, 1000)
+        double3 xformOp:translate = (0, 0, 200)
         uniform token[] xformOpOrder = ["xformOp:translate"]
 
         def Mesh "Visual" (

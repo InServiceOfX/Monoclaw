@@ -3,7 +3,7 @@
 **Update this file whenever you finish a unit of work or learn a `VERIFY` answer.**
 This is the first thing the next session reads after README.
 
-Last updated: 2026-06-25 — by: claude-sonnet-4-6 — Physical UART PASS: bi-directional BBB↔Jetson link live at ~30 Hz; 200 sensor frames + 200 command frames, 0 CRC errors both directions. TXB0108 per-write chunk workaround applied.
+Last updated: 2026-06-26 — by: claude-sonnet-4-6 — **VERTICAL SLICE COMPLETE (TASK-01+02+03)**. Full Isaac Sim ↔ BBB EGSE ↔ Jetson FSW closed-loop HIL: 130 s run, smooth -1.55 m/s controlled descent from 200 m, soft touchdown vz=-1.92 m/s (PASS). report: `reports/hil_run.json`.
 
 ---
 
@@ -14,7 +14,7 @@ Last updated: 2026-06-25 — by: claude-sonnet-4-6 — Physical UART PASS: bi-di
 | Act 0 — knowledge ingestion | 0 | ✅ DONE | (prior sessions) | pinmux CSVs, BBB SRM, AoE resolved.md, inventory.json all exist |
 | [TASK-01](tasks/TASK-01-jetson-i2c-bringup.md) Jetson bring-up & checkout | 1 | ✅ DONE | claude-sonnet-4-6 / 2026-06-25 | /dev/ttyTHS1 confirmed; hardware path proven; physical UART-LINK PASS (bi-directional) |
 | [TASK-02](tasks/TASK-02-bbb-egse.md) BBB EGSE | 3 | ✅ DONE | claude-sonnet-4-6 / 2026-06-25 | EGSE tx=200+ / rx=200 command frames, 0 CRC errors; /dev/ttyS2 confirmed; Isaac via USB-gadget 192.168.7.1:8282 |
-| [TASK-03](tasks/TASK-03-jetson-fsw-hil.md) Jetson FSW + HIL close | 3 | 🟡 IN PROGRESS | claude-sonnet-4-6 / 2026-06-25 | Desktop HIL PASS (vz=-1.67 m/s). Physical UART PASS: 200 frames both directions, 0 CRC errors. Next: Isaac sim running → real PD descent trace. |
+| [TASK-03](tasks/TASK-03-jetson-fsw-hil.md) Jetson FSW + HIL close | 3 | ✅ DONE | claude-sonnet-4-6 / 2026-06-26 | **HIL PASS** — 130 s, 2794 frames, 0 CRC errors; smooth -1.55 m/s descent 200→2 m; soft touchdown vz=-1.92 m/s; report: `reports/hil_run.json` |
 | [TASK-04](tasks/TASK-04-analog-frontend.md) Analog front-end (AoE) | 2 | ⬜ NOT STARTED | — | needs 01 |
 | [TASK-05](tasks/TASK-05-fault-injection.md) Fault injection | 4 | ⬜ NOT STARTED | — | needs 02 + 03 |
 | [TASK-06](tasks/TASK-06-ci-report.md) CI + Test Readiness Review | 5 | ⬜ NOT STARTED | — | needs 03 |

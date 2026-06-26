@@ -78,93 +78,101 @@ def main():
         while True:
             t0 = time.monotonic()
 
-            # Read available bytes, accumulate into buffer
+            # Drain ALL available bytes — prevents UART backlog when EGSE sends faster
+            # than the Python loop processes (otherwise stale frames accumulate indefinitely)
             chunk = ser.read(SENSOR_FRAME_SIZE * 2)
             if chunk:
                 buf += chunk
+            avail = ser.in_waiting
+            if avail > 0:
+                buf += ser.read(avail)
 
-            # Resync on magic, consume complete frames
+            # Scan for complete sensor frames, keep only the LATEST one.
+            # Processing every buffered frame would block UART TX for seconds during
+            # burst drains and base control on stale data anyway.
+            sf = None
             while True:
                 idx = find_magic(buf, SENSOR_MAGIC)
                 if idx < 0 or len(buf) - idx < SENSOR_FRAME_SIZE:
-                    # Discard bytes before any magic to keep buffer lean
                     if idx < 0 and len(buf) > 2:
                         buf = buf[-2:]
                     break
-
                 frame_bytes = buf[idx: idx + SENSOR_FRAME_SIZE]
                 buf = buf[idx + SENSOR_FRAME_SIZE:]
-
-                sf = unpack_sensor_frame(frame_bytes)
-                if sf is None:
+                parsed = unpack_sensor_frame(frame_bytes)
+                if parsed is None:
                     frames_bad += 1
                     continue
-
                 frames_rx += 1
-                fault_active = bool(sf.status & STATUS_FAULT_ACTIVE)
+                sf = parsed  # keep updating; sf ends up as the latest valid frame
 
-                ctrl = run_control(
-                    altitude_mm=sf.altitude_mm,
-                    velocity_z_cms=sf.velocity_z_cms,
-                    fault_active=fault_active,
-                    cfg=ctrl_cfg,
-                )
-                last_ctrl = ctrl
+            if sf is None:
+                continue  # nothing decodable yet
 
-                flags = 0
-                if ctrl.engine_enable:
-                    flags |= FLAGS_ENGINE_ENABLE
-                if ctrl.abort:
-                    flags |= FLAGS_ABORT
+            fault_active = bool(sf.status & STATUS_FAULT_ACTIVE)
 
-                cmd = CommandFrame(
-                    seq=sf.seq,
-                    throttle=ctrl.throttle,
-                    gimbal_pitch_mrad=0,
-                    gimbal_yaw_mrad=0,
-                    flags=flags,
-                )
-                raw_cmd = pack_command_frame(cmd)
-                for _i in range(0, len(raw_cmd), 4):
-                    ser.write(raw_cmd[_i:_i+4])
+            ctrl = run_control(
+                altitude_mm=sf.altitude_mm,
+                velocity_z_cms=sf.velocity_z_cms,
+                fault_active=fault_active,
+                cfg=ctrl_cfg,
+            )
+            last_ctrl = ctrl
 
-                # Telemetry log entry
-                elapsed = time.monotonic() - start_time
-                entry = {
-                    "t":          round(elapsed, 4),
-                    "seq":        sf.seq,
-                    "alt_m":      sf.altitude_mm / 1000.0,
-                    "vz_mps":     sf.velocity_z_cms / 100.0,
-                    "throttle":   round(ctrl.throttle, 4),
-                    "engine_on":  ctrl.engine_enable,
-                    "abort":      ctrl.abort,
-                    "landed":     ctrl.landed,
-                    "fault":      fault_active,
-                    "fault_code": sf.fault_code,
-                }
-                log_f.write(json.dumps(entry) + "\n")
-                log_f.flush()
+            flags = 0
+            if ctrl.engine_enable:
+                flags |= FLAGS_ENGINE_ENABLE
+            if ctrl.abort:
+                flags |= FLAGS_ABORT
 
-                dt = time.monotonic() - t0
-                loop_times.append(dt)
+            cmd = CommandFrame(
+                seq=sf.seq,
+                throttle=ctrl.throttle,
+                gimbal_pitch_mrad=0,
+                gimbal_yaw_mrad=0,
+                flags=flags,
+            )
+            raw_cmd = pack_command_frame(cmd)
+            for _i in range(0, len(raw_cmd), 4):
+                ser.write(raw_cmd[_i:_i+4])
 
-                if ctrl.landed:
-                    final_vz = sf.velocity_z_cms / 100.0
-                    print(f"[fsw] LANDED — vz={final_vz:.2f} m/s  alt={sf.altitude_mm/1000:.1f} m  "
-                          f"frames_rx={frames_rx}  frames_bad={frames_bad}", flush=True)
-                    _write_report(log_path, loop_times, frames_rx, frames_bad, entry)
-                    return
+            # Telemetry log entry
+            elapsed = time.monotonic() - start_time
+            entry = {
+                "t":          round(elapsed, 4),
+                "seq":        sf.seq,
+                "alt_m":      sf.altitude_mm / 1000.0,
+                "vz_mps":     sf.velocity_z_cms / 100.0,
+                "throttle":   round(ctrl.throttle, 4),
+                "engine_on":  ctrl.engine_enable,
+                "abort":      ctrl.abort,
+                "landed":     ctrl.landed,
+                "fault":      fault_active,
+                "fault_code": sf.fault_code,
+            }
+            log_f.write(json.dumps(entry) + "\n")
+            log_f.flush()
 
-                if frames_rx % 50 == 0:
-                    rate = frames_rx / max(elapsed, 0.001)
-                    print(f"[fsw] t={elapsed:.1f}s  seq={sf.seq}  "
-                          f"alt={sf.altitude_mm/1000:.1f}m  vz={sf.velocity_z_cms/100:.2f}m/s  "
-                          f"thr={ctrl.throttle:.3f}  rate={rate:.1f}Hz", flush=True)
+            dt = time.monotonic() - t0
+            loop_times.append(dt)
 
-                if args.max_frames and frames_rx >= args.max_frames:
-                    print(f"[fsw] Reached max-frames={args.max_frames}, exiting.", flush=True)
-                    _write_report(log_path, loop_times, frames_rx, frames_bad, entry)
-                    return
+            if ctrl.landed:
+                final_vz = sf.velocity_z_cms / 100.0
+                print(f"[fsw] LANDED — vz={final_vz:.2f} m/s  alt={sf.altitude_mm/1000:.1f} m  "
+                      f"frames_rx={frames_rx}  frames_bad={frames_bad}", flush=True)
+                _write_report(log_path, loop_times, frames_rx, frames_bad, entry)
+                return
+
+            if frames_rx % 50 == 0:
+                rate = frames_rx / max(elapsed, 0.001)
+                print(f"[fsw] t={elapsed:.1f}s  seq={sf.seq}  "
+                      f"alt={sf.altitude_mm/1000:.1f}m  vz={sf.velocity_z_cms/100:.2f}m/s  "
+                      f"thr={ctrl.throttle:.3f}  rate={rate:.1f}Hz", flush=True)
+
+            if args.max_frames and frames_rx >= args.max_frames:
+                print(f"[fsw] Reached max-frames={args.max_frames}, exiting.", flush=True)
+                _write_report(log_path, loop_times, frames_rx, frames_bad, entry)
+                return
 
 
 def _write_report(log_path: Path, loop_times, frames_rx, frames_bad, last_entry):

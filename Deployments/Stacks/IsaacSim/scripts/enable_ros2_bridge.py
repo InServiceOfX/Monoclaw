@@ -291,8 +291,12 @@ class _ControlHandler(BaseHTTPRequestHandler):
                 _cmd_queue.put({"type": "starship_command", "action": "safe_mode"})
                 self._send_json({"status": "queued", "action": action})
             elif action == "reset_position":
-                _cmd_queue.put({"type": "starship_command", "action": "reset_position"})
-                self._send_json({"status": "queued", "action": action})
+                alt_m  = float(body.get("altitude_m", 1000.0))
+                vz_mps = float(body.get("vz_mps", 0.0))
+                _cmd_queue.put({"type": "starship_command", "action": "reset_position",
+                                "altitude_m": alt_m, "vz_mps": vz_mps})
+                self._send_json({"status": "queued", "action": action,
+                                 "altitude_m": alt_m, "vz_mps": vz_mps})
             elif action == "throttle":
                 # Continuous throttle+gimbal command from the Jetson FSW / BBB EGSE.
                 # Body: {"action":"throttle","value":0.0..1.0,
@@ -567,8 +571,12 @@ def _handle_cmd(cmd: dict) -> None:
     if cmd_type == "timeline":
         action = cmd.get("action")
         if action == "play":
+            if _starship_controller is not None:
+                _starship_controller.set_throttle_direct(0.0, 0.0, 0.0)
             timeline.play()
         elif action == "stop":
+            if _starship_controller is not None:
+                _starship_controller.set_throttle_direct(0.0, 0.0, 0.0)
             timeline.stop()
         elif action == "pause":
             timeline.pause()
@@ -629,9 +637,16 @@ def _handle_cmd(cmd: dict) -> None:
                     else:
                         print("[rosa] WARNING: throttle command — no controller active", flush=True)
                 elif action == "reset_position":
-                    # Stop physics, teleport to 1000m AGL, zero all velocity, replay.
+                    # Stop physics, zero throttle, teleport to target AGL,
+                    # set initial velocity, replay.
                     # Stopping the timeline flushes PhysX internal state so the
                     # position/velocity writes actually take effect.
+                    # Zero throttle first so the controller's cached value doesn't
+                    # launch the vehicle on resume.
+                    altitude_m = float(cmd.get("altitude_m", 1000.0))
+                    vz_mps     = float(cmd.get("vz_mps", 0.0))
+                    if _starship_controller is not None:
+                        _starship_controller.set_throttle_direct(0.0, 0.0, 0.0)
                     timeline.stop()
                     for _ in range(5):
                         app.update()
@@ -639,18 +654,19 @@ def _handle_cmd(cmd: dict) -> None:
                     xf = UsdGeom.Xformable(prim)
                     for op in xf.GetOrderedXformOps():
                         if "translate" in op.GetOpName():
-                            op.Set(Gf.Vec3d(0, 0, 1000.0))
-                    for attr_name in (
-                        "physxRigidBody:velocity", "physics:velocity",
-                        "physxRigidBody:angularVelocity", "physics:angularVelocity",
-                    ):
+                            op.Set(Gf.Vec3d(0, 0, altitude_m))
+                    for attr_name in ("physxRigidBody:velocity", "physics:velocity"):
+                        attr = prim.GetAttribute(attr_name)
+                        if attr.IsValid():
+                            attr.Set(Gf.Vec3f(0.0, 0.0, vz_mps))
+                    for attr_name in ("physxRigidBody:angularVelocity", "physics:angularVelocity"):
                         attr = prim.GetAttribute(attr_name)
                         if attr.IsValid():
                             attr.Set(Gf.Vec3f(0.0, 0.0, 0.0))
                     for _ in range(5):
                         app.update()
                     timeline.play()
-                    print("[rosa] RESET: Starship → 1000m AGL, velocity zeroed, sim resumed", flush=True)
+                    print(f"[rosa] RESET: Starship → {altitude_m:.0f}m AGL, vz={vz_mps:.1f}m/s, throttle zeroed, sim resumed", flush=True)
         except Exception as exc:
             print(f"[rosa] starship_command error: {exc}", flush=True)
     elif cmd_type == "create_starship_stage":
@@ -698,6 +714,13 @@ if _preload_scene_path:
 # ── Main loop ─────────────────────────────────────────────────────────────────
 print("[rosa] Isaac Sim running — Ctrl-C or SIGTERM to stop")
 
+# Real-time physics rate limiter: without this the main loop runs at CPU speed
+# (thousands of Hz), making physics run N× faster than real-time.  The FSW
+# operates at 30 Hz over UART so it can only close the loop at real-time.
+# Target 60 Hz = physics_dt 1/60 s ≈ real-time for Isaac's default 60 Hz step.
+_RT_FRAME_S = 1.0 / 60.0
+_rt_last = time.monotonic()
+
 try:
     while app.is_running():
         # Drain command queue (max 10 per frame to avoid starvation).
@@ -741,6 +764,16 @@ try:
                 print(f"[rosa] Reset error: {exc}")
 
         app.update()
+
+        # Pace physics to real-time only while simulation is playing.
+        if timeline.is_playing():
+            _now = time.monotonic()
+            _budget = _RT_FRAME_S - (_now - _rt_last)
+            if _budget > 0:
+                time.sleep(_budget)
+            _rt_last = time.monotonic()
+        else:
+            _rt_last = time.monotonic()
 
 except KeyboardInterrupt:
     print("\n[rosa] Caught interrupt — shutting down")

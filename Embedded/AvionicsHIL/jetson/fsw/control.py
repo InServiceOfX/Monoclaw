@@ -43,8 +43,9 @@ def run_control(
     Returns throttle + flags to pack into the command frame.
     """
     if fault_active:
-        # Safe-state: cut engines, let FSW upstream decide abort
-        return ControlOutput(throttle=0.0, engine_enable=False, abort=True, landed=False)
+        # Isaac telemetry unreachable — maintain hover so Starship holds altitude
+        # until the sensor link is restored (cutting engines causes uncontrolled free-fall)
+        return ControlOutput(throttle=HOVER_THROTTLE, engine_enable=True, abort=False, landed=False)
 
     alt_m = altitude_mm / 1_000.0
     vz    = velocity_z_cms / 100.0        # cm/s → m/s

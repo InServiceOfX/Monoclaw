@@ -18,6 +18,6 @@ loop:
   rate_hz: 50
 
 control:
-  target_touchdown_velocity_mps: -2.0
-  kp: 0.05
-  kd: 0.3
+  target_touchdown_velocity_mps: -1.5   # equilibrium at vz=-1.5 m/s; |vz|=1.5 < 2.0 soft-touchdown threshold
+  kp: 0.0                               # altitude term off — caused equilibrium shift with kp>0
+  kd: 0.05                              # tuned 2026-06-26: kd=0.30 caused oscillation/crash; 0.05 gives τ≈1.1s stable descent

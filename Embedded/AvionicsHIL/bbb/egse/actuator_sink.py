@@ -91,12 +91,20 @@ class ActuatorSink:
                 'gimbal_pitch': frame.gimbal_pitch_mrad / 1000.0,
                 'gimbal_yaw':   frame.gimbal_yaw_mrad  / 1000.0,
             }
+        # Fire-and-forget in a daemon thread so the UART reader never blocks.
+        # Isaac's GIL can hold for >50ms (physics step), causing short timeouts to
+        # silently fail and leave stale throttle applied.  500ms gives the HTTP
+        # server thread time to wake up between physics frames.
+        url = f"{self._base_url}/starship/command"
+        threading.Thread(
+            target=self._post_to_isaac,
+            args=(url, body),
+            daemon=True,
+        ).start()
+
+    def _post_to_isaac(self, url: str, body: dict) -> None:
         try:
-            self._session.post(
-                f"{self._base_url}/starship/command",
-                json=body,
-                timeout=0.05,
-            )
+            requests.post(url, json=body, timeout=0.5)
         except Exception as exc:
             self.isaac_post_errors += 1
             if self.isaac_post_errors <= 3 or self.isaac_post_errors % 100 == 0:
