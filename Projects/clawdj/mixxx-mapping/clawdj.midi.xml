@@ -112,6 +112,20 @@
         <key>clawdj.cueDeck2</key>
         <options><script-binding/></options>
       </control>
+      <control>
+        <description>sync deck 1 to active deck</description>
+        <status>0x9F</status>
+        <midino>0x08</midino>
+        <key>clawdj.syncDeck1</key>
+        <options><script-binding/></options>
+      </control>
+      <control>
+        <description>sync deck 2 to active deck</description>
+        <status>0x9F</status>
+        <midino>0x09</midino>
+        <key>clawdj.syncDeck2</key>
+        <options><script-binding/></options>
+      </control>
 
       <!-- Continuous controls (CC) -->
       <control>

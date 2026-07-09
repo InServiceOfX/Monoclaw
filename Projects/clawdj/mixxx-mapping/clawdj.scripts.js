@@ -105,6 +105,15 @@ clawdj.pauseDeck2 = function (c, ctl, v) {
     engine.setValue("[Channel2]", "play", 0);
 };
 
+clawdj.syncDeck1 = function (c, ctl, v) {
+    if (!clawdj._noteOn(v)) return;
+    engine.setValue("[Channel1]", "beatsync", 1);
+};
+clawdj.syncDeck2 = function (c, ctl, v) {
+    if (!clawdj._noteOn(v)) return;
+    engine.setValue("[Channel2]", "beatsync", 1);
+};
+
 clawdj.cueDeck1 = function (c, ctl, v) {
     if (!clawdj._noteOn(v)) return;
     engine.setValue("[Channel1]", "cue_goto", 1);

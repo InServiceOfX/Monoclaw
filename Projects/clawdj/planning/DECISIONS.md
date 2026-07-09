@@ -131,6 +131,28 @@ Our Rust core never touches Mixxx's process or files at runtime; communication i
 
 ---
 
+### 2026-07-03 · Revalidated Mixxx programmability
+
+**Context.** Ernest asked whether the installed Mac mini Mixxx can be
+programmatically controlled, and whether we should reinstall, patch, or fork
+Mixxx. Current installed app is Mixxx 2.5.6 arm64 in `/Applications/Mixxx.app`,
+which matches the current stable version recommended by upstream on 2026-07-03.
+Local Mixxx source is clean on `main` at `4ae413dbe8`, a 2.7-alpha development
+snapshot.
+
+**Decision.** Do not reinstall Mixxx and do not fork yet. Continue with stock
+Mixxx 2.5.6 plus virtual MIDI for all transport/mixer/recipe control. Treat
+deterministic track loading as the only likely reason to patch Mixxx.
+
+**Consequences.** Existing `clawdj` mapping remains the right short-term path.
+If the `__clawdj_queue` + `LoadSelectedTrack` approach is unreliable in manual
+validation, fork Mixxx and add the smallest legacy controller-script API:
+`engine.loadTrackFromLocation(group, path, play)`, implemented by routing to
+`PlayerManager::slotLoadLocationToPlayer`. Avoid building a broad HTTP/REST
+server until there is a real need for external non-MIDI clients.
+
+---
+
 ### TBD — `[Open]` Whisper local vs LRCLIB for lyrics
 
 Pending. Recommend: LRC file → LRCLIB API → whisper.cpp local, in that order.

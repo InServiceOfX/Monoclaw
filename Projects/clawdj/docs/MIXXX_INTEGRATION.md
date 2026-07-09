@@ -2,6 +2,14 @@
 
 ## What Mixxx exposes today
 
+Updated check: 2026-07-03, against:
+
+- Installed `/Applications/Mixxx.app`: **2.5.6 arm64**.
+- Upstream stable docs: **2.5.6** is the current stable release; 2.6 beta and
+  2.7 alpha/nightly builds exist but are not recommended for live use.
+- Local source checkout: Mixxx `main` at `4ae413dbe8`, matching a 2.7-alpha
+  development snapshot.
+
 Mixxx has a unified internal API called the **Control system** — every knob,
 button, slider, deck, EQ, effect is a `(group, key)` pair you can read and
 write. Examples:
@@ -28,10 +36,24 @@ The Control system is reachable from:
 3. **OSC client (output only, unmerged branch)** — see "OSC" below.
 4. **Keyboard mappings** (limited).
 
-There is **no built-in TCP/HTTP/IPC API**. There is no "headless" Python or
-JavaScript runner that talks to the Control system from outside Mixxx. You can
-launch Mixxx with command-line flags (`--developer`, `--debug-assertions`, etc.)
-but those don't take dynamic commands.
+There is **no built-in TCP/HTTP/WebSocket/REST/OSC input API** in stable Mixxx.
+There is no "headless" Python or JavaScript runner that talks to the Control
+system from outside Mixxx. You can launch Mixxx with command-line flags
+(`--developer`, `--debug-assertions`, `--settings-path`, etc.) and with startup
+audio files, but those don't provide a live command channel.
+
+Source check notes:
+
+- The legacy controller scripting API exposes `engine.getValue`,
+  `engine.setValue`, `engine.makeConnection` / `engine.connectControl`, timers,
+  scratch helpers, and MIDI output.
+- `engine.getPlayer(group)` exists, but in legacy controller scripts it returns
+  a `JavascriptPlayerProxy` exposing metadata only (`artist`, `title`, `key`,
+  etc.). It does **not** expose a load-by-path method.
+- Mixxx's newer QML layer has `QmlPlayerManagerProxy::loadLocationToPlayer` and
+  `QmlPlayerProxy::loadTrackFromLocation`, but that proxy is for QML UI /
+  controller-screen code, not the XML+JS MIDI mapping path we use today.
+- The local `main` checkout still has no general-purpose command server.
 
 ## The decision: virtual-MIDI bridge
 
@@ -134,7 +156,8 @@ perfectly).
 
 ## Loading tracks: the catch and the fix
 
-There is **no JS API to load a track by file path** from a controller script. The available routes are:
+There is **no legacy controller-script JS API to load a track by file path**.
+The available stock-Mixxx routes are:
 
 1. `LoadSelectedTrackFromGroup` — acts on whatever is highlighted in the GUI library.
 2. Auto-DJ queue.
@@ -147,3 +170,23 @@ There is **no JS API to load a track by file path** from a controller script. Th
 3. JS in Mixxx: focus the library on our playlist, set selection to row 0, fire `LoadSelectedTrackFromGroup` against `[Channel<N>]`.
 
 This stays inside Mixxx's sanctioned API. We never modify the real `library` table.
+
+## Patch option: first-class `clawdj` command API
+
+We do **not** need a custom Mixxx build for M0/M1 transport control, EQ, fader,
+looping, cueing, beat feedback, or most live recipes. Virtual MIDI is enough.
+
+The only compelling reason to fork/patch Mixxx is deterministic track loading
+without GUI library focus. The smallest useful patch is **not** a broad HTTP
+server; it is one of:
+
+1. Expose a legacy controller-script method like
+   `engine.loadTrackFromLocation(group, path, play)` by routing through
+   `PlayerManager::slotLoadLocationToPlayer`.
+2. Add a narrow local IPC command server that accepts JSON commands and calls
+   existing `ControlObject` and `PlayerManager` APIs on the GUI thread.
+
+Recommendation: keep stock Mixxx 2.5.6 for live use and finish validating the
+current virtual-MIDI mapping first. If track loading proves too brittle because
+of library-focus behavior, fork Mixxx and implement option (1). It is small,
+upstream-friendly, and reuses already-existing Mixxx internals.
