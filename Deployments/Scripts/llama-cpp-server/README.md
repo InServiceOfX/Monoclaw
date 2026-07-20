@@ -13,6 +13,9 @@ cp config.yml.example config.yml
 # 2. Launch a model
 ./launch.sh qwen35-9b-distilled
 
+# Preview the exact Docker/llama-server command without starting anything
+./launch.sh --dry-run qwen35-9b-distilled
+
 # 3. Stop
 ./launch.sh --stop
 ```
@@ -38,6 +41,35 @@ llama-cpp-server/
 
 Profiles expose the **most useful** server params. For the full list (60+ options), see:
 https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md
+
+Supported profile sampling defaults include `temperature`, `top_p`, `top_k`,
+`min_p`, and `repeat_penalty`. API clients may override them per request.
+
+## Qwythos-9B
+
+Two local text-only profiles are included:
+
+```bash
+# Recommended on the local 8 GB RTX 3070: Q4_K_M with 32K context
+./launch.sh qwythos-9b-q4
+
+# Higher-quality Q5_K_M with a safer 16K context
+./launch.sh qwythos-9b-q5
+```
+
+Both use the model-card sampling defaults (`temperature=0.6`, `top_p=0.95`,
+`top_k=20`, `repeat_penalty=1.05`), one server slot, Flash Attention, and q4_0
+KV cache. The GGUF embeds YaRN scaling for up to 1M tokens, but that context is
+not practical on an 8 GB GPU. To experiment with more context, override the
+profile value and increase gradually:
+
+```bash
+./launch.sh qwythos-9b-q4 -c 65536
+```
+
+Vision and MTP profiles are intentionally omitted until their full GGUF files
+are downloaded. A ~135-byte `*.gguf` is only a Git LFS pointer, not a loadable
+model or projector.
 
 ## Docker Image
 

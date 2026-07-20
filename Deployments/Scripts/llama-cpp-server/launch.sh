@@ -3,6 +3,7 @@
 #
 # Usage:
 #   ./launch.sh <profile>           # Start server with profile
+#   ./launch.sh --dry-run <profile> # Print command without changing runtime state
 #   ./launch.sh --stop              # Stop running container
 #   ./launch.sh --status            # Show container status
 #   ./launch.sh                     # List available profiles
@@ -21,8 +22,18 @@ if [[ ! -f "$CONFIG_FILE" ]]; then
     exit 1
 fi
 
+DRY_RUN=false
+
 # ── handle --stop / --status with no profile ──────────────────────────────────
 case "${1:-}" in
+    --dry-run)
+        DRY_RUN=true
+        shift
+        if [[ $# -eq 0 ]]; then
+            echo "Usage: $0 --dry-run <profile> [extra llama-server args...]"
+            exit 1
+        fi
+        ;;
     --stop|stop)
         NAME=$(python3 -c "
 import yaml
@@ -44,6 +55,7 @@ print(cfg.get('docker',{}).get('container_name','llama-cpp-server'))
         ;;
     "")
         echo "Usage: $0 <profile> [extra llama-server args...]"
+        echo "       $0 --dry-run <profile> [extra llama-server args...]"
         echo "       $0 --stop | stop"
         echo "       $0 --status | status"
         echo ""
@@ -110,6 +122,13 @@ add("-np", "parallel")
 add("-b", "batch_size")
 add("-ub", "ubatch_size")
 add("-t", "threads")
+
+# Default sampling parameters. API clients can override these per request.
+add("--temp", "temperature")
+add("--top-p", "top_p")
+add("--top-k", "top_k")
+add("--min-p", "min_p")
+add("--repeat-penalty", "repeat_penalty")
 
 # Flash attention
 fa = prof.get("flash_attn")
@@ -186,14 +205,14 @@ print(f'FULL_CMD={shlex.quote(" ".join(shlex.quote(a) for a in docker_run))}')
 PYEOF
 )"
 
-# ── stop existing container ───────────────────────────────────────────────────
-if docker ps -q --filter "name=${CONTAINER_NAME}" 2>/dev/null | grep -q .; then
-    echo "⚠️  Stopping existing container: ${CONTAINER_NAME}"
-    docker stop "${CONTAINER_NAME}" >/dev/null 2>&1
-    docker rm "${CONTAINER_NAME}" >/dev/null 2>&1 || true
+# Append any extra args the user passed after the profile name
+if [[ $# -gt 0 ]]; then
+    for arg in "$@"; do
+        FULL_CMD+=" $(printf '%q' "$arg")"
+    done
 fi
 
-# ── launch ────────────────────────────────────────────────────────────────────
+# ── command preview ───────────────────────────────────────────────────────────
 echo "=== llama.cpp CUDA Server ==="
 echo "Profile  : ${PROFILE}"
 echo "Image    : ${DOCKER_IMAGE}"
@@ -205,16 +224,19 @@ echo "Full docker command:"
 echo "${FULL_CMD}"
 echo ""
 
-# Append any extra args the user passed after the profile name
-if [[ $# -gt 0 ]]; then
-    # Strip trailing quote, append extra args, re-quote
-    EXTRA_ARGS=""
-    for arg in "$@"; do
-        EXTRA_ARGS+=" $(printf '%q' "$arg")"
-    done
-    FULL_CMD="${FULL_CMD%\'} ${EXTRA_ARGS}'"
+if [[ "$DRY_RUN" == true ]]; then
+    echo "✅ Dry run complete; no container was started or stopped."
+    exit 0
 fi
 
+# ── stop existing container ───────────────────────────────────────────────────
+if docker ps -q --filter "name=${CONTAINER_NAME}" 2>/dev/null | grep -q .; then
+    echo "⚠️  Stopping existing container: ${CONTAINER_NAME}"
+    docker stop "${CONTAINER_NAME}" >/dev/null 2>&1
+    docker rm "${CONTAINER_NAME}" >/dev/null 2>&1 || true
+fi
+
+# ── launch ────────────────────────────────────────────────────────────────────
 eval "${FULL_CMD}"
 
 # ── wait for ready ─────────────────────────────────────────────────────────────
