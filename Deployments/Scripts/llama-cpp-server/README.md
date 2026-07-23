@@ -69,9 +69,20 @@ Text-only profiles (copy each `*.yml.example` → `*.yml` before first launch):
 # Q5_K_M — higher quality (~6.1 GB); good default on 8–12 GB GPUs
 ./launch.sh qwythos-9b-q5
 
+# Q5_K_M + vision — same text quant + official F16 mmproj (image input)
+# Requires: git lfs pull --include="mmproj-Qwythos-9B-Claude-Mythos-5-1M-F16.gguf"
+./launch.sh qwythos-9b-q5-vision
+
 # Q6_K — best local quality (~6.9 GB); prefer 12 GB VRAM
 ./launch.sh qwythos-9b-q6
 ```
+
+### Vision (mmproj)
+
+`qwythos-9b-q5-vision` sets `mmproj_path`, which `launch.sh` passes as
+`--mmproj` to llama-server. Clients then send OpenAI-style image content to
+`http://localhost:8080/v1/chat/completions`. Use a lower `ctx_size` than
+text-only (default 262144) because the projector costs ~0.9 GB VRAM.
 
 All use model-card sampling defaults (`temperature=0.6`, `top_p=0.95`,
 `top_k=20`, `repeat_penalty=1.05`, `n_predict`/`max_new_tokens=16384`), one
