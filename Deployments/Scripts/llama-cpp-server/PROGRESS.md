@@ -27,6 +27,12 @@
 
 ## Last Worked On
 
+**2026-07-22** — Raised local Qwythos context to hardware max on MS-7885
+(RTX 3060 12GB, q4_0 KV, flash-attn): Q5 `ctx_size=589824` (OOM at 606208),
+Q6 `ctx_size=524288`. Model-card max remains 1,048,576 (YaRN). Left
+`n_predict=16384` per model-card `max_new_tokens` (generation budget ≠ context).
+Generation smoke-tested at Q5 589824.
+
 **2026-07-22** — Converted Qwythos profiles to the `.yml.example` + gitignored
 local `.yml` pattern (same as Qwen/Gemma). Fixed `host_model_path` for MS-7885
 (`/media/propdev/9dc1a908-.../Data/Models/LLM/...`). Added Q6_K profile.

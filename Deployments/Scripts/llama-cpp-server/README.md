@@ -74,13 +74,24 @@ Text-only profiles (copy each `*.yml.example` → `*.yml` before first launch):
 ```
 
 All use model-card sampling defaults (`temperature=0.6`, `top_p=0.95`,
-`top_k=20`, `repeat_penalty=1.05`), one server slot, Flash Attention, and q4_0
-KV cache. The GGUF embeds YaRN scaling for up to 1M tokens, but that context is
-not practical on consumer GPUs. Defaults: Q4 at 32K context; Q5/Q6 at 16K.
-Override and raise gradually:
+`top_k=20`, `repeat_penalty=1.05`, `n_predict`/`max_new_tokens=16384`), one
+server slot, Flash Attention, and q4_0 KV cache.
+
+**Context vs generation**
+
+| Setting | Meaning | Model card | Local MS-7885 (RTX 3060 12GB) |
+|---|---|---|---|
+| `ctx_size` (`-c`) | Prompt + history + generation room | max **1,048,576** (YaRN) | Q5 **589824**, Q6 **524288** (VRAM-limited; 1M OOMs) |
+| `n_predict` (`-n`) | Default max **new** tokens | **16384** for `<think>`+answer | keep **16384**; raise per-request `max_tokens` if needed |
+
+The GGUF embeds YaRN for up to 1M tokens. Full 1M needs multi-GPU or KV
+offload (card: H100 class ~256k–512k comfortably). On this desktop, raise
+context in the local `profiles/*.yml` (gitignored), not by setting
+`n_predict` to 1M — generation budget is independent of window size.
 
 ```bash
-./launch.sh qwythos-9b-q5 -c 32768
+# one-off override without editing the profile
+./launch.sh qwythos-9b-q5 -c 262144
 ```
 
 Vision and MTP profiles are intentionally omitted until their full GGUF files

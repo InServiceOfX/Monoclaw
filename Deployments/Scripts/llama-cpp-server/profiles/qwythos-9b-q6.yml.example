@@ -5,6 +5,10 @@
 #
 # Copy to qwythos-9b-q6.yml and set host_model_path for your machine.
 # model_path is inside the container (/models mount from config.yml).
+#
+# Context (model card): 1,048,576 YaRN max; see qwythos-9b-q5.yml.example.
+# Context (MS-7885 RTX 3060 12GB, Q6 + q4_0 KV + FA, empirical): 524288 loads;
+# 589824 OOM. Local yml uses 524288.
 
 model_path: /models/empero-ai/Qwythos-9B-Claude-Mythos-5-1M-GGUF/Qwythos-9B-Claude-Mythos-5-1M-Q6_K.gguf
 # Host-side absolute path (documentation / sanity check only; launch.sh uses model_path)
@@ -15,9 +19,8 @@ server:
   host: 0.0.0.0
   port: 8080
 
-# ~0.8 GB larger than Q5; keep context modest so KV + CUDA graphs still fit.
-# On RTX 3060 12GB, 16K is a safe start; raise with: ./launch.sh qwythos-9b-q6 -c 32768
 n_gpu_layers: 99
+# Conservative template default. Local MS-7885 yml uses 524288 (hardware max).
 ctx_size: 16384
 parallel: 1
 batch_size: 1024
@@ -27,6 +30,7 @@ flash_attn: "on"
 cache_type_k: q4_0
 cache_type_v: q4_0
 
+# Model-card max_new_tokens for <think>+answer (generation budget ≠ context).
 n_predict: 16384
 reasoning: auto
 reasoning_format: deepseek

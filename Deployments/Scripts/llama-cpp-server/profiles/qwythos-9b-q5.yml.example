@@ -1,9 +1,19 @@
 # Profile: Empero Qwythos-9B Claude Mythos 5 1M (Q5_K_M)
 # Source: https://huggingface.co/empero-ai/Qwythos-9B-Claude-Mythos-5-1M-GGUF
-# Higher-quality quant (~6.1 GB weights). Tuned conservatively for 8–12 GB GPUs.
+# Higher-quality quant (~6.1 GB weights).
 #
 # Copy to qwythos-9b-q5.yml and set host_model_path for your machine.
 # model_path is inside the container (/models mount from config.yml).
+#
+# Context (model card):
+#   max_position_embeddings / YaRN max = 1,048,576 tokens
+#   native architecture = 262,144; YaRN factor 4× → 1M
+#   llama-cli full window: -c 1010000 (or any value ≤ 1048576)
+#   Full 1M: multi-GPU or KV offload; H100 class ~256k–512k comfortably
+#
+# Context (this repo / MS-7885 RTX 3060 12GB, Q5 + q4_0 KV + FA, empirical):
+#   loads ≤ 589824; OOM at 606208. Local yml uses 589824.
+#   Start lower on 8 GB cards (16384–32768) and raise with -c.
 
 model_path: /models/empero-ai/Qwythos-9B-Claude-Mythos-5-1M-GGUF/Qwythos-9B-Claude-Mythos-5-1M-Q5_K_M.gguf
 # Host-side absolute path (documentation / sanity check only; launch.sh uses model_path)
@@ -14,9 +24,8 @@ server:
   host: 0.0.0.0
   port: 8080
 
-# Q5 leaves less room than Q4 for KV cache and CUDA work buffers on an 8 GB GPU.
-# On a 12 GB GPU you can try -c 32768 via CLI override if needed.
 n_gpu_layers: 99
+# Conservative template default. Local MS-7885 yml uses 589824 (hardware max).
 ctx_size: 16384
 parallel: 1
 batch_size: 1024
@@ -26,6 +35,8 @@ flash_attn: "on"
 cache_type_k: q4_0
 cache_type_v: q4_0
 
+# Model-card max_new_tokens for <think>+answer. Generation budget ≠ context.
+# Do not set this to 1M; clients override max_tokens per request as needed.
 n_predict: 16384
 reasoning: auto
 reasoning_format: deepseek
