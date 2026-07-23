@@ -1,0 +1,38 @@
+# Profile: Empero Qwythos-9B Claude Mythos 5 1M (Q6_K)
+# Source: https://huggingface.co/empero-ai/Qwythos-9B-Claude-Mythos-5-1M-GGUF
+# Highest practical text quant for local use (~6.9 GB weights).
+# Prefer a 12 GB GPU; on 8 GB lower ctx_size or n_gpu_layers if CUDA OOM.
+#
+# Copy to qwythos-9b-q6.yml and set host_model_path for your machine.
+# model_path is inside the container (/models mount from config.yml).
+
+model_path: /models/empero-ai/Qwythos-9B-Claude-Mythos-5-1M-GGUF/Qwythos-9B-Claude-Mythos-5-1M-Q6_K.gguf
+# Host-side absolute path (documentation / sanity check only; launch.sh uses model_path)
+host_model_path: /media/propdev/9dc1a908-7eff-4e1c-8231-ext4/home/propdev/Data/Models/LLM/empero-ai/Qwythos-9B-Claude-Mythos-5-1M-GGUF/Qwythos-9B-Claude-Mythos-5-1M-Q6_K.gguf
+alias: qwythos-9b-q6-k
+
+server:
+  host: 0.0.0.0
+  port: 8080
+
+# ~0.8 GB larger than Q5; keep context modest so KV + CUDA graphs still fit.
+# On RTX 3060 12GB, 16K is a safe start; raise with: ./launch.sh qwythos-9b-q6 -c 32768
+n_gpu_layers: 99
+ctx_size: 16384
+parallel: 1
+batch_size: 1024
+ubatch_size: 256
+
+flash_attn: "on"
+cache_type_k: q4_0
+cache_type_v: q4_0
+
+n_predict: 16384
+reasoning: auto
+reasoning_format: deepseek
+
+temperature: 0.6
+top_p: 0.95
+top_k: 20
+min_p: 0.0
+repeat_penalty: 1.05

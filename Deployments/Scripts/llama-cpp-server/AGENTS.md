@@ -15,10 +15,13 @@ This directory contains a profile-driven Docker launcher for a local CUDA
 
 ## Conventions
 
-- Put reusable profiles in `profiles/<lowercase-name>.yml`.
+- Commit **templates only**: `profiles/<lowercase-name>.yml.example`.
+- Local runtime files are `profiles/<name>.yml` and are **gitignored** (machine
+  `host_model_path` / tuning). Copy from the example on each host.
 - `model_path` is the path inside the container's `/models` mount.
-- `host_model_path` documents the corresponding host file.
+- `host_model_path` documents the corresponding host file (not used by launch.sh).
 - Use one profile per quantization when settings or memory needs differ.
 - Prefer conservative single-user context defaults; document how to scale up.
-- Never commit `config.yml`, model weights, logs, or generated outputs.
+- Never commit `config.yml`, local `profiles/*.yml`, model weights, logs, or
+  generated outputs.
 - Follow the repository rule: commits and pushes only from a feature branch.

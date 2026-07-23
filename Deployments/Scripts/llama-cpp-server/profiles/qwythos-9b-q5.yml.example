@@ -1,9 +1,13 @@
 # Profile: Empero Qwythos-9B Claude Mythos 5 1M (Q5_K_M)
 # Source: https://huggingface.co/empero-ai/Qwythos-9B-Claude-Mythos-5-1M-GGUF
-# Higher-quality quant; tuned conservatively for this machine's 8 GB RTX 3070.
+# Higher-quality quant (~6.1 GB weights). Tuned conservatively for 8–12 GB GPUs.
+#
+# Copy to qwythos-9b-q5.yml and set host_model_path for your machine.
+# model_path is inside the container (/models mount from config.yml).
 
 model_path: /models/empero-ai/Qwythos-9B-Claude-Mythos-5-1M-GGUF/Qwythos-9B-Claude-Mythos-5-1M-Q5_K_M.gguf
-host_model_path: /media/ernest/Samsung980ProPCI/Data/Models/LLM/empero-ai/Qwythos-9B-Claude-Mythos-5-1M-GGUF/Qwythos-9B-Claude-Mythos-5-1M-Q5_K_M.gguf
+# Host-side absolute path (documentation / sanity check only; launch.sh uses model_path)
+host_model_path: /media/propdev/9dc1a908-7eff-4e1c-8231-ext4/home/propdev/Data/Models/LLM/empero-ai/Qwythos-9B-Claude-Mythos-5-1M-GGUF/Qwythos-9B-Claude-Mythos-5-1M-Q5_K_M.gguf
 alias: qwythos-9b-q5-k-m
 
 server:
@@ -11,6 +15,7 @@ server:
   port: 8080
 
 # Q5 leaves less room than Q4 for KV cache and CUDA work buffers on an 8 GB GPU.
+# On a 12 GB GPU you can try -c 32768 via CLI override if needed.
 n_gpu_layers: 99
 ctx_size: 16384
 parallel: 1

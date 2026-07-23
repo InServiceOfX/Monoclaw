@@ -30,14 +30,27 @@ llama-cpp-server/
 ├── config.yml.example         # Global config template (→ config.yml)
 ├── chat.sh                    # Interactive chat client
 ├── profiles/
-│   └── qwen35-9b-distilled.yml  # Per-model profile
+│   ├── *.yml.example          # Committed templates (portable)
+│   └── *.yml                  # Local copies (gitignored; machine paths)
 └── README.md
 ```
 
 ## Configuration
 
-- `config.yml` — Docker image, model volumes, GPU device
+- `config.yml` — Docker image, model volumes, GPU device (**gitignored**; copy from `config.yml.example`)
 - `profiles/<name>.yml` — Model-specific: GGUF path, context size, GPU layers, KV cache, etc.
+
+**Profiles are machine-local.** Commit only `profiles/*.yml.example`. On each host:
+
+```bash
+cp profiles/qwythos-9b-q5.yml.example profiles/qwythos-9b-q5.yml
+# edit host_model_path; ensure config.yml volumes cover that host directory
+```
+
+`model_path` is the path **inside** the container under the `/models` mount.
+`host_model_path` is documentation only (launch.sh does not read it). Different
+machines almost always need different `host_model_path` values even when
+`model_path` stays the same.
 
 Profiles expose the **most useful** server params. For the full list (60+ options), see:
 https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md
@@ -47,24 +60,27 @@ Supported profile sampling defaults include `temperature`, `top_p`, `top_k`,
 
 ## Qwythos-9B
 
-Two local text-only profiles are included:
+Text-only profiles (copy each `*.yml.example` → `*.yml` before first launch):
 
 ```bash
-# Recommended on the local 8 GB RTX 3070: Q4_K_M with 32K context
+# Q4_K_M — lightest; needs a full download (LFS pointer alone will not load)
 ./launch.sh qwythos-9b-q4
 
-# Higher-quality Q5_K_M with a safer 16K context
+# Q5_K_M — higher quality (~6.1 GB); good default on 8–12 GB GPUs
 ./launch.sh qwythos-9b-q5
+
+# Q6_K — best local quality (~6.9 GB); prefer 12 GB VRAM
+./launch.sh qwythos-9b-q6
 ```
 
-Both use the model-card sampling defaults (`temperature=0.6`, `top_p=0.95`,
+All use model-card sampling defaults (`temperature=0.6`, `top_p=0.95`,
 `top_k=20`, `repeat_penalty=1.05`), one server slot, Flash Attention, and q4_0
 KV cache. The GGUF embeds YaRN scaling for up to 1M tokens, but that context is
-not practical on an 8 GB GPU. To experiment with more context, override the
-profile value and increase gradually:
+not practical on consumer GPUs. Defaults: Q4 at 32K context; Q5/Q6 at 16K.
+Override and raise gradually:
 
 ```bash
-./launch.sh qwythos-9b-q4 -c 65536
+./launch.sh qwythos-9b-q5 -c 32768
 ```
 
 Vision and MTP profiles are intentionally omitted until their full GGUF files

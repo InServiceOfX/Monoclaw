@@ -1,6 +1,13 @@
 # Instance-specific config (has local paths, GPU IDs)
 config.yml
 
+# Local profiles (machine-specific host_model_path). Commit *.yml.example only.
 profiles/qwen35-9b-distilled.yml
 profiles/qwen35-9b-distilled-q5.yml
 profiles/qwen35-9b-distilled-q8.yml
+profiles/gemma-4-e4b-it.yml
+profiles/gemma-4-e4b-it-q5.yml
+profiles/gemma-4-e4b-it-q6.yml
+profiles/qwythos-9b-q4.yml
+profiles/qwythos-9b-q5.yml
+profiles/qwythos-9b-q6.yml
