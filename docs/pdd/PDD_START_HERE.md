@@ -210,6 +210,10 @@ later.
 
 ### Phase 4: Bootstrap the PDD project
 
+This phase concerns creating a **whole greenfield architecture and its initial
+prompts**. It is not the command used every time a story or generated contract
+is added.
+
 For the current PDD CLI, the supported greenfield architecture workflow begins
 with a **GitHub issue URL whose body contains the PRD**:
 
@@ -244,6 +248,38 @@ If GitHub cannot be used, keep the local PRD and ask the agent to explain the
 available manual or project-specific bootstrap. Do not let it claim that
 `pdd story add` automatically turns a local story into a new architecture; the
 current command expects an existing prompt or development-unit association.
+
+### Do I need a GitHub issue for every story or contract?
+
+No. PDD uses “issue source” as a broad name for the independent product intent
+from which it derives a story. That source can be:
+
+- a GitHub issue URL or issue number;
+- a local Markdown file; or
+- text supplied directly on the command line.
+
+For example, after the relevant prompt/dev unit exists:
+
+```bash
+# Durable, reviewable local source; no GitHub issue or issue fetch.
+pdd story add docs/requirements/pressure_trace_limits.md \
+  --devunit pressure_trace_analyzer
+
+# Or start directly from dictated/typed text.
+pdd story add \
+  --text "As a test engineer, I need out-of-limit pressure intervals highlighted so I can diagnose a valve problem." \
+  --title "Pressure trace limits" \
+  --devunit pressure_trace_analyzer
+```
+
+The inline form persists the supplied text under `.pdd/story_sources/` so the
+generated contract retains a local source reference. Both forms still use an
+LLM to author the canonical story and generated contract, but neither needs a
+GitHub issue.
+
+The required `--devunit` or `--prompt` is important: a story-to-contract mapping
+does not create a greenfield architecture. It describes acceptance intent for
+one or more prompts that already exist.
 
 ### Phase 5: Review the generated plan
 
@@ -289,14 +325,23 @@ tests/story_regression/test_story_pressure_trace_limits.py
 In the current CLI, a command such as:
 
 ```bash
-pdd story add ISSUE_URL \
-  --devunit pressure_trace_analyzer \
-  --generate-regression
+pdd story add docs/requirements/pressure_trace_limits.md \
+  --devunit pressure_trace_analyzer
 ```
 
-creates a story for an existing development unit, derives a contract, and can
-generate regression coverage. The precise flags may change; the agent must
-check `pdd story add --help`.
+creates a story for an existing development unit and best-effort derives its
+contract. To generate executable regression coverage, run the separate
+follow-up:
+
+```bash
+pdd test \
+  --from-story user_stories/story__pressure_trace_limits.md \
+  --output tests/story_regression/test_story_pressure_trace_limits.py
+```
+
+The `pdd story add --generate-regression` option only prints this handoff
+command; it does not run it. The precise flags may change, so the agent must
+check `pdd story add --help` and `pdd test --help`.
 
 The short human story remains the acceptance-level source. The generated
 contract is a more detailed, machine-oriented expansion and must remain
