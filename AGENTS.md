@@ -28,6 +28,23 @@ in this repo (or any Ernest repo), read:
 - `docs/agent-loops/harness-for-this-repo.md` — what Ernest's repos already
   have, what's missing, and the recommended build order
 
+## Prompt-Driven Development
+
+If a task targets an explicitly PDD-managed dev unit or asks for PDD adoption,
+read:
+
+- `docs/pdd/PDD_START_HERE.md` — beginner workflow from ordinary-language
+  product intent to a reviewed PRD, user stories, and generated PDD artifacts;
+- `docs/pdd/PDD_WITH_ANY_AGENT_HARNESS.md` — command routing, workflows,
+  verification, safety, and brownfield adoption;
+- `docs/pdd/PDD_CONCEPTS_AND_USER_STORIES.md` — conceptual model, the
+  Agile/Extreme Programming origin of user stories, PDD's adaptation, and a
+  walkthrough of the current implementation.
+
+Do not assume all Monoclaw source is PDD-generated. Confirm ownership through a
+matching `.prompt`, `.pddrc`, `architecture.json`, or explicit project
+instruction before regenerating code.
+
 ## Orientation Protocol (run this every session)
 
 ```

@@ -4,6 +4,15 @@ This is a standalone operating guide for an AI coding agent using the `pdd`
 command-line interface. It is not specific to Claude Code, Codex, Gemini,
 OpenCode, OpenClaw, Cursor, or any repository.
 
+If you are a product owner, domain expert, mechanical engineer, or anyone who
+wants to begin with an ordinary-language description rather than PDD commands,
+start with [`PDD_START_HERE.md`](PDD_START_HERE.md).
+
+For the conceptual model, the Agile/Extreme Programming origin of user stories,
+PDD's adaptation of the Three C's, and a source-level walkthrough of the current
+implementation, read
+[`PDD_CONCEPTS_AND_USER_STORIES.md`](PDD_CONCEPTS_AND_USER_STORIES.md).
+
 Assume one of these is true:
 
 - `pdd` is installed and available on `PATH`; or
