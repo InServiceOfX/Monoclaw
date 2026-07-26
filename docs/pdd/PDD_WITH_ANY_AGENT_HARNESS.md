@@ -24,6 +24,10 @@ For the recurring workflow after a project is configured, including the
 distinction between conversational intent, Product Intent, component prompts,
 and user stories, read [`PDD_AFTER_SETUP.md`](PDD_AFTER_SETUP.md).
 
+For project-wide prompt suites, C++ header/source pairs, and the distinction
+between logical regeneration units and physical files, read
+[`PDD_PROMPT_GRAPH_AND_ARTIFACT_BUNDLES.md`](PDD_PROMPT_GRAPH_AND_ARTIFACT_BUNDLES.md).
+
 Assume one of these is true:
 
 - `pdd` is installed and available on `PATH`; or

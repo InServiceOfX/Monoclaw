@@ -45,6 +45,9 @@ PDD adoption, read:
 - `docs/pdd/PDD_VIDEO_CLEAR_WALKTHROUGH_NOTES.md` — transcript-backed notes
   from the official PDD walkthrough, including who writes and who reviews each
   artifact;
+- `docs/pdd/PDD_PROMPT_GRAPH_AND_ARTIFACT_BUNDLES.md` — project-wide prompt
+  graphs, the limits of one-prompt/one-file, the C++ header/source pattern, and
+  the current fork boundary for native multi-file units;
 - `docs/pdd/PDD_NATURAL_LANGUAGE_AGENT_PLAYBOOK.md` — natural-language intent
   intake, automatic internal routing, outputs, approval gates, and regression
   evidence;
@@ -71,6 +74,11 @@ into the affected versioned `.prompt` file; a PRD or user story does not replace
 that source artifact. Do not require him to choose an issue URL, local file,
 `--text`, internal target name, prompt path, slug, or output filename when
 repository inspection can make that choice.
+
+Treat the prompt suite collectively as project source. Do not equate a PDD
+logical unit with one physical file when several artifacts share one
+regeneration boundary. Current PDD may require linked per-output prompt entries;
+keep their contract canonical and synchronize/verify the group together.
 
 ## Orientation Protocol (run this every session)
 

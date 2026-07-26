@@ -190,6 +190,14 @@ A `.prompt` file specifies one manageable part closely enough to regenerate
 it. It is the operative PDD source for that part: its role, interface,
 dependencies, requirements, constraints, examples, and prohibited behavior.
 
+The project's **collective prompt suite** maps to the whole project. Do not
+force prompt boundaries to match physical files mechanically. Use a coherent
+regeneration and verification boundary: sometimes one file, sometimes a linked
+or bundled set such as a C++ header and implementation. Current PDD represents
+multiple primary output files as linked prompt entries; native atomic
+multi-file units require additional tooling. See
+[`PDD_PROMPT_GRAPH_AND_ARTIFACT_BUNDLES.md`](PDD_PROMPT_GRAPH_AND_ARTIFACT_BUNDLES.md).
+
 This is what “stay in prompt space” centers on. The agent can write it for you,
 but accepted behavior must reach it rather than remaining only in chat or a
 PRD.

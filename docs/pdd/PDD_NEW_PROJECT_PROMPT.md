@@ -29,7 +29,9 @@ The agent should:
 6. Create and maintain versioned PDD `.prompt` files as the operative source
    for each PDD-generated part. Present their purpose, behavior, `MUST` and
    `MUST NOT` rules, assumptions, and tests for human review. Do not stop after
-   writing a PRD or stories.
+   writing a PRD or stories. Treat the prompt suite collectively as project
+   source, and choose logical regeneration boundaries by cohesion rather than
+   blindly creating one prompt for every physical file.
 7. Handle PDD configuration, architecture, stories, contracts, code, and tests
    internally.
 8. Ask before external actions such as posting a GitHub issue.

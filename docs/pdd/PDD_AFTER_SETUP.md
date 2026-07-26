@@ -68,10 +68,13 @@ This is a versioned file such as:
 prompts/pressure_trace_analyzer_python.prompt
 ```
 
-It is the operative source specification for one generated code file or
-narrowly bounded part of the product. It should state that part's purpose,
-interface, dependencies, requirements, constraints, examples, outputs, and
-important `MUST NOT` behavior.
+It is source specification for a bounded logical part of the product. The
+project's prompt suite collectively governs the project. A logical part may
+produce one file or a coherent artifact bundle such as a C++ header and source
+file, although current PDD `0.0.309` implements each primary output as a
+separate prompt/architecture entry. The prompt source should state the part's
+purpose, interface, dependencies, requirements, constraints, examples,
+outputs, and important `MUST NOT` behavior.
 
 This is the prompt Greg was asking about. PDD's own README calls `.prompt`
 files its human-authored source language, and its doctrine calls prompts the
@@ -130,6 +133,7 @@ It does **not** mean:
 - every chat message becomes a new `.prompt` file;
 - all requests must be rewritten as user stories;
 - one enormous prompt should contain the whole repository;
+- every physical file boundary is automatically a good prompt boundary;
 - a PRD alone is sufficient;
 - generated code may never be inspected or temporarily patched while
   diagnosing a problem.
@@ -336,3 +340,9 @@ The official-channel video
 reinforces this with its “prompt and tests are the mold” explanation. Analysis
 and transcript archive details are in
 [`PDD_VIDEO_CLEAR_WALKTHROUGH_NOTES.md`](PDD_VIDEO_CLEAR_WALKTHROUGH_NOTES.md).
+
+The companion video
+[`Prompt Driven Development Intro`](https://youtu.be/UsdgyHBFE0g) repeats the
+one-prompt/one-file claim. Our refined prompt-graph and C++ artifact-bundle
+policy is documented in
+[`PDD_PROMPT_GRAPH_AND_ARTIFACT_BUNDLES.md`](PDD_PROMPT_GRAPH_AND_ARTIFACT_BUNDLES.md).

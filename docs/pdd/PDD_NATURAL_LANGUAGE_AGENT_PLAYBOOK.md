@@ -75,6 +75,15 @@ This is internal routing vocabulary. In conversation with the user, say
 “affected part of the product” or name the part directly. Never require the
 user to understand or supply a “dev unit.”
 
+A logical product part is not necessarily one physical file. The project's
+prompt suite collectively governs the project, and a coherent unit may own
+coupled outputs such as a C++ header and implementation. Current PDD may expose
+those outputs as several linked prompt entries. In that case, preserve one
+canonical shared contract, update all affected prompt projections, and
+synchronize/verify the group. Do not expose the mechanical split to the user.
+See
+[`PDD_PROMPT_GRAPH_AND_ARTIFACT_BUNDLES.md`](PDD_PROMPT_GRAPH_AND_ARTIFACT_BUNDLES.md).
+
 This playbook was checked against PDD `0.0.309` at source commit `17b41a779` on
 2026-07-26. The installed CLI is authoritative. Before execution, run:
 
@@ -93,12 +102,13 @@ owns these decisions:
 1. Determine whether the message adds, corrects, removes, replaces, or clarifies
    accepted intent.
 2. Preserve the message and update the current human-readable requirements.
-3. Discover the affected product part and its PDD prompt mapping from repository
-   evidence.
-4. Propagate accepted behavior into the affected `.prompt` file before
+3. Discover the affected product part and its PDD prompt mapping or linked
+   prompt group from repository evidence.
+4. Propagate accepted behavior into the affected `.prompt` source before
    completing implementation. If no appropriate prompt exists, route through
    the architecture/change workflow rather than pretending a story is enough.
-5. Present consequential prompt changes for meaning-level human approval. The
+5. Present consequential prompt or prompt-group changes for meaning-level
+   human approval. The
    agent may write the file, but must not treat prompt source as an ignorable
    generated artifact.
 6. Select the least complicated story source form that remains durable when an

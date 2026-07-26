@@ -18,8 +18,8 @@ indexed in `Data/Public/youtube-transcripts/index.json`.
 
 The video makes PDD's core idea unusually clear:
 
-- A prompt is a complete mini-specification, ideally for one generated code
-  file or one narrowly bounded module.
+- The video describes a prompt as a complete mini-specification and repeatedly
+  recommends one prompt per generated code file.
 - Tests are guardrails that preserve the required behavior.
 - The prompt and tests are the durable “mold.”
 - Generated code is the replaceable part produced by that mold.
@@ -60,12 +60,23 @@ changes. It should not become mandatory paperwork for every small request.
 For a small change to an established PDD-managed file, the affected `.prompt`
 and tests may be the only current-truth artifacts that need modification.
 
-### The prompt should be narrower than “a feature”
+### “One prompt per file” is a convention, not our universal boundary
 
-“One prompt per code file” is the video's clearest rule. The PDD prompting
-guide allows the slightly broader formulation “one code file or narrowly
-scoped module.” Agents should therefore avoid broad feature mega-prompts. The
-repository's actual `.pddrc` and architecture mappings remain authoritative.
+The video presents “one prompt per code file” as a rule. We do not adopt that
+as a universal software-design boundary. C and C++ header/source pairs are an
+obvious counterexample: several physical files may implement one coherent
+contract and need to regenerate together.
+
+The project-level source is the collective PDD program: its prompt graph,
+includes, tests, architecture, and configuration. Within that graph, use the
+smallest coherent regeneration and verification boundary. That may be one file
+or a multi-file artifact bundle. Avoid both arbitrary per-file fragmentation
+and whole-project mega-prompts.
+
+Current PDD implements singular primary outputs, so native atomic bundles would
+require a fork enhancement. The current compatibility pattern is a shared
+canonical contract included by linked per-output prompts. See
+[`PDD_PROMPT_GRAPH_AND_ARTIFACT_BUNDLES.md`](PDD_PROMPT_GRAPH_AND_ARTIFACT_BUNDLES.md).
 
 ### User stories are not the main compiler input
 
