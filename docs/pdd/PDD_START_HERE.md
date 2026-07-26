@@ -53,6 +53,10 @@ This guide is the friendly entry point. The other documents are references:
 - [`PDD_INTENT_FIRST_WORKFLOW.md`](PDD_INTENT_FIRST_WORKFLOW.md) separates what
   the human controls from what the agent edits, explains why stories exist
   alongside prompts and tests, and proposes a simpler `pdd intent` front door.
+- [`PDD_VIDEO_ARCHITECTING_WORKFLOW_NOTES.md`](PDD_VIDEO_ARCHITECTING_WORKFLOW_NOTES.md)
+  analyzes the official architecture-workflow demonstration: flexible PRD,
+  architecture review, prompt-graph generation, dependency-ordered sync, and
+  which mechanics should be delegated to the agent.
 - [`PDD_CONCEPTS_AND_USER_STORIES.md`](PDD_CONCEPTS_AND_USER_STORIES.md)
   explains the ideas, the Agile/Extreme Programming background of user
   stories, and what the PDD code actually does.

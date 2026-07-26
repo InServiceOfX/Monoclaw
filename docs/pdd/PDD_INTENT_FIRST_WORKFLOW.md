@@ -283,6 +283,14 @@ complexity, and that is the correct immediate compatibility layer. Code changes
 are still worthwhile because every harness should not have to independently
 reimplement the same routing and bookkeeping.
 
+The official “Architecting with AI” demonstration reinforces this split. It
+shows the presenter using Claude Code or Cursor to help write the specification
+and to turn `architecture.json` dependencies into synchronization automation.
+See
+[`PDD_VIDEO_ARCHITECTING_WORKFLOW_NOTES.md`](PDD_VIDEO_ARCHITECTING_WORKFLOW_NOTES.md).
+The proposed facade should make that agent orchestration a supported workflow
+instead of a workaround each user reconstructs.
+
 ## Recommended implementation order
 
 1. Add a read-only `pdd intent plan` path that accepts text/file/stdin and
