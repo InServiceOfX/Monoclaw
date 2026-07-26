@@ -62,7 +62,9 @@ not replace it.
 The distinction between a conversational request, Product Intent, a PDD prompt,
 and a user story is defined in
 [`PDD_AFTER_SETUP.md`](PDD_AFTER_SETUP.md). Read it before executing ongoing
-PDD work.
+PDD work. The human-versus-agent ownership boundary and the rationale for
+independent stories are defined in
+[`PDD_INTENT_FIRST_WORKFLOW.md`](PDD_INTENT_FIRST_WORKFLOW.md).
 
 ## Plain-language terminology
 
@@ -126,6 +128,13 @@ owns these decisions:
 The agent must not shift these mechanics back to the user merely because the
 CLI exposes several options.
 
+The product/domain human owns the meaning and the standard of proof, not the
+file-maintenance keystrokes. Unless the human explicitly asks to edit them,
+the agent should maintain `.pddrc`, `architecture.json`, `.prompt` syntax,
+story metadata, generated contracts, test code, paths, and command flags.
+Everything must remain inspectable, and consequential meaning still requires
+the appropriate human or technical review.
+
 ## Minimum input from the user
 
 Only one thing is required:
@@ -169,6 +178,8 @@ infer safely. Do not ask the user:
 - the prompt path when repository inspection can find it;
 - PDD's internal name for the affected product part;
 - a slug, story directory, contract directory, or test filename.
+- manual edits to `.pddrc`, `architecture.json`, `.prompt` syntax, generated
+  contracts, story metadata, or test code.
 
 ## Treat later messages as changes to intent
 

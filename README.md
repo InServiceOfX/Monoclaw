@@ -37,6 +37,9 @@ explanation. After setup, read
 [`docs/pdd/PDD_AFTER_SETUP.md`](docs/pdd/PDD_AFTER_SETUP.md) for the practical
 meaning of “stay in prompt space”: the human keeps talking normally while the
 agent maintains versioned `.prompt` source, stories, tests, and generated code.
+For the simplest ownership model—human intent and evidence, agent-managed PDD
+mechanics—and the proposed `pdd intent` CLI, see
+[`docs/pdd/PDD_INTENT_FIRST_WORKFLOW.md`](docs/pdd/PDD_INTENT_FIRST_WORKFLOW.md).
 For why the collective prompt suite maps to the project—and why a C++ `.h` and
 `.cpp` may form one logical regeneration unit—see
 [`docs/pdd/PDD_PROMPT_GRAPH_AND_ARTIFACT_BUNDLES.md`](docs/pdd/PDD_PROMPT_GRAPH_AND_ARTIFACT_BUNDLES.md).

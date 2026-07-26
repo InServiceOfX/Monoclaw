@@ -18,6 +18,12 @@ You should not have to hand-write `.prompt` files, `.pddrc`, or
 `.prompt` file: that is the durable source PDD operates on, not merely an
 optional technical byproduct.
 
+Your authority over prompts and tests does not mean you must type their file
+formats. You control the intended meaning and the evidence that should prove
+it; the agent can perform the mechanical edits. The exact division, including
+why an independently reviewed story is sometimes useful, is explained in
+[`PDD_INTENT_FIRST_WORKFLOW.md`](PDD_INTENT_FIRST_WORKFLOW.md).
+
 You also should not have to decide among GitHub, local-file, and inline story
 inputs or identify a technical component name. An AI agent following the story
 playbook owns those decisions.
@@ -44,6 +50,9 @@ This guide is the friendly entry point. The other documents are references:
 - [`PDD_AFTER_SETUP.md`](PDD_AFTER_SETUP.md) explains Greg Tanaka's “prompt
   file” question, what “stay in prompt space” means, and what the agent does
   with each later request.
+- [`PDD_INTENT_FIRST_WORKFLOW.md`](PDD_INTENT_FIRST_WORKFLOW.md) separates what
+  the human controls from what the agent edits, explains why stories exist
+  alongside prompts and tests, and proposes a simpler `pdd intent` front door.
 - [`PDD_CONCEPTS_AND_USER_STORIES.md`](PDD_CONCEPTS_AND_USER_STORIES.md)
   explains the ideas, the Agile/Extreme Programming background of user
   stories, and what the PDD code actually does.
@@ -369,18 +378,25 @@ traceable to it.
 |---|---|---|
 | Spoken or typed product idea | You | Yes, but ordinary language is enough |
 | Product Intent (PRD) Markdown | You + AI agent | Usually reviewed by you, drafted by agent |
-| Human user stories | You + AI agent | Dictate or edit; agent can format them |
+| Human user stories | You + AI agent | Confirm or correct their meaning in conversation; the agent can edit the file |
 | GitHub PRD issue | You + agent | Approve before agent posts it |
 | `.pddrc` | PDD + agent | Normally no |
 | `architecture.json` | PDD + agent | Normally no |
 | `architecture_diagram.html` | PDD | No |
 | `prompts/*.prompt` | Developer or AI agent; PDD may bootstrap it | Do not hand-author syntax unless you want to, but approve its meaning; a technical owner reviews consequential prompt diffs |
 | Generated story contract | PDD | No; review for faithful interpretation |
-| Tests | PDD + agent | Product user reviews the claimed behavior; technical owner reviews critical coverage |
+| Tests | PDD + agent | Provide important examples and judge the claimed behavior; a technical owner reviews critical coverage |
 | Generated source code | PDD + agent | No line-by-line review for ordinary low-risk work; direct expert review remains required where risk demands it |
 
 “Normally no” does not mean “never inspect.” It means these are not the price
 of admission for describing your product.
+
+More precisely, a normal product/domain user should not be asked to manually
+modify `.pddrc`, `architecture.json`, generated contracts, prompt paths, story
+metadata, or command flags. The user may review any of them, but the AI agent
+owns their mechanical maintenance. For consequential work, the human approves
+the behavioral meaning and architectural tradeoffs rather than editing JSON or
+PDD syntax.
 
 ## Do names and directories matter?
 

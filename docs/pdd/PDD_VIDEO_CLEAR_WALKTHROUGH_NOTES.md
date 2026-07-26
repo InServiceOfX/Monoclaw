@@ -90,6 +90,14 @@ human-story and generated-contract files. These ideas are compatible:
 - `pdd story add` is selective acceptance coverage, not the command for every
   change.
 
+This is why “humans control prompts and tests” does not make stories
+contradictory. Prompts and tests form the core technical mold. A story is a
+small, independently derived check that the mold still represents the original
+human request. Human control means authority over the behavioral meaning and
+proof, not a requirement to hand-edit every artifact. See
+[`PDD_INTENT_FIRST_WORKFLOW.md`](PDD_INTENT_FIRST_WORKFLOW.md) for the simplified
+human workflow and proposed CLI facade.
+
 ### The “five times smaller” statement is not a universal guarantee
 
 The video illustrates a 4,000-line codebase with 800 lines of mini-spec

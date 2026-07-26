@@ -75,6 +75,14 @@ that source artifact. Do not require him to choose an issue URL, local file,
 `--text`, internal target name, prompt path, slug, or output filename when
 repository inspection can make that choice.
 
+The product/domain human controls intended meaning and acceptable evidence, not
+PDD file mechanics. Do not require the human to manually edit `.pddrc`,
+`architecture.json`, `.prompt` syntax, generated contracts, story metadata, or
+tests. The agent maintains those artifacts, presents a plain-language review
+card, and asks only about consequential meaning or tradeoffs. Follow
+`docs/pdd/PDD_INTENT_FIRST_WORKFLOW.md` for this ownership boundary and the
+proposed simplified front door.
+
 Treat the prompt suite collectively as project source. Do not equate a PDD
 logical unit with one physical file when several artifacts share one
 regeneration boundary. Current PDD may require linked per-output prompt entries;
