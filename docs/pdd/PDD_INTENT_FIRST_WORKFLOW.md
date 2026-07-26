@@ -197,34 +197,52 @@ inline text, but it only builds acceptance coverage and still requires the
 caller to identify prompt or development-unit targets. It is not a universal
 “implement what I just asked for” command.
 
-## Proposed fork improvement: `pdd intent`
+## Implemented fork improvement: `pdd intent plan`
 
-The PDD fork should add a beginner-facing orchestration facade while retaining
-the existing commands for backward compatibility and advanced control.
+The PDD fork now has the first, read-only slice of a beginner-facing
+orchestration facade. Existing commands remain available for backward
+compatibility and advanced control.
 
-Example interface:
+Current interface:
 
 ```bash
-pdd intent "Highlight out-of-limit pressure intervals without changing the uploaded data."
-pdd intent --file docs/requests/pressure-trace.md
-pdd intent review
-pdd intent apply <intent-id>
-pdd intent status
+pdd intent plan --text \
+  "Highlight out-of-limit pressure intervals without changing the uploaded data."
+pdd intent plan docs/requests/pressure-trace.md
+printf '%s\n' "Add offline PDF export." | pdd intent plan
+pdd intent plan --text "Add offline PDF export." --json
 ```
 
 An AI harness could invoke the same functionality through a structured tool
-call. The person would normally never type these commands.
+call. The person would normally never type these commands. This first slice
+classifies and explains; it deliberately does not yet edit or generate project
+files.
 
-### `pdd intent` responsibilities
+It handles four adoption routes without changing the human interaction:
 
-1. Accept ordinary text, a local file, or standard input. GitHub must be
-   optional.
-2. Preserve the original request unchanged for independent traceability.
-3. Determine whether the repository is greenfield, existing PDD, or
-   conventional brownfield.
-4. Discover the affected logical part or parts from the prompt graph and code;
-   never require the human to supply a “dev unit.”
-5. Produce the human-facing review card.
+1. existing standalone project without PDD:
+   `existing_project_adoption` / `characterize_then_adopt`;
+2. completely new standalone project:
+   `new_project_design` / `design_greenfield`;
+3. existing monorepo subproject without PDD:
+   `existing_subproject_adoption` / `characterize_then_adopt`;
+4. proposed new monorepo subproject:
+   `new_subproject_design` / `design_greenfield`.
+
+For routes 3 and 4, `--project-root` is the subproject directory, not the
+monorepo root. A proposed new directory need not exist during planning.
+
+### Full `pdd intent` responsibilities
+
+1. **Implemented:** accept ordinary text, a local file, or standard input
+   without GitHub.
+2. **Implemented:** preserve the original request unchanged for independent
+   traceability.
+3. **Implemented:** classify greenfield, existing PDD, conventional
+   brownfield, repository, and scoped monorepo-subproject cases.
+4. **Implemented for existing PDD inventories:** discover candidate logical
+   parts conservatively without requiring the human to supply a “dev unit.”
+5. **Implemented:** produce the human-facing review card and stable JSON.
 6. Record corrections without erasing the original request.
 7. Update Product Intent only when the request changes whole-product current
    truth.
@@ -293,13 +311,16 @@ instead of a workaround each user reconstructs.
 
 ## Recommended implementation order
 
-1. Add a read-only `pdd intent plan` path that accepts text/file/stdin and
-   prints the review card plus proposed targets without modifying the project.
+1. **Done in fork commit `fefa9a1fc`:** add a read-only `pdd intent plan` path
+   that accepts text/file/stdin and prints the review card plus proposed
+   targets without modifying the project.
 2. Add a local `pdd intent apply` path that updates prompts and runs a scoped
    existing-project workflow without requiring GitHub.
 3. Add durable intent records, corrections, and status.
 4. Add selective story creation using explicit policy and an override.
-5. Add a stable structured API/tool schema for agent harnesses.
+5. **Planning schema done:** expose stable `pdd.intent.plan.v1` JSON for agent
+   harnesses; extend the schema for apply and status as those commands are
+   implemented.
 6. Pilot it on one small Python unit and one coupled C++ header/source unit
    before treating target discovery as reliable.
 
