@@ -7,13 +7,16 @@ or special filenames.
 
 If that describes you, the short answer is:
 
-> Tell the AI agent what you want in ordinary language. Ask it to turn your
-> explanation into a draft product requirements document and a small set of
-> user stories. Review those human-readable documents first. Let the agent and
-> PDD create the technical PDD files after you approve the intent.
+> Tell the AI agent what you want in ordinary language. The agent maintains a
+> human-readable Product Intent document and turns accepted behavior into
+> versioned PDD `.prompt` files. PDD regenerates the affected software. User
+> stories and tests independently check that the prompts and software still
+> deliver what you meant.
 
-You should not have to begin by writing `.prompt` files, `.pddrc`, or
-`architecture.json`.
+You should not have to hand-write `.prompt` files, `.pddrc`, or
+`architecture.json`. But every PDD-generated part eventually needs a versioned
+`.prompt` file: that is the durable source PDD operates on, not merely an
+optional technical byproduct.
 
 You also should not have to decide among GitHub, local-file, and inline story
 inputs or identify a technical component name. An AI agent following the story
@@ -27,6 +30,8 @@ routes it through PDD.
 
 For a new project, the copy/paste adoption prompt is preserved on its own page:
 [`PDD_NEW_PROJECT_PROMPT.md`](PDD_NEW_PROJECT_PROMPT.md).
+For the recurring workflow after adoption, read
+[`PDD_AFTER_SETUP.md`](PDD_AFTER_SETUP.md).
 
 This guide is the friendly entry point. The other documents are references:
 
@@ -36,6 +41,9 @@ This guide is the friendly entry point. The other documents are references:
 - [`PDD_NATURAL_LANGUAGE_AGENT_PLAYBOOK.md`](PDD_NATURAL_LANGUAGE_AGENT_PLAYBOOK.md)
   tells an AI agent how to accept evolving natural-language intent and select
   the internal PDD workflow automatically.
+- [`PDD_AFTER_SETUP.md`](PDD_AFTER_SETUP.md) explains Greg Tanaka's “prompt
+  file” question, what “stay in prompt space” means, and what the agent does
+  with each later request.
 - [`PDD_CONCEPTS_AND_USER_STORIES.md`](PDD_CONCEPTS_AND_USER_STORIES.md)
   explains the ideas, the Agile/Extreme Programming background of user
   stories, and what the PDD code actually does.
@@ -62,13 +70,15 @@ PDD applies a similar idea to software:
 what people need
        |
        v
-PRD and user stories          human-readable intent
+Product Intent                whole-product human meaning
        |
        v
-architecture and prompts      precise technical specification
+versioned PDD prompts         source for generated parts
        |
        v
-generated code and tests      implementation and evidence
+generated code                implementation
+
+user stories and tests        independent acceptance evidence
 ```
 
 The prompt in Prompt-Driven Development is not a disposable chat message. A
@@ -81,9 +91,13 @@ division of work is:
 
 - You explain the need, the users, examples, constraints, and what success
   looks like.
-- The AI agent helps organize that explanation into a PRD and user stories.
+- The AI agent organizes that explanation into Product Intent and the affected
+  versioned `.prompt` files.
 - You correct and approve that human-readable intent.
-- The agent invokes PDD and reviews the generated architecture and prompts.
+- The agent invokes PDD and reviews the generated architecture and
+  implementation.
+- The agent creates user stories selectively as independent checks for
+  important outcomes; stories do not replace prompts.
 - PDD generates or synchronizes code, tests, examples, and evidence.
 - The agent runs the checks and reports what is actually proven.
 
@@ -151,13 +165,13 @@ work. They are not a mandatory Scrum file format. Their value is that a person
 can discuss and approve a small outcome before implementation details take
 over.
 
-## PRD versus user stories
+## Product Intent, prompts, and user stories
 
-A PRD and a user story operate at different zoom levels.
+These artifacts operate at different levels and are not substitutes.
 
-### Product requirements document
+### Product Intent (PRD)
 
-The PRD describes the product or larger change:
+The Product Intent document describes the product or larger change:
 
 - the problem and intended users;
 - goals and non-goals;
@@ -166,7 +180,18 @@ The PRD describes the product or larger change:
 - acceptance criteria and examples;
 - major technical or operational requirements, when known.
 
-It is the map of the whole job.
+It is the map of the whole job. A useful conventional heading is `Product
+Intent (PRD)`.
+
+### PDD prompt
+
+A `.prompt` file specifies one manageable part closely enough to regenerate
+it. It is the operative PDD source for that part: its role, interface,
+dependencies, requirements, constraints, examples, and prohibited behavior.
+
+This is what “stay in prompt space” centers on. The agent can write it for you,
+but accepted behavior must reach it rather than remaining only in chat or a
+PRD.
 
 ### User story
 
@@ -175,9 +200,9 @@ point of view.
 
 It is one destination or trip on the map.
 
-One PRD usually leads to several candidate user stories. Those stories can then
-be split, reordered, clarified, or rejected. The agent should not turn every
-sentence of the PRD into a story mechanically.
+One Product Intent document usually leads to several component prompts and
+some candidate user stories. Stories can be split, reordered, clarified, or
+rejected. The agent should not turn every sentence into a story mechanically.
 
 ## The recommended beginner workflow
 
@@ -200,18 +225,19 @@ You do not have to answer everything at once.
 ### Phase 2: Have the agent draft human-readable intent
 
 Ask the agent to inspect the repository and create or update a local Markdown
-PRD, conventionally:
+Product Intent document, conventionally:
 
 ```text
-docs/PRD.md
+docs/PRODUCT_INTENT.md
 ```
 
 Ask it to propose a small set of user stories as part of that document or in a
 separate draft. At this point, do not generate code. Read the draft and correct
 it in ordinary language.
 
-The PRD filename is a convention, not a PDD requirement. If the repository
-already has a requirements location or template, use that instead.
+Use `# Product Intent (PRD)` as its heading if the term PRD is useful. The
+filename is a convention, not a PDD requirement. If the repository already has
+a requirements location or template, use that instead.
 
 ### Phase 3: Approve the product intent
 
@@ -333,13 +359,13 @@ traceable to it.
 | Artifact | Normal owner | Do you need to hand-write it? |
 |---|---|---|
 | Spoken or typed product idea | You | Yes, but ordinary language is enough |
-| PRD Markdown | You + AI agent | Usually reviewed by you, drafted by agent |
+| Product Intent (PRD) Markdown | You + AI agent | Usually reviewed by you, drafted by agent |
 | Human user stories | You + AI agent | Dictate or edit; agent can format them |
 | GitHub PRD issue | You + agent | Approve before agent posts it |
 | `.pddrc` | PDD + agent | Normally no |
 | `architecture.json` | PDD + agent | Normally no |
 | `architecture_diagram.html` | PDD | No |
-| `prompts/*.prompt` | PDD + agent | Normally no; review important decisions |
+| `prompts/*.prompt` | AI agent + PDD | No hand-authoring required, but this is the operative source for each generated part |
 | Generated story contract | PDD | No; review for faithful interpretation |
 | Source code and tests | PDD + agent | No, but review and test the result |
 
@@ -358,7 +384,7 @@ project-root/
 ├── architecture.json
 ├── architecture_diagram.html
 ├── docs/
-│   └── PRD.md
+│   └── PRODUCT_INTENT.md
 ├── prompts/
 │   └── <development-unit>_<language>.prompt
 ├── user_stories/
@@ -442,8 +468,9 @@ rule before treating code as generated output.
 
 ### A fluent generated document can still misunderstand you
 
-Read the PRD and user stories. Ask for concrete examples. Correct words that
-have special meaning in your domain.
+Read Product Intent and user stories. Review the agent's plain-language summary
+of changed prompt rules. Ask for concrete examples. Correct words that have
+special meaning in your domain.
 
 ### Passing checks prove only what was checked
 
@@ -454,7 +481,7 @@ or merely inferred.
 
 ## The whole workflow in one sentence
 
-Describe the need in your own words, approve a human-readable PRD and small
-user stories, let PDD and the agent translate that intent into versioned
-technical prompts and code, and require tests plus review to show that the
+Describe the need in your own words; let the agent maintain Product Intent and
+versioned `.prompt` source; use stories selectively as independent acceptance
+checks; then regenerate and require tests plus review to show that the
 translation stayed faithful.

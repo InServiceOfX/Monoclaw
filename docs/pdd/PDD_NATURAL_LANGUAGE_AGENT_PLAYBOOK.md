@@ -39,18 +39,30 @@ faithful, versioned chain from what the user means to what the software does:
 ordinary user messages
         |
         v
-durable intent and current requirements
+Product Intent and request history
         |
         v
-human stories + technical PDD prompts + tests
+versioned PDD prompts
         |
         v
-generated software + evidence
+generated software
+
+human stories + contracts + tests
+        |
+        +---- independently check prompts and behavior
 ```
 
 The user's messages are sufficient **intake**. Chat history alone is not a
 sufficient durable source of truth. The agent must write accepted intent into
-the repository before depending on it for future regeneration.
+the repository before depending on it for future regeneration. For each
+PDD-managed part, the affected `.prompt` file is the operative source for
+generation. Product requirements and user stories support that source; they do
+not replace it.
+
+The distinction between a conversational request, Product Intent, a PDD prompt,
+and a user story is defined in
+[`PDD_AFTER_SETUP.md`](PDD_AFTER_SETUP.md). Read it before executing ongoing
+PDD work.
 
 ## Plain-language terminology
 
@@ -81,16 +93,21 @@ owns these decisions:
 1. Determine whether the message adds, corrects, removes, replaces, or clarifies
    accepted intent.
 2. Preserve the message and update the current human-readable requirements.
-3. Select the least complicated source form that remains durable.
-4. Discover the affected product part and its PDD prompt mapping from repository
+3. Discover the affected product part and its PDD prompt mapping from repository
    evidence.
-5. Preview the operation when useful.
-6. Choose the relevant PDD command; do not assume every message means
+4. Propagate accepted behavior into the affected `.prompt` file before
+   completing implementation. If no appropriate prompt exists, route through
+   the architecture/change workflow rather than pretending a story is enough.
+5. Select the least complicated story source form that remains durable when an
+   independent user story is valuable.
+6. Preview the operation when useful.
+7. Choose the relevant PDD command; do not assume every message means
    `pdd story add`.
-7. Find and review every output rather than assuming generation succeeded.
-8. Present the human story for approval in plain language.
-9. Generate executable regression coverage separately when authorized.
-10. Report deterministic tests, semantic/LLM checks, and unproven claims
+8. Find and review every output rather than assuming generation succeeded.
+9. Present any human story for approval in plain language.
+10. Generate executable regression coverage separately when authorized.
+11. Report prompt-source changes, deterministic tests, semantic/LLM checks,
+    and unproven claims
     separately.
 
 The agent must not shift these mechanics back to the user merely because the
@@ -160,8 +177,9 @@ a newer prompt sounds different. For a correction or removal:
 2. show the meaning-level change when it is consequential;
 3. preserve history by recording that the earlier intent was superseded or
    retired;
-4. update the current PRD/requirements and active human stories;
-5. propagate the accepted change to PDD prompts and tests;
+4. update the current Product Intent/requirements and any affected human
+   stories;
+5. propagate the accepted change to the affected PDD prompts and tests;
 6. regenerate/synchronize only after the source artifacts agree.
 
 Never reverse the direction by treating generated code as the explanation of
@@ -173,10 +191,11 @@ Prefer the repository's established product-requirements structure. If none
 exists, use a simple versioned fallback:
 
 ```text
-docs/requirements/
-├── PRODUCT.md
-└── requests/
-    └── YYYY-MM-DD-<descriptive-slug>.md
+docs/
+├── PRODUCT_INTENT.md
+└── requirements/
+    └── requests/
+        └── YYYY-MM-DD-<descriptive-slug>.md
 ```
 
 The request file should preserve the user's meaning faithfully and record:
@@ -189,9 +208,9 @@ The request file should preserve the user's meaning faithfully and record:
   committing;
 - the resulting requirement/story links.
 
-`PRODUCT.md` is the current consolidated truth; request records preserve how it
-changed. A repository may use different names. Follow its established layout
-rather than creating a second requirements system.
+`PRODUCT_INTENT.md` is the current consolidated truth; request records preserve
+how it changed. A repository may use different names. Follow its established
+layout rather than creating a second requirements system.
 
 ## First routing decision: does an affected PDD-managed part exist?
 

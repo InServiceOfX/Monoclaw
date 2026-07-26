@@ -39,6 +39,9 @@ PDD adoption, read:
   PDD in a new project;
 - `docs/pdd/PDD_START_HERE.md` — beginner workflow from ordinary-language
   product intent to a reviewed PRD, user stories, and generated PDD artifacts;
+- `docs/pdd/PDD_AFTER_SETUP.md` — post-setup operating model, the distinction
+  between conversational intent and versioned `.prompt` source, and the
+  practical meaning of “stay in prompt space”;
 - `docs/pdd/PDD_NATURAL_LANGUAGE_AGENT_PLAYBOOK.md` — natural-language intent
   intake, automatic internal routing, outputs, approval gates, and regression
   evidence;
@@ -48,7 +51,8 @@ PDD adoption, read:
   Agile/Extreme Programming origin of user stories, PDD's adaptation, and a
   walkthrough of the current implementation.
 
-For agent execution, the mandatory detailed files are
+For agent execution after PDD adoption, the mandatory detailed files are
+`PDD_AFTER_SETUP.md`,
 `PDD_NATURAL_LANGUAGE_AGENT_PLAYBOOK.md` and
 `PDD_WITH_ANY_AGENT_HARNESS.md`. `PDD_START_HERE.md` is the human-facing
 explanation.
@@ -59,9 +63,11 @@ instruction before regenerating code.
 
 In a PDD-managed project, treat Ernest's ordinary product requests,
 corrections, removals, examples, and constraints as intent input and follow the
-story playbook. No PDD trigger phrase is required. Do not require him to choose
-an issue URL, local file, `--text`, internal target name, prompt path, slug, or
-output filename when repository inspection can make that choice.
+PDD playbooks. No PDD trigger phrase is required. Propagate accepted behavior
+into the affected versioned `.prompt` file; a PRD or user story does not replace
+that source artifact. Do not require him to choose an issue URL, local file,
+`--text`, internal target name, prompt path, slug, or output filename when
+repository inspection can make that choice.
 
 ## Orientation Protocol (run this every session)
 

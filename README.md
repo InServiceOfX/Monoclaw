@@ -33,4 +33,7 @@ Then describe the product normally. See
 [`docs/pdd/PDD_NEW_PROJECT_PROMPT.md`](docs/pdd/PDD_NEW_PROJECT_PROMPT.md) for
 the one-page handoff and
 [`docs/pdd/PDD_START_HERE.md`](docs/pdd/PDD_START_HERE.md) for the beginner
-explanation.
+explanation. After setup, read
+[`docs/pdd/PDD_AFTER_SETUP.md`](docs/pdd/PDD_AFTER_SETUP.md) for the practical
+meaning of “stay in prompt space”: the human keeps talking normally while the
+agent maintains versioned `.prompt` source, stories, tests, and generated code.

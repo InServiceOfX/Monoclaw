@@ -20,6 +20,10 @@ PDD's adaptation of the Three C's, and a source-level walkthrough of the current
 implementation, read
 [`PDD_CONCEPTS_AND_USER_STORIES.md`](PDD_CONCEPTS_AND_USER_STORIES.md).
 
+For the recurring workflow after a project is configured, including the
+distinction between conversational intent, Product Intent, component prompts,
+and user stories, read [`PDD_AFTER_SETUP.md`](PDD_AFTER_SETUP.md).
+
 Assume one of these is true:
 
 - `pdd` is installed and available on `PATH`; or

@@ -24,11 +24,15 @@ The agent should:
    and [`PDD_WITH_ANY_AGENT_HARNESS.md`](PDD_WITH_ANY_AGENT_HARNESS.md).
 3. Inspect the project and installed `pdd` command.
 4. Preserve your ordinary-language request as durable, human-readable intent.
-5. Draft the initial requirements and explain its interpretation for review.
-6. Handle PDD configuration, architecture, prompts, stories, contracts, code,
-   and tests internally.
-7. Ask before external actions such as posting a GitHub issue.
-8. Report what was generated, what was tested, and what remains uncertain.
+5. Draft `docs/PRODUCT_INTENT.md` (or use the repository's equivalent) and
+   explain its interpretation for review.
+6. Create and maintain versioned PDD `.prompt` files as the operative source
+   for each PDD-generated part. Do not stop after writing a PRD or stories.
+7. Handle PDD configuration, architecture, stories, contracts, code, and tests
+   internally.
+8. Ask before external actions such as posting a GitHub issue.
+9. Report what changed in prompt source, what was generated, what was tested,
+   and what remains uncertain.
 
 After the project is configured for PDD, do not repeat the setup prompt.
 Continue talking normally:
@@ -50,5 +54,7 @@ Never allow ...
 ```
 
 The agent should treat those later messages as additions, corrections,
-removals, and constraints; preserve the accepted changes; and route them
-through PDD without requiring another magic phrase.
+removals, and constraints; preserve the accepted changes; update the affected
+versioned `.prompt` source; and route them through PDD without requiring
+another magic phrase. See [`PDD_AFTER_SETUP.md`](PDD_AFTER_SETUP.md) for this
+ongoing loop.
