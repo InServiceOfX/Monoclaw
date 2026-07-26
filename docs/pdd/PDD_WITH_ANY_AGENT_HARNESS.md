@@ -4,9 +4,16 @@ This is a standalone operating guide for an AI coding agent using the `pdd`
 command-line interface. It is not specific to Claude Code, Codex, Gemini,
 OpenCode, OpenClaw, Cursor, or any repository.
 
+For the workspace-to-Monoclaw instruction-loading architecture, read
+[`PDD_WORKSPACE_BOOTSTRAP.md`](PDD_WORKSPACE_BOOTSTRAP.md).
+
 If you are a product owner, domain expert, mechanical engineer, or anyone who
 wants to begin with an ordinary-language description rather than PDD commands,
 start with [`PDD_START_HERE.md`](PDD_START_HERE.md).
+
+For automatic `pdd story` input selection, dev-unit discovery, output
+interpretation, human approval, and regression routing, follow
+[`PDD_NATURAL_LANGUAGE_AGENT_PLAYBOOK.md`](PDD_NATURAL_LANGUAGE_AGENT_PLAYBOOK.md).
 
 For the conceptual model, the Agile/Extreme Programming origin of user stories,
 PDD's adaptation of the Three C's, and a source-level walkthrough of the current

@@ -30,20 +30,36 @@ in this repo (or any Ernest repo), read:
 
 ## Prompt-Driven Development
 
-If a task targets an explicitly PDD-managed dev unit or asks for PDD adoption,
-read:
+If a task targets an explicitly PDD-managed part of the product or asks for
+PDD adoption, read:
 
+- `docs/pdd/PDD_WORKSPACE_BOOTSTRAP.md` — how workspace/harness instruction
+  files load the canonical Monoclaw PDD policy;
 - `docs/pdd/PDD_START_HERE.md` — beginner workflow from ordinary-language
   product intent to a reviewed PRD, user stories, and generated PDD artifacts;
+- `docs/pdd/PDD_NATURAL_LANGUAGE_AGENT_PLAYBOOK.md` — natural-language intent
+  intake, automatic internal routing, outputs, approval gates, and regression
+  evidence;
 - `docs/pdd/PDD_WITH_ANY_AGENT_HARNESS.md` — command routing, workflows,
   verification, safety, and brownfield adoption;
 - `docs/pdd/PDD_CONCEPTS_AND_USER_STORIES.md` — conceptual model, the
   Agile/Extreme Programming origin of user stories, PDD's adaptation, and a
   walkthrough of the current implementation.
 
+For agent execution, the mandatory detailed files are
+`PDD_NATURAL_LANGUAGE_AGENT_PLAYBOOK.md` and
+`PDD_WITH_ANY_AGENT_HARNESS.md`. `PDD_START_HERE.md` is the human-facing
+explanation.
+
 Do not assume all Monoclaw source is PDD-generated. Confirm ownership through a
 matching `.prompt`, `.pddrc`, `architecture.json`, or explicit project
 instruction before regenerating code.
+
+In a PDD-managed project, treat Ernest's ordinary product requests,
+corrections, removals, examples, and constraints as intent input and follow the
+story playbook. No PDD trigger phrase is required. Do not require him to choose
+an issue URL, local file, `--text`, internal target name, prompt path, slug, or
+output filename when repository inspection can make that choice.
 
 ## Orientation Protocol (run this every session)
 

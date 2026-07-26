@@ -15,8 +15,24 @@ If that describes you, the short answer is:
 You should not have to begin by writing `.prompt` files, `.pddrc`, or
 `architecture.json`.
 
-This guide is the friendly entry point. The other two documents are references:
+You also should not have to decide among GitHub, local-file, and inline story
+inputs or identify a technical component name. An AI agent following the story
+playbook owns those decisions.
 
+There is one adoption decision: the project must be explicitly configured to
+use PDD. After that, you do not need to say “use PDD” or “create story
+coverage” every time. Ordinary requests, corrections, removals, examples, and
+constraints are sufficient input. The agent preserves accepted intent and
+routes it through PDD.
+
+This guide is the friendly entry point. The other documents are references:
+
+- [`PDD_WORKSPACE_BOOTSTRAP.md`](PDD_WORKSPACE_BOOTSTRAP.md) explains how
+  workspace-root instruction files make Claude, Codex, Cursor, and other
+  harnesses load the same Git-versioned Monoclaw policy.
+- [`PDD_NATURAL_LANGUAGE_AGENT_PLAYBOOK.md`](PDD_NATURAL_LANGUAGE_AGENT_PLAYBOOK.md)
+  tells an AI agent how to accept evolving natural-language intent and select
+  the internal PDD workflow automatically.
 - [`PDD_CONCEPTS_AND_USER_STORIES.md`](PDD_CONCEPTS_AND_USER_STORIES.md)
   explains the ideas, the Agile/Extreme Programming background of user
   stories, and what the PDD code actually does.
@@ -234,59 +250,36 @@ Posting a GitHub issue is an external action. The AI agent should show you the
 draft and ask before creating or posting it. If you already created the issue,
 give the agent its URL.
 
-PDD also has an experimental incremental PRD mode for updating an **existing**
-PDD architecture:
-
-```bash
-pdd generate --incremental --experimental-prd docs/PRD.md
-```
-
-That mode expects an existing `architecture.json`; it is not currently the
-ordinary greenfield local-file bootstrap.
+PDD also has an experimental local-PRD mode for updating a project that already
+has PDD architecture. The agent can determine whether that mode applies; the
+user does not choose it.
 
 If GitHub cannot be used, keep the local PRD and ask the agent to explain the
-available manual or project-specific bootstrap. Do not let it claim that
-`pdd story add` automatically turns a local story into a new architecture; the
-current command expects an existing prompt or development-unit association.
+available manual or project-specific bootstrap. Adding acceptance intent to an
+existing PDD specification and creating a brand-new PDD architecture are
+different internal operations, but the agent—not the user—owns that routing.
 
 ### Do I need a GitHub issue for every story or contract?
 
-No. PDD uses “issue source” as a broad name for the independent product intent
-from which it derives a story. That source can be:
+No. PDD can derive a story from:
 
-- a GitHub issue URL or issue number;
+- ordinary conversation preserved in the repository;
 - a local Markdown file; or
-- text supplied directly on the command line.
+- a GitHub issue when one is useful.
 
-For example, after the relevant prompt/dev unit exists:
+The agent should normally preserve conversational intent as a versioned local
+requirements record, discover which part of the product it affects, and invoke
+PDD. Neither a GitHub issue nor PDD command knowledge is required from the user.
 
-```bash
-# Durable, reviewable local source; no GitHub issue or issue fetch.
-pdd story add docs/requirements/pressure_trace_limits.md \
-  --devunit pressure_trace_analyzer
-
-# Or start directly from dictated/typed text.
-pdd story add \
-  --text "As a test engineer, I need out-of-limit pressure intervals highlighted so I can diagnose a valve problem." \
-  --title "Pressure trace limits" \
-  --devunit pressure_trace_analyzer
-```
-
-The inline form persists the supplied text under `.pdd/story_sources/` so the
-generated contract retains a local source reference. Both forms still use an
-LLM to author the canonical story and generated contract, but neither needs a
-GitHub issue.
-
-The required `--devunit` or `--prompt` is important: a story-to-contract mapping
-does not create a greenfield architecture. It describes acceptance intent for
-one or more prompts that already exist.
+The story and contract authoring step still uses an LLM. A local requirements
+record avoids a GitHub dependency, not the configured model call.
 
 ### Phase 5: Review the generated plan
 
 The agent should summarize, in plain language:
 
-- the proposed development units;
-- what each unit is responsible for;
+- the proposed parts of the product;
+- what each part is responsible for;
 - important interfaces and dependencies;
 - which prompts correspond to which code files;
 - assumptions PDD made;
@@ -311,8 +304,8 @@ Small slices make mistakes easier to identify and correct.
 
 ### Phase 7: Preserve stories as acceptance intent
 
-Once prompts exist, PDD can associate human stories with those prompts and
-derive detailed contracts and regression tests.
+Once the technical PDD specification exists, PDD can associate human stories
+with the affected parts and derive detailed contracts and regression tests.
 
 The conventional files are:
 
@@ -322,26 +315,11 @@ user_stories/contracts/pressure_trace_limits.contract.md
 tests/story_regression/test_story_pressure_trace_limits.py
 ```
 
-In the current CLI, a command such as:
-
-```bash
-pdd story add docs/requirements/pressure_trace_limits.md \
-  --devunit pressure_trace_analyzer
-```
-
-creates a story for an existing development unit and best-effort derives its
-contract. To generate executable regression coverage, run the separate
-follow-up:
-
-```bash
-pdd test \
-  --from-story user_stories/story__pressure_trace_limits.md \
-  --output tests/story_regression/test_story_pressure_trace_limits.py
-```
-
-The `pdd story add --generate-regression` option only prints this handoff
-command; it does not run it. The precise flags may change, so the agent must
-check `pdd story add --help` and `pdd test --help`.
+The agent creates the human story and asks PDD to derive its contract. The agent
+then separately asks PDD to generate executable regression coverage, inspects
+whether that test is genuinely behavioral, and runs it. These are separate
+internal operations, but the user only reviews the intended meaning and the
+reported evidence.
 
 The short human story remains the acceptance-level source. The generated
 contract is a more detailed, machine-oriented expansion and must remain
@@ -411,53 +389,27 @@ The practical rule is:
 > You provide names that make sense to people. The agent applies the project's
 > PDD naming and directory conventions, then checks that PDD can resolve them.
 
-## A prompt you can give any AI coding agent
+## No required prompt template
 
-Copy this and replace the bracketed text:
+For a project that is already configured to use PDD, simply talk about the
+product:
 
-```text
-Use Prompt-Driven Development for this project.
+> Highlight out-of-limit pressure intervals.
 
-I am describing product intent, not implementation:
+> Actually, merge intervals separated by less than two seconds.
 
-[Describe the problem and what you want in ordinary language.]
+> Remove CSV export.
 
-Possible users:
-[Who experiences the problem? It is okay if I am unsure.]
+> Never alter the original uploaded samples.
 
-Examples, constraints, and must-not rules:
-[Add anything I know. It is okay to leave this incomplete.]
+Those are sufficient inputs. The agent instructions—not a special user
+incantation—cause the messages to be preserved and routed through PDD.
 
-First inspect the repository and determine whether it is already PDD-managed.
-Then:
+For a project not yet configured for PDD, one adoption request is sufficient:
 
-1. Draft or update a plain-language PRD and a small set of candidate user
-   stories. Label assumptions and open questions.
-2. Show me the human-readable intent for approval before generating code or
-   taking external actions.
-3. Do not ask me to hand-author .prompt files, .pddrc, or architecture.json
-   unless the installed PDD workflow cannot generate what is needed.
-4. If this is greenfield, explain that the current supported PDD architecture
-   bootstrap uses a GitHub issue containing the approved PRD. Ask before
-   creating or posting that issue.
-5. After approval, use the installed PDD CLI and its current --help output to
-   generate and review the architecture, configuration, and prompts.
-6. Work in one small approved development unit at a time. Run relevant tests
-   and report evidence, remaining uncertainty, and any drift among intent,
-   prompts, tests, and generated code.
-7. Follow this repository's branch, safety, review, and PDD ownership rules.
-
-Explain decisions to me in product language first. I should be able to review
-the workflow without already knowing PDD internals.
-```
-
-For an even shorter start:
-
-```text
-Use PDD. I want [ordinary-language description].
-Turn this into a draft PRD and a few user stories for my approval.
-Do not generate code yet, and do not ask me to write PDD plumbing files.
-```
+> Set this project up to use Prompt-Driven Development. I will describe the
+> product in ordinary language; preserve my requests and handle the PDD
+> mechanics for me.
 
 ## What the AI agent should inspect
 
