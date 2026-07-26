@@ -35,6 +35,8 @@ PDD adoption, read:
 
 - `docs/pdd/PDD_WORKSPACE_BOOTSTRAP.md` — how workspace/harness instruction
   files load the canonical Monoclaw PDD policy;
+- `docs/pdd/PDD_NEW_PROJECT_PROMPT.md` — one-time copy/paste prompt for adopting
+  PDD in a new project;
 - `docs/pdd/PDD_START_HERE.md` — beginner workflow from ordinary-language
   product intent to a reviewed PRD, user stories, and generated PDD artifacts;
 - `docs/pdd/PDD_NATURAL_LANGUAGE_AGENT_PLAYBOOK.md` — natural-language intent

@@ -25,6 +25,9 @@ coverage” every time. Ordinary requests, corrections, removals, examples, and
 constraints are sufficient input. The agent preserves accepted intent and
 routes it through PDD.
 
+For a new project, the copy/paste adoption prompt is preserved on its own page:
+[`PDD_NEW_PROJECT_PROMPT.md`](PDD_NEW_PROJECT_PROMPT.md).
+
 This guide is the friendly entry point. The other documents are references:
 
 - [`PDD_WORKSPACE_BOOTSTRAP.md`](PDD_WORKSPACE_BOOTSTRAP.md) explains how
@@ -410,6 +413,9 @@ For a project not yet configured for PDD, one adoption request is sufficient:
 > Set this project up to use Prompt-Driven Development. I will describe the
 > product in ordinary language; preserve my requests and handle the PDD
 > mechanics for me.
+
+Copy it from [`PDD_NEW_PROJECT_PROMPT.md`](PDD_NEW_PROJECT_PROMPT.md) when
+starting in a fresh project or agent session.
 
 ## What the AI agent should inspect
 

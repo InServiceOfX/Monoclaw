@@ -19,3 +19,18 @@ See [PRIVACY.md](PRIVACY.md) before working with private local files.
 ## Usage
 `git checkout -b feat/xxx`
 Build per-lang.
+
+## Prompt-Driven Development
+
+To adopt PDD for a new project, paste this once into the AI agent:
+
+```text
+Set this project up to use Prompt-Driven Development. I’ll describe the product
+in ordinary language; preserve my requests and handle the PDD mechanics for me.
+```
+
+Then describe the product normally. See
+[`docs/pdd/PDD_NEW_PROJECT_PROMPT.md`](docs/pdd/PDD_NEW_PROJECT_PROMPT.md) for
+the one-page handoff and
+[`docs/pdd/PDD_START_HERE.md`](docs/pdd/PDD_START_HERE.md) for the beginner
+explanation.
