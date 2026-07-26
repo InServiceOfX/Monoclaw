@@ -180,8 +180,9 @@ The Product Intent document describes the product or larger change:
 - acceptance criteria and examples;
 - major technical or operational requirements, when known.
 
-It is the map of the whole job. A useful conventional heading is `Product
-Intent (PRD)`.
+It is an optional map of the whole job, especially useful for greenfield work
+or a large change. A useful conventional heading is `Product Intent (PRD)`.
+PDD does not require this document to be updated for every small request.
 
 ### PDD prompt
 
@@ -365,9 +366,10 @@ traceable to it.
 | `.pddrc` | PDD + agent | Normally no |
 | `architecture.json` | PDD + agent | Normally no |
 | `architecture_diagram.html` | PDD | No |
-| `prompts/*.prompt` | AI agent + PDD | No hand-authoring required, but this is the operative source for each generated part |
+| `prompts/*.prompt` | Developer or AI agent; PDD may bootstrap it | Do not hand-author syntax unless you want to, but approve its meaning; a technical owner reviews consequential prompt diffs |
 | Generated story contract | PDD | No; review for faithful interpretation |
-| Source code and tests | PDD + agent | No, but review and test the result |
+| Tests | PDD + agent | Product user reviews the claimed behavior; technical owner reviews critical coverage |
+| Generated source code | PDD + agent | No line-by-line review for ordinary low-risk work; direct expert review remains required where risk demands it |
 
 “Normally no” does not mean “never inspect.” It means these are not the price
 of admission for describing your product.
@@ -471,6 +473,12 @@ rule before treating code as generated output.
 Read Product Intent and user stories. Review the agent's plain-language summary
 of changed prompt rules. Ask for concrete examples. Correct words that have
 special meaning in your domain.
+
+The human story is deliberately short and should be read and approved, but it
+cannot replace prompt review. The `.prompt` is the fuller source specification.
+You need not write it yourself; require the agent to summarize its purpose,
+inputs/outputs, changed behavior, `MUST`/`MUST NOT` rules, assumptions, and
+tests. For consequential changes, inspect the relevant prompt section directly.
 
 ### Passing checks prove only what was checked
 

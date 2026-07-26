@@ -98,15 +98,18 @@ owns these decisions:
 4. Propagate accepted behavior into the affected `.prompt` file before
    completing implementation. If no appropriate prompt exists, route through
    the architecture/change workflow rather than pretending a story is enough.
-5. Select the least complicated story source form that remains durable when an
+5. Present consequential prompt changes for meaning-level human approval. The
+   agent may write the file, but must not treat prompt source as an ignorable
+   generated artifact.
+6. Select the least complicated story source form that remains durable when an
    independent user story is valuable.
-6. Preview the operation when useful.
-7. Choose the relevant PDD command; do not assume every message means
+7. Preview the operation when useful.
+8. Choose the relevant PDD command; do not assume every message means
    `pdd story add`.
-8. Find and review every output rather than assuming generation succeeded.
-9. Present any human story for approval in plain language.
-10. Generate executable regression coverage separately when authorized.
-11. Report prompt-source changes, deterministic tests, semantic/LLM checks,
+9. Find and review every output rather than assuming generation succeeded.
+10. Present any human story for approval in plain language.
+11. Generate executable regression coverage separately when authorized.
+12. Report prompt-source changes, deterministic tests, semantic/LLM checks,
     and unproven claims
     separately.
 
@@ -403,7 +406,26 @@ Important current behavior:
 
 ## Human approval gate
 
-After generation, show the user:
+Prompt approval and story approval are related but different.
+
+Before regenerating from a consequential prompt change, show the product/domain
+human a plain-language prompt review card:
+
+1. the affected part and its purpose;
+2. inputs and outputs;
+3. behavior added, changed, or removed;
+4. `MUST` and `MUST NOT` rules;
+5. important examples and edge cases;
+6. dependencies, architecture effects, and unresolved assumptions;
+7. tests intended to prove the behavior.
+
+The human need not write prompt syntax, but must be able to correct its meaning.
+A technical owner must inspect consequential `.prompt` diffs, interfaces,
+dependencies, and critical tests. Apply stricter direct review for safety,
+security, privacy, financial, performance-sensitive, or otherwise high-risk
+behavior.
+
+After story generation, show the user:
 
 1. the one-sentence human story;
 2. the source it was derived from;
@@ -417,6 +439,10 @@ Ask the user to approve or correct the **meaning**, not the PDD syntax.
 The human story is editable. The generated contract is derived output and must
 not be hand-edited. If the story meaning is wrong, correct the story/source and
 regenerate/re-align the contract through supported tooling.
+
+Approval of the one-sentence story does not implicitly approve the full prompt.
+The story checks one acceptance outcome; the prompt is the fuller source that
+governs regeneration.
 
 The current PDD library contains `sync_user_story_contract()`, but version
 `0.0.309` does not expose a dedicated public CLI command for it. Do not pretend

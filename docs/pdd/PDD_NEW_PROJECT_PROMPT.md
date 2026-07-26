@@ -27,7 +27,9 @@ The agent should:
 5. Draft `docs/PRODUCT_INTENT.md` (or use the repository's equivalent) and
    explain its interpretation for review.
 6. Create and maintain versioned PDD `.prompt` files as the operative source
-   for each PDD-generated part. Do not stop after writing a PRD or stories.
+   for each PDD-generated part. Present their purpose, behavior, `MUST` and
+   `MUST NOT` rules, assumptions, and tests for human review. Do not stop after
+   writing a PRD or stories.
 7. Handle PDD configuration, architecture, stories, contracts, code, and tests
    internally.
 8. Ask before external actions such as posting a GitHub issue.

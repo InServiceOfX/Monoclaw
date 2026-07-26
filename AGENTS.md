@@ -42,6 +42,9 @@ PDD adoption, read:
 - `docs/pdd/PDD_AFTER_SETUP.md` — post-setup operating model, the distinction
   between conversational intent and versioned `.prompt` source, and the
   practical meaning of “stay in prompt space”;
+- `docs/pdd/PDD_VIDEO_CLEAR_WALKTHROUGH_NOTES.md` — transcript-backed notes
+  from the official PDD walkthrough, including who writes and who reviews each
+  artifact;
 - `docs/pdd/PDD_NATURAL_LANGUAGE_AGENT_PLAYBOOK.md` — natural-language intent
   intake, automatic internal routing, outputs, approval gates, and regression
   evidence;
