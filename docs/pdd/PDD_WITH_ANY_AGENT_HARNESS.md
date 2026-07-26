@@ -149,6 +149,7 @@ This table is the primary routing policy.
 
 | Situation | Route |
 |---|---|
+| Ordinary-language product request, correction, removal, or PDD-adoption request in any standalone/monorepo new/existing layout | Run `pdd intent plan --text "<exact request>" --project-root "<exact project/subproject scope>" --json`; it is read-only intake, so continue with the applicable implementation route after review |
 | Current runtime symptom: crash, stack trace, failing command, regression, wrong CLI/API/UI output, or incorrect generated behavior | `pdd bug <issue-url>` then `pdd fix <issue-url>` |
 | Explicit product, specification, or source-truth change with no current runtime failure to reproduce | `pdd change <issue-url>` then synchronize the affected dev units |
 | PRD or requirements issue must become architecture and prompts | `pdd generate <issue-url>` |

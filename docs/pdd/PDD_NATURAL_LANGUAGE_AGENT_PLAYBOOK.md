@@ -86,23 +86,51 @@ synchronize/verify the group. Do not expose the mechanical split to the user.
 See
 [`PDD_PROMPT_GRAPH_AND_ARTIFACT_BUNDLES.md`](PDD_PROMPT_GRAPH_AND_ARTIFACT_BUNDLES.md).
 
-This playbook was checked against PDD `0.0.309` at source commit `17b41a779` on
+This playbook was checked against the PDD fork at source commit `fefa9a1fc` on
 2026-07-26. The installed CLI is authoritative. Before execution, run:
 
 ```bash
 pdd --version
+pdd intent --help
+pdd intent plan --help
 pdd story --help
 pdd story add --help
 pdd test --help
 ```
+
+## Required local intent intake
+
+For an ordinary product request, correction, removal, or PDD-adoption request,
+the agent should first invoke the read-only planner itself:
+
+```bash
+pdd intent plan --text "<the user's exact request>" \
+  --project-root "<exact existing or proposed project/subproject root>" \
+  --json
+```
+
+Use a file argument or stdin when that is the request's real source. Do not ask
+the human to choose the form or type the command.
+
+The planner preserves the request, distinguishes standalone and monorepo
+subproject scope, classifies new/existing/PDD-managed projects, proposes
+candidate product areas, and returns a review structure. It does not call a
+model or change files. Therefore, do not report the product change as complete
+after planning. If the user authorized implementation, use the plan as intake,
+present or resolve consequential open decisions, and continue through the
+applicable prompt/story/test/sync workflow below.
+
+For a monorepo, pass the intended subproject root—not the repository root—when
+only that subproject is in scope. A proposed new subproject path may be absent.
 
 ## Agent contract
 
 When a user expresses product intent in a PDD-managed repository, the agent
 owns these decisions:
 
-1. Determine whether the message adds, corrects, removes, replaces, or clarifies
-   accepted intent.
+1. Run `pdd intent plan` against the exact project/subproject scope and
+   determine whether the message adds, corrects, removes, replaces, or
+   clarifies accepted intent.
 2. Preserve the message and update the current human-readable requirements.
 3. Discover the affected product part and its PDD prompt mapping or linked
    prompt group from repository evidence.

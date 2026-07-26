@@ -81,7 +81,11 @@ PDD file mechanics. Do not require the human to manually edit `.pddrc`,
 tests. The agent maintains those artifacts, presents a plain-language review
 card, and asks only about consequential meaning or tradeoffs. Follow
 `docs/pdd/PDD_INTENT_FIRST_WORKFLOW.md` for this ownership boundary and the
-proposed simplified front door.
+implemented planning-only front door. For ordinary product intent, the agent
+should run `pdd intent plan` with the user's exact request and the exact
+project/subproject root; the human should not have to invoke it. Planning is
+read-only, so continue through the applicable PDD implementation workflow when
+the user authorized changes.
 
 Treat the prompt suite collectively as project source. Do not equate a PDD
 logical unit with one physical file when several artifacts share one
