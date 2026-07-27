@@ -197,11 +197,11 @@ inline text, but it only builds acceptance coverage and still requires the
 caller to identify prompt or development-unit targets. It is not a universal
 “implement what I just asked for” command.
 
-## Implemented fork improvement: `pdd intent plan`
+## Implemented fork workflow: `pdd intent plan` and `pdd intent apply`
 
-The PDD fork now has the first, read-only slice of a beginner-facing
-orchestration facade. Existing commands remain available for backward
-compatibility and advanced control.
+The PDD fork now has a beginner-facing local planning and application facade.
+Existing commands remain available for backward compatibility and advanced
+control.
 
 Current interface:
 
@@ -211,12 +211,14 @@ pdd intent plan --text \
 pdd intent plan docs/requests/pressure-trace.md
 printf '%s\n' "Add offline PDF export." | pdd intent plan
 pdd intent plan --text "Add offline PDF export." --json
+pdd intent apply --text "Add offline PDF export." \
+  --approve INTENT_ID_FROM_PLAN --json
 ```
 
 An AI harness could invoke the same functionality through a structured tool
-call. The person would normally never type these commands. This first slice
-classifies and explains; it deliberately does not yet edit or generate project
-files.
+call. The person would normally never type these commands. Planning classifies
+and explains without writing. Apply requires the exact reviewed plan ID before
+it mutates the selected project or subproject.
 
 It handles four adoption routes without changing the human interaction:
 
@@ -232,7 +234,13 @@ It handles four adoption routes without changing the human interaction:
 For routes 3 and 4, `--project-root` is the subproject directory, not the
 monorepo root. A proposed new directory need not exist during planning.
 
-### Full `pdd intent` responsibilities
+When an independent story is warranted, apply stops with
+`awaiting_story_approval`, its path, and its SHA-256. The agent presents the
+story in ordinary language. Only after the human approves that exact wording
+does the agent rerun apply with `--approve-story <sha256>`; regression
+generation and synchronization do not run before that gate.
+
+### `pdd intent` responsibilities
 
 1. **Implemented:** accept ordinary text, a local file, or standard input
    without GitHub.
@@ -243,17 +251,19 @@ monorepo root. A proposed new directory need not exist during planning.
 4. **Implemented for existing PDD inventories:** discover candidate logical
    parts conservatively without requiring the human to supply a “dev unit.”
 5. **Implemented:** produce the human-facing review card and stable JSON.
-6. Record corrections without erasing the original request.
-7. Update Product Intent only when the request changes whole-product current
-   truth.
-8. Update the affected `.prompt` source and any shared prompt contracts.
-9. Create an independent story only when the selection rules above justify it.
-10. Generate or update tests, synchronize the affected artifacts, and report
-    exact evidence.
-11. Expose prompt/test/code diffs for audit without requiring the human to
-    manipulate their paths.
-12. Stop for unresolved consequential choices and avoid silently inventing
-    product policy.
+6. **Implemented:** record corrections/removals as new immutable events with
+   explicit `--supersedes`, without erasing the original request.
+7. **Implemented:** maintain Product Intent and per-intent machine status.
+8. **Implemented:** update or create architecture and `.prompt` source through
+   existing local PDD workflows.
+9. **Implemented:** create an independent story selectively and require
+   approval of its exact SHA-256.
+10. **Implemented:** generate story regression coverage after approval,
+    synchronize the scoped project, and request evidence.
+11. **Implemented:** report changed prompt/test/code paths without requiring
+    the human to manipulate them.
+12. **Implemented:** reject mismatched approval IDs, uncharacterized
+    brownfield adoption, missing prompt mappings, and failed child workflows.
 
 ### A possible durable intent packet
 
@@ -314,15 +324,14 @@ instead of a workaround each user reconstructs.
 1. **Done in fork commit `fefa9a1fc`:** add a read-only `pdd intent plan` path
    that accepts text/file/stdin and prints the review card plus proposed
    targets without modifying the project.
-2. Add a local `pdd intent apply` path that updates prompts and runs a scoped
-   existing-project workflow without requiring GitHub.
-3. Add durable intent records, corrections, and status.
-4. Add selective story creation using explicit policy and an override.
-5. **Planning schema done:** expose stable `pdd.intent.plan.v1` JSON for agent
-   harnesses; extend the schema for apply and status as those commands are
-   implemented.
-6. Pilot it on one small Python unit and one coupled C++ header/source unit
+2. **Done in fork commit `3365d04ac`:** add local `pdd intent apply`, exact
+   plan approval, durable intent/correction records, brownfield safety,
+   selective story approval, regression generation, scoped sync, and
+   `pdd.intent.apply.v1` status.
+3. Pilot it on one small Python unit and one coupled C++ header/source unit
    before treating target discovery as reliable.
+4. Add a dedicated `pdd intent status` convenience command if operational
+   experience shows that reading the apply JSON/status record is insufficient.
 
 The implementation should reuse existing PDD story, prompt, sync, test, and
 verification internals. It should not replace them or alter their advanced

@@ -53,7 +53,7 @@ This guide is the friendly entry point. The other documents are references:
 - [`PDD_INTENT_FIRST_WORKFLOW.md`](PDD_INTENT_FIRST_WORKFLOW.md) separates what
   the human controls from what the agent edits, explains why stories exist
   alongside prompts and tests, and documents the implemented `pdd intent plan`
-  front door plus the remaining application work.
+  and `pdd intent apply` front door.
 - [`PDD_VIDEO_ARCHITECTING_WORKFLOW_NOTES.md`](PDD_VIDEO_ARCHITECTING_WORKFLOW_NOTES.md)
   analyzes the official architecture-workflow demonstration: flexible PRD,
   architecture review, prompt-graph generation, dependency-ordered sync, and
@@ -64,15 +64,16 @@ This guide is the friendly entry point. The other documents are references:
 - [`PDD_WITH_ANY_AGENT_HARNESS.md`](PDD_WITH_ANY_AGENT_HARNESS.md) gives an AI
   coding agent the detailed command-routing and safety rules.
 
-The PDD implementation checked for this guide includes fork commit
-`fefa9a1fc` (`feat/intent-front-door`) on 2026-07-26. PDD changes quickly, so
-the installed command's help is authoritative.
+The PDD implementation checked for this guide includes fork commits
+`fefa9a1fc` and `3365d04ac` (`feat/intent-front-door`) on 2026-07-26. PDD
+changes quickly, so the installed command's help is authoritative.
 
 The same ordinary-language interaction covers four layouts: an existing
 standalone project, a new standalone project, an existing monorepo subproject,
 and a proposed new monorepo subproject. The agent selects the project or
-subproject root and runs `pdd intent plan`; the human does not need to learn
-the internal greenfield, brownfield, or “development unit” vocabulary.
+subproject root, runs `pdd intent plan`, and—after the human approves what it
+understood—runs `pdd intent apply`. The human does not need to learn the
+internal greenfield, brownfield, or “development unit” vocabulary.
 
 ## The easiest mental model
 

@@ -81,11 +81,14 @@ PDD file mechanics. Do not require the human to manually edit `.pddrc`,
 tests. The agent maintains those artifacts, presents a plain-language review
 card, and asks only about consequential meaning or tradeoffs. Follow
 `docs/pdd/PDD_INTENT_FIRST_WORKFLOW.md` for this ownership boundary and the
-implemented planning-only front door. For ordinary product intent, the agent
-should run `pdd intent plan` with the user's exact request and the exact
-project/subproject root; the human should not have to invoke it. Planning is
-read-only, so continue through the applicable PDD implementation workflow when
-the user authorized changes.
+implemented intent front door. For ordinary product intent, the agent should
+run `pdd intent plan` with the user's exact request and the exact
+project/subproject root; the human should not have to invoke it. After the human
+approves the review card, the agent runs `pdd intent apply` with that exact
+plan ID. If apply requests story approval, present the story's meaning and
+resume only with the approved file SHA-256. Never use `--characterized` for
+brownfield adoption until the existing behavior and critical negative tests
+were actually run.
 
 Treat the prompt suite collectively as project source. Do not equate a PDD
 logical unit with one physical file when several artifacts share one

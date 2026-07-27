@@ -222,11 +222,12 @@ This preserves the video's three meaningful review boundaries without forcing
 the user to remember templates, file paths, JSON schemas, module names, or
 synchronization order.
 
-## Effect on the proposed `pdd intent` facade
+## Effect on the implemented `pdd intent` facade
 
-The video strengthens the case for the proposed `pdd intent` workflow.
+The video supplied design evidence for the implemented `pdd intent` workflow.
 
-`pdd intent plan` should produce three sections when they are relevant:
+`pdd intent plan` now summarizes these concerns in its review card when they
+are relevant:
 
 ```text
 Product interpretation:
@@ -234,8 +235,8 @@ Architecture interpretation:
 Prompt/test impact:
 ```
 
-It should then expose only consequential decisions and let the human approve or
-correct them. `pdd intent apply` should own template selection, architecture
+It exposes consequential decisions and lets the human approve or correct the
+meaning. `pdd intent apply` owns template selection, architecture
 metadata, prompt generation, dependency ordering, scoped synchronization, and
 verification.
 

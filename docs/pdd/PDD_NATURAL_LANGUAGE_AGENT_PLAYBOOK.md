@@ -86,13 +86,14 @@ synchronize/verify the group. Do not expose the mechanical split to the user.
 See
 [`PDD_PROMPT_GRAPH_AND_ARTIFACT_BUNDLES.md`](PDD_PROMPT_GRAPH_AND_ARTIFACT_BUNDLES.md).
 
-This playbook was checked against the PDD fork at source commit `fefa9a1fc` on
+This playbook was checked against the PDD fork at source commit `3365d04ac` on
 2026-07-26. The installed CLI is authoritative. Before execution, run:
 
 ```bash
 pdd --version
 pdd intent --help
 pdd intent plan --help
+pdd intent apply --help
 pdd story --help
 pdd story add --help
 pdd test --help
@@ -116,9 +117,29 @@ The planner preserves the request, distinguishes standalone and monorepo
 subproject scope, classifies new/existing/PDD-managed projects, proposes
 candidate product areas, and returns a review structure. It does not call a
 model or change files. Therefore, do not report the product change as complete
-after planning. If the user authorized implementation, use the plan as intake,
-present or resolve consequential open decisions, and continue through the
-applicable prompt/story/test/sync workflow below.
+after planning.
+
+Present the review card in ordinary language. After the human approves its
+meaning, invoke apply yourself with the exact same request, title, source, and
+scope:
+
+```bash
+pdd intent apply --text "<the user's exact request>" \
+  --project-root "<the same exact project/subproject root>" \
+  --approve "<intent-id returned by plan>" \
+  --json
+```
+
+For conventional brownfield code, first run characterization and critical
+negative tests, then add `--characterized`. The flag is an agent assertion,
+not a replacement for evidence.
+
+If apply returns `status: awaiting_story_approval` (exit 2), read the reported
+story file and present its meaning to the human. If the human corrects it,
+perform the edit on their behalf. Compute the current file SHA-256 and rerun
+the same apply command with `--approve-story <sha256>`. Never pass a stale or
+unreviewed hash. Apply then generates the story regression and runs scoped
+synchronization.
 
 For a monorepo, pass the intended subproject root—not the repository root—when
 only that subproject is in scope. A proposed new subproject path may be absent.
@@ -128,15 +149,15 @@ only that subproject is in scope. A proposed new subproject path may be absent.
 When a user expresses product intent in a PDD-managed repository, the agent
 owns these decisions:
 
-1. Run `pdd intent plan` against the exact project/subproject scope and
-   determine whether the message adds, corrects, removes, replaces, or
-   clarifies accepted intent.
+1. Run `pdd intent plan` against the exact project/subproject scope, determine
+   whether the message adds, corrects, removes, replaces, or clarifies accepted
+   intent, and obtain meaning-level approval.
 2. Preserve the message and update the current human-readable requirements.
 3. Discover the affected product part and its PDD prompt mapping or linked
    prompt group from repository evidence.
-4. Propagate accepted behavior into the affected `.prompt` source before
-   completing implementation. If no appropriate prompt exists, route through
-   the architecture/change workflow rather than pretending a story is enough.
+4. Run `pdd intent apply` with the exact approved plan ID. Let it route accepted
+   behavior through Product Intent, architecture, affected `.prompt` source,
+   selective story coverage, regression generation, and scoped sync.
 5. Present consequential prompt or prompt-group changes for meaning-level
    human approval. The
    agent may write the file, but must not treat prompt source as an ignorable

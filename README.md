@@ -38,7 +38,7 @@ explanation. After setup, read
 meaning of “stay in prompt space”: the human keeps talking normally while the
 agent maintains versioned `.prompt` source, stories, tests, and generated code.
 For the simplest ownership model—human intent and evidence, agent-managed PDD
-mechanics—and the implemented planning-only `pdd intent plan` CLI, see
+mechanics—and the implemented `pdd intent plan` / `pdd intent apply` CLI, see
 [`docs/pdd/PDD_INTENT_FIRST_WORKFLOW.md`](docs/pdd/PDD_INTENT_FIRST_WORKFLOW.md).
 The official greenfield demonstration and its
 PRD-to-architecture-to-prompt sequence are analyzed in
