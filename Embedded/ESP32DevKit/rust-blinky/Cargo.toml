@@ -1,0 +1,29 @@
+[package]
+name = "esp32-blinky"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+esp-hal = { version = "0.21.1", features = ["esp32"] }
+esp-backtrace = { version = "0.14", features = ["esp32", "panic-handler", "exception-handler", "println"] }
+esp-println = { version = "0.12", features = ["esp32"] }
+
+# Pin-only: these aren't used by our code, they just nudge the resolver
+# away from recent crates.io releases that require Cargo's `edition2024`
+# feature, which this Oct-2024-era esp Xtensa nightly toolchain predates.
+# Kept as build-dependencies (host target, has std) rather than
+# [dependencies] (bare-metal Xtensa target, no std) for that reason.
+[build-dependencies]
+toml = "=0.8.19"
+toml_edit = "=0.22.22"
+proc-macro-crate = "=3.2.0"
+indexmap = "=2.6.0"
+hashbrown = "=0.15.0"
+serde = "=1.0.210"
+
+[profile.release]
+opt-level = "s"
+lto = true
+
+[profile.dev]
+opt-level = "s"
