@@ -15,6 +15,29 @@ Deployments/  — Docker configs, scripts, LLM serving infrastructure
 docs/         — Reference docs for agent/harness engineering patterns
 ```
 
+## Shared Agent Skills (any AI harness)
+
+Canonical, Git-versioned skills live in `shared/openclaw/skills/<name>/SKILL.md`.
+After cloning or pulling on any machine, install them into local harnesses
+(Claude Code, Grok, hermes-agent) with:
+
+```bash
+./Scripts/install-agent-skills.sh
+```
+
+Installed copies are overwritten from canonical on every run — edit the
+canonical file, never the installed copy. Codex and other AGENTS.md-driven
+harnesses read the skills directly from `shared/openclaw/skills/`.
+
+Current skills (each dir's SKILL.md frontmatter is authoritative):
+
+- `short-form-viral-content` — hook/retention/engagement structure for
+  TikTok/Reels/Shorts.
+- `short-form-video-assembly` — automated faceless video pipeline; drives the
+  `Rust/shortform-video` CLI (build it first: `cargo build --release` there;
+  provenance in `docs/shortform/MONEYPRINTERTURBO_ASSESSMENT.md`).
+- `schwab-download-transfer` — Schwab brokerage export workflow handoff.
+
 ## Agent Loop & Harness Engineering
 
 If you are working on or improving how agents are designed, looped, or instructed
