@@ -29,6 +29,11 @@ LOG_FILE="$SCRIPT_DIR/.llama-server.log"
 # so "which model am I actually talking to" has an answer.
 ACTIVE_FILE="$SCRIPT_DIR/.llama-server.profile"
 
+# Port --status probes for the loaded model. Read from config.yml's server.port;
+# profiles may override it, but every profile here uses the global default.
+STATUS_PORT=$(awk '/^server:/{s=1;next} /^[^[:space:]#]/{s=0} s && /^[[:space:]]+port:/{gsub(/[^0-9]/,"",$2); print $2; exit}' "$CONFIG_FILE" 2>/dev/null)
+STATUS_PORT="${STATUS_PORT:-8080}"
+
 # ── handle --stop / --status with no profile ──────────────────────────────────
 case "${1:-}" in
     --stop|stop)
@@ -49,30 +54,41 @@ case "${1:-}" in
         exit 0
         ;;
     --status|status)
+        # A foreground launch execs the binary and never writes a PID file, so
+        # "is it running" cannot be answered from the PID file alone — fall back
+        # to pgrep. The profile/model report below runs either way; keying it to
+        # the PID file would hide it for exactly the foreground case.
+        RUNNING=0
         if [[ -f "$PID_FILE" ]]; then
             PID=$(cat "$PID_FILE")
             if kill -0 "$PID" 2>/dev/null; then
-                echo "llama-server running (PID $PID)"
+                echo "llama-server running (PID $PID, backgrounded by this script)"
                 ps -p "$PID" -o pid,comm,etime,rss | tail -1
-                [[ -f "$ACTIVE_FILE" ]] && echo "Active profile: $(cat "$ACTIVE_FILE")"
-                # Ask the server itself, so this reports reality rather than
-                # what the state file believes.
-                LOADED=$(curl -sf -m 3 "http://127.0.0.1:8080/v1/models" 2>/dev/null \
-                    | sed -n 's/.*"id":"\([^"]*\)".*/\1/p' | head -1)
-                [[ -n "$LOADED" ]] && echo "Loaded model:   $LOADED"
-                echo ""
-                echo "Note: client configs list every profile as a selectable model,"
-                echo "      but only the profile above is loaded. Selecting another"
-                echo "      silently serves this one. Re-launch to switch."
+                RUNNING=1
             else
                 echo "Not running (stale PID file)"
                 rm -f "$PID_FILE" "$ACTIVE_FILE"
             fi
+        elif pgrep -f "llama-server" >/dev/null 2>&1; then
+            echo "llama-server running (foreground, or started outside this script):"
+            pgrep -af "llama-server" | cut -c1-100
+            RUNNING=1
         else
-            pgrep -f "llama-server" >/dev/null 2>&1 \
-                && echo "llama-server found (not managed by this script):" \
-                && pgrep -af "llama-server" \
-                || echo "No llama-server running"
+            echo "No llama-server running"
+            rm -f "$ACTIVE_FILE"
+        fi
+
+        if [[ "$RUNNING" == "1" ]]; then
+            [[ -f "$ACTIVE_FILE" ]] && echo "Active profile: $(cat "$ACTIVE_FILE")"
+            # Ask the server itself, so this reports reality rather than what
+            # the state file believes.
+            LOADED=$(curl -sf -m 3 "http://127.0.0.1:${STATUS_PORT}/v1/models" 2>/dev/null \
+                | sed -n 's/.*"id":"\([^"]*\)".*/\1/p' | head -1)
+            [[ -n "$LOADED" ]] && echo "Loaded model:   $LOADED"
+            echo ""
+            echo "Note: client configs list every profile as a selectable model,"
+            echo "      but only the profile above is loaded. Selecting another"
+            echo "      silently serves this one. Re-launch to switch."
         fi
         exit 0
         ;;
