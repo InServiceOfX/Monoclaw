@@ -25,7 +25,9 @@ parallel: 4
 
 # ─── macOS / Metal Performance ───────────────────────────────────────────────
 
-# Flash attention: keeps generation speed constant regardless of context length.
+# Flash attention: large win on attention cost, and required for long context to
+# be practical. It does not hold generation speed constant as context grows —
+# measured ~24 -> ~13 tok/s from 0.6K to 91K on an M4 Pro (9B Q8_0, f16 KV).
 # Metal supports this in recent llama.cpp builds.
 flash_attn: "on"
 
@@ -63,7 +65,7 @@ jinja: true
 # Optional: pass chat-template kwargs as JSON. Useful for templates that support
 # switches such as non-thinking mode.
 # chat_template_kwargs:
-#   thinking: false
+#   enable_thinking: false
 
 # Optional: enable llama.cpp's default speculative decoding config.
 # Leave disabled unless you have verified it helps this model/workload.

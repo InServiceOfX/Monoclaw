@@ -240,3 +240,7 @@ Deployments/Scripts/llama-cpp-server-macos/profiles/*.yml
 
 # Jetson pinmux parse output — generated data, lives in Data/Public/embedded/NVIDIAJetsonOrinNano/output/
 Embedded/JetsonOrinNano/output/
+
+# llama-cpp-server-macos — runtime state
+Deployments/Scripts/llama-cpp-server-macos/.llama-server.pid
+Deployments/Scripts/llama-cpp-server-macos/.llama-server.profile

@@ -22,6 +22,12 @@ if [[ ! -f "$CONFIG_FILE" ]]; then
 fi
 
 PID_FILE="$SCRIPT_DIR/.llama-server.pid"
+LOG_FILE="$SCRIPT_DIR/.llama-server.log"
+# Records which profile is currently serving. Only one llama-server runs at a
+# time on this port, while client configs (OpenClaw, Hermes) list every profile
+# as a selectable model — selecting one does not load it. --status reads this
+# so "which model am I actually talking to" has an answer.
+ACTIVE_FILE="$SCRIPT_DIR/.llama-server.profile"
 
 # ── handle --stop / --status with no profile ──────────────────────────────────
 case "${1:-}" in
@@ -39,6 +45,7 @@ case "${1:-}" in
             echo "No PID file found. Checking for running llama-server..."
             pkill -f "llama-server.*--port" && echo "Killed" || echo "No llama-server found"
         fi
+        rm -f "$ACTIVE_FILE"
         exit 0
         ;;
     --status|status)
@@ -47,9 +54,19 @@ case "${1:-}" in
             if kill -0 "$PID" 2>/dev/null; then
                 echo "llama-server running (PID $PID)"
                 ps -p "$PID" -o pid,comm,etime,rss | tail -1
+                [[ -f "$ACTIVE_FILE" ]] && echo "Active profile: $(cat "$ACTIVE_FILE")"
+                # Ask the server itself, so this reports reality rather than
+                # what the state file believes.
+                LOADED=$(curl -sf -m 3 "http://127.0.0.1:8080/v1/models" 2>/dev/null \
+                    | sed -n 's/.*"id":"\([^"]*\)".*/\1/p' | head -1)
+                [[ -n "$LOADED" ]] && echo "Loaded model:   $LOADED"
+                echo ""
+                echo "Note: client configs list every profile as a selectable model,"
+                echo "      but only the profile above is loaded. Selecting another"
+                echo "      silently serves this one. Re-launch to switch."
             else
                 echo "Not running (stale PID file)"
-                rm -f "$PID_FILE"
+                rm -f "$PID_FILE" "$ACTIVE_FILE"
             fi
         else
             pgrep -f "llama-server" >/dev/null 2>&1 \
@@ -116,19 +133,80 @@ srv_cfg = cfg.get("server", {})
 binary = srv_cfg.get("binary", "llama-server")
 models_dir = cfg.get("models_dir", "")
 
-# Model path: profile takes precedence. Absolute paths are used as-is; relative
-# paths are resolved against models_dir from config.yml.
-model_path = prof.get("model_path", "")
-if not model_path:
-    print('echo "Error: No model_path in profile"; exit 1')
+def fail(msg):
+    print(f'echo {shlex.quote("Error: " + msg)} >&2; exit 1')
     sys.exit(0)
-model_path = os.path.expandvars(os.path.expanduser(str(model_path)))
-if not os.path.isabs(model_path):
-    if not models_dir:
-        print('echo "Error: Relative model_path requires models_dir in config.yml"; exit 1')
-        sys.exit(0)
-    base = Path(os.path.expandvars(os.path.expanduser(str(models_dir))))
-    model_path = str(base / model_path)
+
+
+def hf_cache_root():
+    """Standard HuggingFace hub cache, matching huggingface_hub's own order."""
+    explicit = cfg.get("hf_cache") or os.environ.get("HF_HUB_CACHE")
+    if explicit:
+        return Path(os.path.expandvars(os.path.expanduser(str(explicit))))
+    hf_home = os.environ.get("HF_HOME")
+    if hf_home:
+        return Path(os.path.expandvars(os.path.expanduser(hf_home))) / "hub"
+    return Path.home() / ".cache" / "huggingface" / "hub"
+
+
+def resolve_hf_file(repo_id, filename, revision=None):
+    """Find <cache>/models--org--repo/snapshots/<rev>/<filename>.
+
+    Resolving at launch time (rather than pinning a snapshot hash in the
+    profile) keeps profiles valid across `fetch-model.sh` re-runs and model
+    revision bumps.
+    """
+    root = hf_cache_root() / ("models--" + str(repo_id).replace("/", "--"))
+    hint = (f"Not in the HuggingFace cache: {repo_id}/{filename}\n"
+            f"  Looked under: {root}\n"
+            f"  Download it: ./fetch-model.sh download {repo_id} {filename}")
+    if not root.is_dir():
+        fail(hint)
+
+    if not revision:
+        ref_main = root / "refs" / "main"
+        if ref_main.is_file():
+            revision = ref_main.read_text(encoding="utf-8").strip()
+
+    snapshots = root / "snapshots"
+    ordered = []
+    if revision and (snapshots / revision).is_dir():
+        ordered.append(snapshots / revision)
+    if snapshots.is_dir():
+        ordered.extend(sorted(
+            (p for p in snapshots.iterdir() if p.is_dir() and p not in ordered),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        ))
+
+    for snap in ordered:
+        candidate = snap / filename
+        if candidate.exists():
+            return str(candidate)
+    fail(hint)
+
+
+# Model location. A profile gives either:
+#   hf_repo + hf_file  — resolved through the HuggingFace hub cache (preferred), or
+#   model_path         — absolute, or relative to models_dir from config.yml.
+model_path = prof.get("model_path", "")
+hf_repo = prof.get("hf_repo")
+hf_file = prof.get("hf_file")
+
+if model_path:
+    model_path = os.path.expandvars(os.path.expanduser(str(model_path)))
+    if not os.path.isabs(model_path):
+        if not models_dir:
+            fail("Relative model_path requires models_dir in config.yml")
+        base = Path(os.path.expandvars(os.path.expanduser(str(models_dir))))
+        model_path = str(base / model_path)
+elif hf_repo and hf_file:
+    model_path = resolve_hf_file(hf_repo, hf_file, prof.get("hf_revision"))
+else:
+    fail("Profile needs either model_path, or hf_repo + hf_file")
+
+if not os.path.exists(model_path):
+    fail(f"Model file not found: {model_path}")
 
 # Server host/port: profile overrides config
 srv_prof = prof.get("server", {})
@@ -177,6 +255,18 @@ if reasoning is not None:
 rf = prof.get("reasoning_format")
 if rf:
     server_args.extend(["--reasoning-format", rf])
+add("--reasoning-budget", "reasoning_budget")
+
+# Sampling defaults. These apply to requests that don't set their own values,
+# so a profile can carry the model card's recommended recipe.
+add("--temp", "temp")
+add("--top-p", "top_p")
+add("--top-k", "top_k")
+add("--min-p", "min_p")
+add("--presence-penalty", "presence_penalty")
+add("--frequency-penalty", "frequency_penalty")
+add("--repeat-penalty", "repeat_penalty")
+add("--repeat-last-n", "repeat_last_n")
 
 # Boolean flags
 if prof.get("metrics"):
@@ -196,11 +286,15 @@ if prof.get("jinja") is not None:
         server_args.append("--no-jinja")
 add_bool("--cont-batching", "--no-cont-batching", "cont_batching")
 
-# RoPE
+# RoPE / YaRN long-context extension
 add("--rope-scaling", "rope_scaling")
 add("--rope-scale", "rope_scale")
 add("--rope-freq-base", "rope_freq_base")
 add("--rope-freq-scale", "rope_freq_scale")
+add("--yarn-orig-ctx", "yarn_orig_ctx")
+add("--yarn-ext-factor", "yarn_ext_factor")
+add("--yarn-attn-factor", "yarn_attn_factor")
+add_bool("--context-shift", "--no-context-shift", "context_shift")
 
 # API key
 api_key = prof.get("api_key")
@@ -280,20 +374,30 @@ echo ""
 # Use --background flag to daemonize
 if [[ "${1:-}" == "--background" || "${1:-}" == "-bg" ]]; then
     shift
-    "${LLAMA_BINARY}" "${SERVER_ARGS[@]}" "$@" &
+    # Redirect to a log file rather than inheriting stdout: a backgrounded
+    # server otherwise writes into whatever pipe launched it, which makes the
+    # startup log (KV self size, n_ctx_per_seq, load errors) unreadable after
+    # the fact.
+    : > "$LOG_FILE"
+    "${LLAMA_BINARY}" "${SERVER_ARGS[@]}" "$@" >>"$LOG_FILE" 2>&1 &
     SERVER_PID=$!
     echo "$SERVER_PID" > "$PID_FILE"
+    echo "$PROFILE" > "$ACTIVE_FILE"
     echo "Started in background (PID $SERVER_PID)"
+    echo "Log: $LOG_FILE"
     echo ""
 
-    # Wait for ready
+    # Wait for ready. Generous headroom, but it exits the moment the server
+    # answers: a 9B with mlock and a 262144-token KV cache is listening in
+    # ~3.4s, so this only matters for far larger models or cold-cache loads.
     echo "Waiting for server on http://${SERVE_HOST}:${SERVE_PORT} ..."
-    for i in $(seq 1 90); do
+    for i in $(seq 1 300); do
         if curl -sf "http://${SERVE_HOST}:${SERVE_PORT}/v1/models" >/dev/null 2>&1; then
             echo ""
             echo "Server ready at http://${SERVE_HOST}:${SERVE_PORT}"
             echo "  OpenAI API: http://${SERVE_HOST}:${SERVE_PORT}/v1/chat/completions"
             echo "  Web UI:     http://${SERVE_HOST}:${SERVE_PORT}"
+            echo "  Log:        $LOG_FILE"
             echo "  Stop:       $0 --stop"
             exit 0
         fi
@@ -301,7 +405,9 @@ if [[ "${1:-}" == "--background" || "${1:-}" == "-bg" ]]; then
         sleep 2
     done
     echo ""
-    echo "Warning: Server did not respond after 3 min. Check: ps -p $SERVER_PID"
+    echo "Warning: Server did not respond after 10 min. Check: ps -p $SERVER_PID"
+    echo "         Log: $LOG_FILE"
 else
+    echo "$PROFILE" > "$ACTIVE_FILE"
     exec "${LLAMA_BINARY}" "${SERVER_ARGS[@]}" "$@"
 fi

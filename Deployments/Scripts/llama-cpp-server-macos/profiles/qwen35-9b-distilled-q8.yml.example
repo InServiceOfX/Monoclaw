@@ -58,7 +58,7 @@ jinja: true
 # Optional: pass chat-template kwargs as JSON. Useful for templates that support
 # switches such as non-thinking mode.
 # chat_template_kwargs:
-#   thinking: false
+#   enable_thinking: false
 
 # Optional: enable llama.cpp's default speculative decoding config.
 # Leave disabled unless you have verified it helps this model/workload.
