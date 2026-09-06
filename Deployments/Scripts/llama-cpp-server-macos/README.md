@@ -200,7 +200,8 @@ i.e. ~81% of installed RAM. Check that line rather than guessing; raise it with
 
 ## Client Integration (OpenClaw / Hermes)
 
-Both clients are configured to reach this server at `http://127.0.0.1:8080/v1`.
+Both clients are configured to reach this server at `http://127.0.0.1:8080/v1`
+— except on the MacBook Pro, which serves on 8081; see the section below.
 
 **OpenClaw** — `~/.openclaw/openclaw.json`, provider `llama-cpp-local`. Each
 profile is registered as a model id:
@@ -244,6 +245,50 @@ Switching models means re-launching:
 
 `contextWindow` values above are per request — `ctx_size / parallel` from the
 profile, not the profile's raw `ctx_size`.
+
+## The MacBook Pro M5 / 32 GB, specifically
+
+`config.yml` and `profiles/*.yml` are gitignored, so each machine sizes itself.
+Everything below is what the laptop's copies actually say, recorded here because
+the files carrying it do not travel with the repo.
+
+**Port 8081, not 8080.** `openshell-gateway` already owns `127.0.0.1:8080` on
+that machine, and llama-server does not fall back to another port — it exits
+with `couldn't bind HTTP server socket` before loading anything. The port lives
+in `config.yml` alone; the laptop's profiles omit `server.port` so `--status`
+and the running server cannot disagree about it.
+
+**A third of the mini's memory.** llama-server reports
+`MTL0 : Apple M5 (25559 MiB)` there, against the mini's 53084. The `.example`
+profiles are sized for the mini and will not fit, so the laptop's profiles are
+resized rather than copied:
+
+| profile | ctx x slots | KV | total |
+|---|---|---|---|
+| `qwen38-9b-distill-q4-fast` | 65536 x 1 | f16, 2.00 GiB | ~8.9 GiB |
+| `qwen38-9b-distill-q4` | 131072 x 2 | q8_0, 4.25 GiB | ~11.1 GiB |
+| `qwen38-9b-distill-q4-max` | 262144 x 1 | q8_0, 4.25 GiB | ~11.1 GiB |
+| `qwen38-9b-distill-q8` | 262144 x 1 | q8_0, 4.25 GiB | ~14.9 GiB |
+
+Two further departures from the mini's profiles, for the same reason: `mlock`
+is off, because wiring the weights on a 32 GB laptop that also runs a browser
+and an editor pushes the rest of the system into swap; and `threads: 4`, the
+M5's performance-core count — counting its 6 efficiency cores slows decode.
+
+**Hermes aliases**, in `~/.hermes/config.yaml` under `model_aliases:`, one per
+profile, each with `provider: custom` and `base_url: http://127.0.0.1:8081/v1`:
+
+```
+qwen38-q4   qwen38-q4-fast   qwen38-q4-max   qwen38-q8
+```
+
+Used as `hermes -m qwen38-q4`. `providers.custom.request_timeout_seconds` is
+5400 there, because the 1800s default is shorter than a deep-context prefill.
+The pre-existing `custom_providers` entry `llama-local` was repointed to 8081
+as well; `mlx-local` still points at 8080 and was left alone.
+
+**OpenClaw** has no `llama-cpp-local` provider on the laptop yet — the model-id
+list in the section above describes the mini only.
 
 ## Measured Throughput
 
