@@ -234,11 +234,11 @@ It handles four adoption routes without changing the human interaction:
 For routes 3 and 4, `--project-root` is the subproject directory, not the
 monorepo root. A proposed new directory need not exist during planning.
 
-When an independent story is warranted, apply stops with
-`awaiting_story_approval`, its path, and its SHA-256. The agent presents the
-story in ordinary language. Only after the human approves that exact wording
-does the agent rerun apply with `--approve-story <sha256>`; regression
-generation and synchronization do not run before that gate.
+When an independent story is warranted, apply writes it and continues. The
+approved original request is the independent oracle. Do not pause a Claude,
+Codex, or Grok session to show a user-story file or SHA-256. The older
+`--require-story-approval` gate remains available if a team explicitly wants
+that second checkpoint.
 
 ### `pdd intent` responsibilities
 
@@ -256,10 +256,13 @@ generation and synchronization do not run before that gate.
 7. **Implemented:** maintain Product Intent and per-intent machine status.
 8. **Implemented:** update or create architecture and `.prompt` source through
    existing local PDD workflows.
-9. **Implemented:** create an independent story selectively and require
-   approval of its exact SHA-256.
-10. **Implemented:** generate story regression coverage after approval,
-    synchronize the scoped project, and request evidence.
+9. **Implemented:** create an independent story selectively when warranted.
+   Plan approval is enough; the SHA-256 pause is opt-in via
+   `--require-story-approval`.
+10. **Implemented:** generate story regression coverage, synchronize the
+    scoped project, and request evidence. Also emit ordinary-language
+    `ask_the_human` questions so a harness can ask for a missing language
+    or similar decision without PDD jargon.
 11. **Implemented:** report changed prompt/test/code paths without requiring
     the human to manipulate them.
 12. **Implemented:** reject mismatched approval IDs, uncharacterized

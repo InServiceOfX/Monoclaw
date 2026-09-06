@@ -134,12 +134,19 @@ For conventional brownfield code, first run characterization and critical
 negative tests, then add `--characterized`. The flag is an agent assertion,
 not a replacement for evidence.
 
-If apply returns `status: awaiting_story_approval` (exit 2), read the reported
-story file and present its meaning to the human. If the human corrects it,
-perform the edit on their behalf. Compute the current file SHA-256 and rerun
-the same apply command with `--approve-story <sha256>`. Never pass a stale or
-unreviewed hash. Apply then generates the story regression and runs scoped
-synchronization.
+Do not pass `--require-story-approval` unless the human asked for a second
+wording checkpoint. The approved original request is the independent oracle.
+If the human later says a saved experience is wrong, run `pdd intent plan`
+on that exact correction. Apply will amend or delete the matched
+`user_stories/story__*.md` file. Do not ask the human for the filename.
+If the plan asks which saved experience to change, ask that in ordinary
+language.
+If a plan includes `ask_the_human` questions, ask those in ordinary
+conversation before apply — especially a missing language or runtime — instead
+of exposing PDD flags. If apply still returns `status: awaiting_story_approval`
+(exit 2), present the story meaning, edit it if the human corrects it, and
+resume with `--approve-story <sha256>` of the current file. Never pass a stale
+or unreviewed hash.
 
 For a monorepo, pass the intended subproject root—not the repository root—when
 only that subproject is in scope. A proposed new subproject path may be absent.
