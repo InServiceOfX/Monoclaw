@@ -63,19 +63,21 @@ def log(message, handle):
     handle.flush()
 
 
-def build_config(start, end):
+def build_config(start, end, force_ocr=True):
     """Marker config for one page range.
 
-    force_ocr is on because this driver targets scans: the PDF carries no text
-    layer, and forcing OCR keeps behaviour identical on the odd page that does
-    carry stray text (page numbers stamped by the scanner, say).
+    force_ocr defaults on because this driver targets scans: the PDF carries no
+    text layer, and forcing OCR keeps behaviour identical on the odd page that
+    does carry stray text (page numbers stamped by the scanner, say). Turn it
+    OFF for a born-digital PDF -- there, forcing OCR throws away a perfectly
+    good text layer and returns a worse, slower result.
     paginate_output is what gives us the per-page delimiters.
     """
     return ConfigParser(
         {
             "page_range": f"{start}-{end}",
             "output_format": "markdown",
-            "force_ocr": True,
+            "force_ocr": force_ocr,
             "paginate_output": True,
             "page_separator": PAGE_SEPARATOR,
             "recognition_batch_size": int(os.environ.get("MARKER_REC_BATCH", 16)),
@@ -145,6 +147,9 @@ def main():
                         help="first PDF page, 0-based inclusive")
     parser.add_argument("--end", type=int, default=None,
                         help="last PDF page, 0-based inclusive")
+    parser.add_argument("--no-force-ocr", dest="force_ocr", action="store_false",
+                        help="use the PDF's own text layer (born-digital books); "
+                             "the default forces OCR, which is right for scans only")
     args = parser.parse_args()
 
     md_dir = os.path.join(args.outdir, "chunks", "md")
@@ -159,7 +164,8 @@ def main():
 
     handle = open(os.path.join(args.outdir, "marker_book.log"), "a")
     log(f"START {args.pdf}", handle)
-    log(f"  pages {args.start}-{last} of {total_pages}, chunk={args.chunk}", handle)
+    log(f"  pages {args.start}-{last} of {total_pages}, chunk={args.chunk}, "
+        f"force_ocr={args.force_ocr}", handle)
 
     ranges = [
         (start, min(start + args.chunk - 1, last))
@@ -183,7 +189,7 @@ def main():
         tag = f"{start:05d}-{end:05d}"
         t_chunk = time.time()
         try:
-            config = build_config(start, end)
+            config = build_config(start, end, force_ocr=args.force_ocr)
             converter = PdfConverter(artifact_dict=models, config=config)
 
             # Build ONCE, render TWICE -- the expensive OCR/layout work is in
