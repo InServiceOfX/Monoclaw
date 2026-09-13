@@ -35,6 +35,15 @@ scripts/
   run_ocr.sh            run marker+nougat on a (small) PDF, then reconcile
   run_ocr_large.sh      same for BIG PDFs/books — chunked Marker (no OOM) + reconcile
   marker_chunked.py     Marker driver: models loaded once, page-range chunks, capped VRAM
+  --- scanned books (no text layer): the page-accurate pipeline ---
+  marker_book.py        Marker driver that keeps STRUCTURE: paginated markdown +
+                        the JSON block tree + extracted figure crops, resumable
+  assemble_book.py      chunks -> pages/page-NNNN.md + book.md + page_index.json
+  build_page_map.py     book_spec.json -> page_map.json + toc.json, folio rule VERIFIED
+  extract_artifacts.py  block tree -> equations/tables/figures (json, md, tex, csv)
+  split_by_pages.py     chapters cut by exact PDF page range (not heading guessing)
+  make_index.py         the greppable INDEX.md (section -> printed page -> PDF page)
+  finalize_book.sh      runs the five above in order after a marker_book.py run
   triage_conflicts.py   book-scale conflict triage: auto-resolve the ~95% cosmetic,
                         rank the few that genuinely need a vision judge
   _paths.sh             shared env/path resolution (storage, weights, CUDA)
@@ -42,6 +51,44 @@ scripts/
 samples/sample.pdf      10-pg arXiv test paper
 examples/               committed reference outputs (no GPU needed to inspect)
 ```
+
+## Scanned books (no text layer)
+
+`run_ocr_large.sh` assumes a born-digital PDF. A **scan** — page images, no text
+layer — needs more, because there is nothing to fall back on when a page is
+missed and the figures exist only as pixels. Use `marker_book.py` and then
+`finalize_book.sh`:
+
+```bash
+. scripts/_paths.sh
+# 1. OCR, resumable. Rerun the same command after a crash; done chunks are skipped.
+"$OCR_VENV_DIR/venv-marker/bin/python" scripts/marker_book.py BOOK.pdf SLUG_DIR/ocr-compare/marker
+
+# 2. Write SLUG_DIR/book_spec.json by hand: the TOC read off the scan, and the
+#    folio rule (how a printed page number maps to a PDF page). Verify that rule
+#    against the running heads on a handful of pages spread through the book --
+#    build_page_map.py will then re-check it against every chapter heading.
+
+# 3. Everything else.
+scripts/finalize_book.sh SLUG_DIR "PDF stem without .pdf"
+```
+
+What that produces, and why each piece exists:
+
+| Output | Why |
+|---|---|
+| `book.md` | the definitive text, one HTML anchor per PDF page |
+| `pages/page-NNNN.md` | one file per PDF page; makes any citation checkable |
+| `chapters/` | split at exact page boundaries from `toc.json` |
+| `artifacts/equations.{json,md,tex}` | every display equation, carrying the book's own number (`Eq. (4.7a)`) |
+| `artifacts/tables.{json,md}`, `artifacts/tables/*.csv` | tables as data, not just as text |
+| `artifacts/figures.{json,md}` + `images/` | the graphs, cropped, with their captions |
+| `INDEX.md`, `toc.json`, `page_map.json` | the three page numberings, resolved |
+
+**Three page numberings.** Marker's `{K}` separator is a 0-based PDF page index;
+filenames and anchors use the 1-based PDF page a viewer shows; a citation uses
+the folio printed on the paper. `page_map.json` is the resolver, and mixing them
+up is the easy mistake to make.
 
 ## Quickstart
 
