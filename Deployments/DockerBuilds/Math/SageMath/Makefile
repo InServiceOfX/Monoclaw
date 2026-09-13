@@ -5,7 +5,7 @@ jupyter:
 	docker compose up -d jupyter
 	@echo ""
 	@echo "  ✓ SageMath Jupyter is running → http://localhost:8889"
-	@echo "    (no token/password required)"
+	@echo "    Get the authentication token with: docker compose logs jupyter"
 	@echo ""
 
 ## Tail Jupyter logs

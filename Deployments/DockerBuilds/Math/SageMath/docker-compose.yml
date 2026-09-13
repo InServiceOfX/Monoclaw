@@ -11,7 +11,8 @@
 #   docker compose down                      # stop all
 
 x-base: &base
-  image: sagemath/sagemath:latest
+  image: ${SAGE_IMAGE:-sagemath/sagemath:latest}
+  pull_policy: never
   volumes:
     - ${NOTEBOOKS:-./notebooks}:/work
   working_dir: /work
@@ -23,7 +24,7 @@ services:
   #   docker compose run --rm cli
   #   docker compose run --rm cli sage -c "from sage.all import *; print(factor(2^64-1))"
   #   docker compose run --rm cli sage /work/myscript.sage
-  #   docker compose run --rm cli python3 /work/myscript.py
+  #   docker compose run --rm cli sage -python /work/myscript.py
   # ─────────────────────────────────────────────
   cli:
     <<: *base
@@ -51,12 +52,12 @@ services:
   # ─────────────────────────────────────────────
   # Jupyter: browser-based notebook
   # Open: http://localhost:8889  (8888 left free for Cadabra)
-  # No token/password — local use only
+  # Generated authentication token; port published only on loopback
   # ─────────────────────────────────────────────
   jupyter:
     <<: *base
-    entrypoint: sage-entrypoint
-    command: sage-jupyter --NotebookApp.token='' --NotebookApp.password=''
+    entrypoint: ""
+    command: ["sage", "-n", "jupyter", "--no-browser", "--ip=0.0.0.0", "--port=8888"]
     ports:
-      - "8889:8888"
+      - "127.0.0.1:8889:8888"
     restart: unless-stopped

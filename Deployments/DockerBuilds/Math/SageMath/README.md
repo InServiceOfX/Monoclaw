@@ -1,15 +1,24 @@
 # SageMath — Docker Deployment
 
+Start with [RUNNING.md](RUNNING.md) for the tested no-pull launcher, correct
+Python invocation, and agent instructions. `python3 sage.py doctor` checks the
+installed image; `python3 sage.py --help` lists all modes. These instructions
+supersede the old unauthenticated Compose setup.
+
 **Image:** `sagemath/sagemath:latest` (10.8, Dec 2025)  
-**No build from source. No environment headaches. Just pull and run.**
+**Use the installed prebuilt image. Never build Sage from source.**
 
 ---
 
-## Quick Pull (one-time)
+## Optional explicit installation on a new machine
 
 ```bash
 docker pull sagemath/sagemath:latest
 ```
+
+Only do this if the image is absent and downloading it is approved. The tested
+launcher and Compose configuration never pull automatically. Tags can change;
+`sage.py` resolves and reports the installed immutable image ID.
 
 ---
 
@@ -30,7 +39,7 @@ docker compose run --rm cli sage -c "from sage.all import *; print(factor(2^64-1
 Put your script in `notebooks/` (mounted as `/work` inside container):
 ```bash
 docker compose run --rm cli sage /work/myscript.sage
-docker compose run --rm cli python3 /work/myscript.py
+docker compose run --rm cli sage -python /work/myscript.py
 ```
 
 ### Interactive IPython REPL (Sage-aware, Python style)
@@ -51,7 +60,7 @@ docker compose run --rm python
 ### Jupyter Notebook server (persistent)
 ```bash
 docker compose up -d jupyter
-# Open: http://localhost:8889
+docker compose logs jupyter  # get token; open it on http://localhost:8889
 # Stop:
 docker compose down
 ```
@@ -89,7 +98,7 @@ make down         # stop all services
 |---|---|
 | Sage-native syntax (`factor()`, `matrix()`, symbolic math) | `make cli` or `docker compose run --rm cli` |
 | Python/IPython REPL with Sage objects (all preloaded) | `make python` — everything already imported, Python syntax |
-| Running a `.py` file | `docker compose run --rm python python3 /work/file.py` |
+| Running a `.py` file | `docker compose run --rm python sage -python /work/file.py` |
 | Running a `.sage` file | `docker compose run --rm cli sage /work/file.sage` |
 | Notebook / interactive exploration | `make jupyter` → http://localhost:8889 |
 
@@ -102,7 +111,7 @@ The difference is prompt style: `sage:` vs IPython `In [1]:`. IPython gives you 
 
 ```bash
 # Evaluate an expression and get stdout
-docker run --rm -v $(pwd):/work sagemath/sagemath:latest sage -c "
+docker run --rm --pull=never --network=none sagemath/sagemath:latest sage -c "
 from sage.all import *
 print(factor(x^4 - 1))
 "
@@ -116,6 +125,6 @@ docker compose run --rm cli sage -c "from sage.all import *; print(matrix([[1,2]
 ## Notes
 - `notebooks/` dir is auto-created by docker compose as a bind mount → `/work`
 - Jupyter port is **8889** (8888 reserved for Cadabra2)
-- No token/password on Jupyter — local use only, don't expose externally
+- Jupyter uses its generated authentication token and publishes only on 127.0.0.1
 - `restart: unless-stopped` on jupyter service — survives reboots
 - Image is ~3GB, no rebuild ever needed; update with `docker pull sagemath/sagemath:latest`
