@@ -6,12 +6,11 @@
   <title>LaTeX Live Viewer</title>
 
   <!-- KaTeX -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.18.7/dist/katex.min.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.18.7/dist/katex.min.js"></script>
 
   <!-- marked.js -->
-  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/marked@18.0.13/lib/marked.umd.min.js"></script>
 
   <style>
     /* ── Reset & base ── */
@@ -41,6 +40,8 @@
       line-height: 1.6;
     }
 
+    body.resizing { user-select: none; cursor: col-resize; }
+
     /* ── Layout ── */
     #app {
       display: flex;
@@ -52,6 +53,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 12px;
       padding: 10px 18px;
       background: var(--surface);
       border-bottom: 1px solid var(--border);
@@ -63,11 +65,13 @@
       font-weight: 600;
       letter-spacing: 0.04em;
       color: var(--accent2);
+      white-space: nowrap;
     }
     header h1 span { color: var(--text-dim); font-weight: 400; }
 
     .header-buttons {
       display: flex;
+      flex-wrap: wrap;
       gap: 8px;
     }
 
@@ -91,6 +95,7 @@
     }
 
     .panels {
+      --split: 50%;
       display: flex;
       flex: 1;
       overflow: hidden;
@@ -100,10 +105,24 @@
     .left-panel {
       display: flex;
       flex-direction: column;
-      width: 50%;
-      border-right: 1px solid var(--border);
+      width: var(--split);
       flex-shrink: 0;
+      min-width: 0;
     }
+    .left-panel.dragover {
+      outline: 2px dashed var(--accent);
+      outline-offset: -2px;
+    }
+
+    /* ── Draggable divider ── */
+    .divider {
+      width: 6px;
+      flex-shrink: 0;
+      background: var(--border);
+      cursor: col-resize;
+      transition: background 0.15s;
+    }
+    .divider:hover, .divider.active { background: var(--accent); }
 
     .panel-label {
       padding: 6px 14px;
@@ -144,6 +163,7 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      min-width: 0;
     }
 
     #preview {
@@ -173,6 +193,8 @@
 
     #preview a { color: var(--accent); text-decoration: none; }
     #preview a:hover { text-decoration: underline; }
+
+    #preview img { max-width: 100%; }
 
     #preview strong { color: #e6edf3; font-weight: 600; }
     #preview em { color: #cdd5e0; font-style: italic; }
@@ -259,9 +281,11 @@
       border-top: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
+      gap: 12px;
       flex-shrink: 0;
       letter-spacing: 0.03em;
     }
+    #stat-hint { opacity: 0.7; }
 
     /* ── Scrollbar style ── */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -284,8 +308,24 @@
     /* ── Responsive: stack vertically on narrow screens ── */
     @media (max-width: 720px) {
       .panels { flex-direction: column; }
-      .left-panel { width: 100%; height: 45%; border-right: none; border-bottom: 1px solid var(--border); }
-      .right-panel { height: 55%; }
+      .left-panel { width: 100%; height: var(--split); }
+      .divider { width: 100%; height: 6px; cursor: row-resize; }
+      .right-panel { height: auto; }
+      #stat-hint { display: none; }
+    }
+
+    /* ── Print: preview only, paper colours (use the browser's Print → PDF) ── */
+    @media print {
+      html, body { background: #fff; color: #000; height: auto; }
+      #app { height: auto; display: block; }
+      header, #statusbar, .left-panel, .divider, .right-panel .panel-label { display: none; }
+      .panels { display: block; overflow: visible; }
+      .right-panel { display: block; overflow: visible; }
+      #preview { overflow: visible; background: #fff; color: #000; padding: 0; }
+      #preview h1, #preview h2, #preview h3, #preview h4, #preview strong, #preview em, #preview th { color: #000; }
+      #preview code, #preview pre, #preview blockquote, #preview th { background: #f4f4f4; color: #000; }
+      #preview tr:nth-child(even) td { background: #fafafa; }
+      .katex { color: #000; }
     }
   </style>
 </head>
@@ -294,13 +334,17 @@
   <header>
     <h1>⚛ LaTeX Live Viewer <span>— KaTeX + marked.js</span></h1>
     <div class="header-buttons">
+      <button id="btn-open" title="Open a .md / .tex / .txt file (or drag one onto the editor)">Open…</button>
+      <button id="btn-save" title="Download the editor contents as a .md file (Ctrl+S)">Save .md</button>
       <button id="btn-copy" title="Copy contents of editor to clipboard">Copy LaTeX</button>
+      <button id="btn-example" title="Replace the editor contents with the demo document">Example</button>
       <button id="btn-clear" class="danger" title="Clear the editor">Clear</button>
+      <input id="file-input" type="file" accept=".md,.markdown,.tex,.txt,text/plain,text/markdown" hidden />
     </div>
   </header>
 
-  <div class="panels">
-    <div class="left-panel">
+  <div class="panels" id="panels">
+    <div class="left-panel" id="left-panel">
       <div class="panel-label">✏ Input — LaTeX / Markdown</div>
       <textarea id="editor" spellcheck="false" placeholder="Type or paste LaTeX and Markdown here…
 
@@ -315,6 +359,8 @@ Examples:
 "></textarea>
     </div>
 
+    <div class="divider" id="divider" title="Drag to resize"></div>
+
     <div class="right-panel">
       <div class="panel-label">👁 Rendered Output</div>
       <div id="preview"></div>
@@ -323,48 +369,155 @@ Examples:
 
   <div id="statusbar">
     <span id="stat-chars">0 chars · 0 lines</span>
+    <span id="stat-hint">Ctrl+S saves .md · Tab indents · drop a file to open · Ctrl+P prints the preview</span>
     <span id="stat-render">Ready</span>
   </div>
 </div>
 
 <script>
-// ── Wait for KaTeX to load (deferred scripts) ──────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+// All CDN scripts are `defer`red, so by the time `load` fires marked and katex
+// are either present or the network failed.
+window.addEventListener('load', () => {
 
-  const editor   = document.getElementById('editor');
-  const preview  = document.getElementById('preview');
-  const btnCopy  = document.getElementById('btn-copy');
-  const btnClear = document.getElementById('btn-clear');
+  const editor     = document.getElementById('editor');
+  const preview    = document.getElementById('preview');
+  const panels     = document.getElementById('panels');
+  const leftPanel  = document.getElementById('left-panel');
+  const divider    = document.getElementById('divider');
+  const btnOpen    = document.getElementById('btn-open');
+  const btnSave    = document.getElementById('btn-save');
+  const btnCopy    = document.getElementById('btn-copy');
+  const btnExample = document.getElementById('btn-example');
+  const btnClear   = document.getElementById('btn-clear');
+  const fileInput  = document.getElementById('file-input');
   const statChars  = document.getElementById('stat-chars');
   const statRender = document.getElementById('stat-render');
+
+  const STORAGE_DOC   = 'latex-viewer:doc';
+  const STORAGE_SPLIT = 'latex-viewer:split';
+
+  // ── localStorage helpers (may throw in private windows / blocked storage) ──
+  function storageGet(key) {
+    try { return localStorage.getItem(key); } catch { return null; }
+  }
+  function storageSet(key, value) {
+    try { localStorage.setItem(key, value); } catch { /* ignore */ }
+  }
+
+  // ── Demo document ──────────────────────────────────────────────────────
+  // String.raw so backslashes read exactly as they would in the editor.
+  const DEMO = String.raw`# Quantum Mechanics — Live LaTeX Demo
+
+Welcome to the **LaTeX Live Viewer**. Type or paste content on the left; the right panel renders as you type, and your text is autosaved in this browser.
+
+---
+
+## Schrödinger Equation
+
+The time-dependent Schrödinger equation:
+
+$$i\hbar \pdv{}{t}\Psi(\vb{r},t) = \hat{H}\,\Psi(\vb{r},t)$$
+
+where the Hamiltonian for a particle in potential $V$ is:
+
+$$\hat{H} = -\frac{\hbar^2}{2m}\nabla^2 + V(\vb{r},t)$$
+
+---
+
+## Dirac Notation (Bra-Ket)
+
+- State vector: $\ket{\psi}$
+- Dual vector: $\bra{\psi}$
+- Inner product: $\braket{\phi|\psi}$
+- Expectation value of $\hat{A}$: $\expval{\hat{A}}$
+
+Matrix element:
+
+$$\mel{m|\hat{A}|n} = \int_{-\infty}^{\infty} \psi_m^*(x)\,\hat{A}\,\psi_n(x)\,\dd x$$
+
+---
+
+## Maxwell's Equations (Differential Form)
+
+$$\nabla \cdot \vb{E} = \frac{\rho}{\varepsilon_0}$$
+
+$$\nabla \cdot \vb{B} = 0$$
+
+$$\nabla \times \vb{E} = -\pdv{\vb{B}}{t}$$
+
+$$\nabla \times \vb{B} = \mu_0\vb{J} + \mu_0\varepsilon_0\pdv{\vb{E}}{t}$$
+
+---
+
+## Path Integral (Feynman)
+
+$$\langle x_f, t_f | x_i, t_i \rangle = \int \mathcal{D}[x(t)]\; \exp\!\left(\frac{i}{\hbar}S[x]\right)$$
+
+where $S[x] = \int_{t_i}^{t_f} \mathcal{L}(x, \dot{x}, t)\,dt$ is the classical action.
+
+---
+
+## Commutation Relations
+
+Canonical quantisation:
+
+$$\comm{\hat{x}_i}{\hat{p}_j} = i\hbar\,\delta_{ij}$$
+
+Ladder operators for the harmonic oscillator:
+
+$$\comm{\hat{a}}{\hat{a}^\dagger} = 1, \qquad \hat{H} = \hbar\omega\!\left(\hat{a}^\dagger\hat{a} + \frac{1}{2}\right)$$
+
+---
+
+## Rotations (for the GNC crowd)
+
+A rotation $R \in \SO{3}$ acting on $\vb{v} \in \R^3$, with $R^{-1} = R\T$; unit quaternion $q \in \SU{2}$ with $\norm{q} = 1$. Inequalities like $0 < \epsilon < 1$ and prices like $5 or $10 render correctly, and math inside code is left alone:
+
+~~~python
+total = price * qty   # $ and $$ in code stay literal
+~~~
+
+---
+
+*Edit anything above to try your own equations!*
+`;
+
+  // ── Restore the last document before anything else, so a CDN failure never
+  //    hides the user's text. ─────────────────────────────────────────────
+  const saved = storageGet(STORAGE_DOC);
+  editor.value = saved === null ? DEMO : saved;
+
+  if (typeof marked === 'undefined' || typeof katex === 'undefined') {
+    preview.innerHTML = '<div class="render-error">Could not load KaTeX / marked.js from cdn.jsdelivr.net — '
+      + 'check your network connection and reload. Your text is still autosaved in this browser.</div>';
+    statRender.textContent = 'CDN load failed';
+    return;
+  }
 
   // Configure marked
   marked.setOptions({
     breaks: true,         // GFM line breaks
     gfm: true,
-    pedantic: false,
   });
 
-  // ── Math delimiter config for KaTeX auto-render ────────────────────────
+  // ── KaTeX options (delimiters are handled by the tokenizer below) ─────
   const katexOptions = {
-    delimiters: [
-      { left: '$$', right: '$$', display: true  },
-      { left: '$',  right: '$',  display: false },
-      { left: '\\[', right: '\\]', display: true  },
-      { left: '\\(', right: '\\)', display: false },
-    ],
     throwOnError: false,
     errorColor: '#f85149',
+    strict: 'ignore',     // don't spam the console for e.g. unicode in math mode
     macros: {
-      // Common physics shorthands
+      // Dirac notation
       '\\ket':    '\\left|#1\\right\\rangle',
       '\\bra':    '\\left\\langle#1\\right|',
-      '\\braket': '\\left\\langle#1\\middle|#2\\right\\rangle',
+      '\\braket': '\\left\\langle#1\\right\\rangle',
       '\\ev':     '\\left\\langle#1\\right\\rangle',
       '\\expval': '\\left\\langle#1\\right\\rangle',
-      '\\mel':    '\\left\\langle#1\\middle|#2\\middle|#3\\right\\rangle',
+      '\\mel':    '\\left\\langle#1\\right\\rangle',
+      // Operators
       '\\Tr':     '\\operatorname{Tr}',
       '\\tr':     '\\operatorname{tr}',
+      '\\rank':   '\\operatorname{rank}',
+      '\\diag':   '\\operatorname{diag}',
       '\\ii':     'i',   // imaginary unit
       '\\ee':     'e',   // Euler's number
       '\\dd':     '\\mathrm{d}',
@@ -375,13 +528,90 @@ document.addEventListener('DOMContentLoaded', () => {
       '\\comm':   '\\left[#1,\\,#2\\right]',
       '\\acomm':  '\\left\\{#1,\\,#2\\right\\}',
       '\\order':  '\\mathcal{O}\\!\\left(#1\\right)',
-      '\\hbar':   '\\hbar',
+      // Vectors & fields (physics-package style)
+      '\\vb':     '\\mathbf{#1}',
+      '\\vu':     '\\hat{\\mathbf{#1}}',
+      '\\grad':   '\\nabla',
+      '\\curl':   '\\nabla\\times',
+      '\\divergence': '\\nabla\\cdot',
+      '\\laplacian':  '\\nabla^2',
+      '\\cross':  '\\times',
+      '\\T':      '^{\\mathsf{T}}',
+      // Number sets & groups
+      '\\R':      '\\mathbb{R}',
+      '\\C':      '\\mathbb{C}',
+      '\\N':      '\\mathbb{N}',
+      '\\Z':      '\\mathbb{Z}',
+      '\\Q':      '\\mathbb{Q}',
+      '\\SO':     '\\mathrm{SO}(#1)',
+      '\\SU':     '\\mathrm{SU}(#1)',
+      '\\SE':     '\\mathrm{SE}(#1)',
     },
   };
+
+  // ── Math protection ─────────────────────────────────────────────────────
+  // marked would mangle `_`, `*`, `\` inside math, so math is swapped for
+  // placeholders before markdown and restored afterwards. Fenced code and
+  // inline code are matched first so a "$" inside them is left for marked.
+  // Inline "$" follows the pandoc rule: no space just inside the delimiters,
+  // no digit right after the closing "$" (so "$5 or $10" is not math), and a
+  // "\$" is a literal dollar.
+  const MATH_OR_CODE = new RegExp([
+    '(^[ \\t]*(?:```|~~~)[\\s\\S]*?^[ \\t]*(?:```|~~~)[ \\t]*$)',   // 1: fenced code
+    '(`[^`\\n]+`)',                                                // 2: inline code
+    '((?<!\\\\)\\$\\$[\\s\\S]+?\\$\\$)',                            // 3: $$ display $$
+    '(\\\\\\[[\\s\\S]+?\\\\\\])',                                   // 4: \[ display \]
+    '(\\\\\\([\\s\\S]+?\\\\\\))',                                   // 5: \( inline \)
+    '((?<!\\\\)\\$(?!\\s)[^\\n$]*?(?<![\\s\\\\])\\$(?!\\d))',        // 6: $ inline $
+  ].join('|'), 'gm');
+
+  // Placeholder uses private-use characters so neither marked nor the user
+  // can produce it by accident.
+  const slotKey = (i) => `\uE000${i}\uE000`;
+
+  function protectMath(src) {
+    const slots = [];
+    const out = src.replace(MATH_OR_CODE, (match, fence, code) => {
+      if (fence || code) return match;
+      slots.push(match);
+      return slotKey(slots.length - 1);
+    });
+    return { out, slots };
+  }
+
+  // Strip the delimiters and hand each span to KaTeX ourselves rather than
+  // letting auto-render rescan the page: its own "$" matching would pick up
+  // the currency-like "$5 or $10" the tokenizer deliberately skipped.
+  // split/join instead of String.replace: a replacement string treats "$$"
+  // as a pattern and would collapse every display equation to inline "$".
+  function renderSpan(math) {
+    let body, displayMode;
+    if (math.startsWith('$$'))        { body = math.slice(2, -2); displayMode = true;  }
+    else if (math.startsWith('\\[')) { body = math.slice(2, -2); displayMode = true;  }
+    else if (math.startsWith('\\(')) { body = math.slice(2, -2); displayMode = false; }
+    else                              { body = math.slice(1, -1); displayMode = false; }
+    return katex.renderToString(body, { ...katexOptions, displayMode });
+  }
+
+  function restoreMath(html, slots) {
+    slots.forEach((math, i) => {
+      html = html.split(slotKey(i)).join(renderSpan(math));
+    });
+    return html;
+  }
+
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
 
   // ── Render function ─────────────────────────────────────────────────────
   function render() {
     const src = editor.value;
+    storageSet(STORAGE_DOC, src);
 
     // Update status bar
     const lines = src === '' ? 0 : src.split('\n').length;
@@ -394,77 +624,112 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      // Step 1: protect math blocks from marked's escaping
-      // We extract $...$ and $$...$$ before markdown processing, then restore them.
-      const mathPlaceholders = [];
-      let counter = 0;
+      const { out, slots } = protectMath(src);
+      preview.innerHTML = restoreMath(marked.parse(out), slots);
 
-      function protect(str) {
-        // Display math first (greedy would break inline)
-        str = str.replace(/\$\$([\s\S]+?)\$\$/g, (_, math) => {
-          const key = `\x00MATH${counter++}\x00`;
-          mathPlaceholders.push({ key, html: `$$${math}$$` });
-          return key;
-        });
-        // Inline math
-        str = str.replace(/\$([^\n$]+?)\$/g, (_, math) => {
-          const key = `\x00MATH${counter++}\x00`;
-          mathPlaceholders.push({ key, html: `$${math}$` });
-          return key;
-        });
-        // \[ ... \] display
-        str = str.replace(/\\\[([\s\S]+?)\\\]/g, (_, math) => {
-          const key = `\x00MATH${counter++}\x00`;
-          mathPlaceholders.push({ key, html: `\\[${math}\\]` });
-          return key;
-        });
-        // \( ... \) inline
-        str = str.replace(/\\\((.+?)\\\)/g, (_, math) => {
-          const key = `\x00MATH${counter++}\x00`;
-          mathPlaceholders.push({ key, html: `\\(${math}\\)` });
-          return key;
-        });
-        return str;
-      }
-
-      // Protect math, render markdown, restore math
-      const protected_ = protect(src);
-      let html = marked.parse(protected_);
-
-      // Restore math placeholders (escape key for use in regex)
-      for (const { key, html: mathHtml } of mathPlaceholders) {
-        const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        html = html.replace(new RegExp(escaped, 'g'), mathHtml);
-      }
-
-      preview.innerHTML = html;
-
-      // Step 2: Run KaTeX auto-render over the live DOM
-      renderMathInElement(preview, katexOptions);
-
-      statRender.textContent = `Rendered ✓  ${new Date().toLocaleTimeString()}`;
+      statRender.textContent = `Rendered ✓  ${new Date().toLocaleTimeString()} · autosaved`;
     } catch (err) {
       preview.innerHTML = `<div class="render-error">Render error: ${escapeHtml(err.message)}</div>`;
       statRender.textContent = 'Error';
     }
   }
 
-  function escapeHtml(str) {
-    return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
-  }
-
   // ── Debounce ───────────────────────────────────────────────────────────
   let debounceTimer;
-  editor.addEventListener('input', () => {
+  function scheduleRender(delay = 300) {
     clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(render, 300);
+    debounceTimer = setTimeout(render, delay);
+  }
+  editor.addEventListener('input', () => scheduleRender());
+
+  // Flush the pending edit if the tab is closed inside the debounce window.
+  window.addEventListener('pagehide', () => storageSet(STORAGE_DOC, editor.value));
+
+  // ── Scroll sync: editor → preview (one way, so manual preview scrolling
+  //    is never fought) ───────────────────────────────────────────────────
+  editor.addEventListener('scroll', () => {
+    const editorRange = editor.scrollHeight - editor.clientHeight;
+    if (editorRange <= 0) return;
+    const ratio = editor.scrollTop / editorRange;
+    preview.scrollTop = ratio * (preview.scrollHeight - preview.clientHeight);
   });
 
-  // ── Buttons ────────────────────────────────────────────────────────────
+  // ── Draggable divider ──────────────────────────────────────────────────
+  const isStacked = () => matchMedia('(max-width: 720px)').matches;
+  function setSplit(percent) {
+    percent = Math.min(80, Math.max(20, percent));
+    panels.style.setProperty('--split', `${percent}%`);
+    return percent;
+  }
+  let split = setSplit(Number(storageGet(STORAGE_SPLIT)) || 50);
+
+  divider.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    divider.setPointerCapture(e.pointerId);
+    divider.classList.add('active');
+    document.body.classList.add('resizing');
+    const rect = panels.getBoundingClientRect();
+
+    const onMove = (ev) => {
+      split = setSplit(isStacked()
+        ? (ev.clientY - rect.top)  / rect.height * 100
+        : (ev.clientX - rect.left) / rect.width  * 100);
+    };
+    const onUp = () => {
+      divider.classList.remove('active');
+      document.body.classList.remove('resizing');
+      divider.removeEventListener('pointermove', onMove);
+      divider.removeEventListener('pointerup', onUp);
+      divider.removeEventListener('pointercancel', onUp);
+      storageSet(STORAGE_SPLIT, String(split));
+    };
+    divider.addEventListener('pointermove', onMove);
+    divider.addEventListener('pointerup', onUp);
+    divider.addEventListener('pointercancel', onUp);
+  });
+
+  // ── Open / drag-drop files ─────────────────────────────────────────────
+  async function loadFile(file) {
+    if (!file) return;
+    editor.value = await file.text();
+    scheduleRender(0);
+  }
+  btnOpen.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => {
+    loadFile(fileInput.files[0]);
+    fileInput.value = '';
+  });
+  leftPanel.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    leftPanel.classList.add('dragover');
+  });
+  leftPanel.addEventListener('dragleave', () => leftPanel.classList.remove('dragover'));
+  leftPanel.addEventListener('drop', (e) => {
+    e.preventDefault();
+    leftPanel.classList.remove('dragover');
+    loadFile(e.dataTransfer.files[0]);
+  });
+
+  // ── Save (.md download) ────────────────────────────────────────────────
+  function saveFile() {
+    const heading = editor.value.match(/^#\s+(.+)$/m)?.[1] ?? '';
+    const name = heading.trim().replace(/[^\w\- ]+/g, '').replace(/\s+/g, '-').slice(0, 60) || 'latex-viewer';
+    const blob = new Blob([editor.value], { type: 'text/markdown;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${name}.md`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+  btnSave.addEventListener('click', saveFile);
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+      e.preventDefault();
+      saveFile();
+    }
+  });
+
+  // ── Copy / Example / Clear ─────────────────────────────────────────────
   btnCopy.addEventListener('click', async () => {
     const text = editor.value;
     if (!text) return;
@@ -484,6 +749,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  btnExample.addEventListener('click', () => {
+    if (editor.value.trim() && editor.value !== DEMO && !confirm('Replace the editor contents with the demo document?')) return;
+    editor.value = DEMO;
+    render();
+    editor.focus();
+  });
+
   btnClear.addEventListener('click', () => {
     if (editor.value && !confirm('Clear the editor?')) return;
     editor.value = '';
@@ -493,95 +765,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── Tab key inserts spaces (not focus-switch) ─────────────────────────
   editor.addEventListener('keydown', (e) => {
-    if (e.key === 'Tab') {
-      e.preventDefault();
-      const start = editor.selectionStart;
-      const end   = editor.selectionEnd;
-      editor.value = editor.value.slice(0, start) + '  ' + editor.value.slice(end);
-      editor.selectionStart = editor.selectionEnd = start + 2;
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(render, 300);
-    }
+    if (e.key !== 'Tab' || e.shiftKey) return;
+    e.preventDefault();
+    // execCommand keeps the edit in the undo stack and fires `input`
+    // (which schedules a render); the manual fallback does neither.
+    if (document.execCommand('insertText', false, '  ')) return;
+    const start = editor.selectionStart;
+    const end   = editor.selectionEnd;
+    editor.value = editor.value.slice(0, start) + '  ' + editor.value.slice(end);
+    editor.selectionStart = editor.selectionEnd = start + 2;
+    scheduleRender();
   });
 
-  // ── Seed with a demo ──────────────────────────────────────────────────
-  editor.value = `# Quantum Mechanics — Live LaTeX Demo
-
-Welcome to the **LaTeX Live Viewer**. Type or paste content on the left; the right panel renders instantly.
-
----
-
-## Schrödinger Equation
-
-The time-dependent Schrödinger equation:
-
-$$i\\hbar \\frac{\\partial}{\\partial t}\\Psi(\\mathbf{r},t) = \\hat{H}\\,\\Psi(\\mathbf{r},t)$$
-
-where the Hamiltonian for a particle in potential $V$ is:
-
-$$\\hat{H} = -\\frac{\\hbar^2}{2m}\\nabla^2 + V(\\mathbf{r},t)$$
-
----
-
-## Dirac Notation (Bra-Ket)
-
-- State vector: $|\\psi\\rangle$
-- Dual vector: $\\langle\\psi|$
-- Inner product: $\\langle\\phi|\\psi\\rangle$
-- Expectation value of $\\hat{A}$: $\\langle\\psi|\\hat{A}|\\psi\\rangle$
-
-Matrix element:
-
-$$\\langle m | \\hat{A} | n \\rangle = \\int_{-\\infty}^{\\infty} \\psi_m^*(x)\\,\\hat{A}\\,\\psi_n(x)\\,dx$$
-
----
-
-## Maxwell's Equations (Differential Form)
-
-$$\\nabla \\cdot \\mathbf{E} = \\frac{\\rho}{\\varepsilon_0}$$
-
-$$\\nabla \\cdot \\mathbf{B} = 0$$
-
-$$\\nabla \\times \\mathbf{E} = -\\frac{\\partial \\mathbf{B}}{\\partial t}$$
-
-$$\\nabla \\times \\mathbf{B} = \\mu_0\\mathbf{J} + \\mu_0\\varepsilon_0\\frac{\\partial \\mathbf{E}}{\\partial t}$$
-
----
-
-## Path Integral (Feynman)
-
-$$\\langle x_f, t_f | x_i, t_i \\rangle = \\int \\mathcal{D}[x(t)]\\; \\exp\\!\\left(\\frac{i}{\\hbar}S[x]\\right)$$
-
-where $S[x] = \\int_{t_i}^{t_f} \\mathcal{L}(x, \\dot{x}, t)\\,dt$ is the classical action.
-
----
-
-## Commutation Relations
-
-Canonical quantisation:
-
-$$[\\hat{x}_i,\\, \\hat{p}_j] = i\\hbar\\,\\delta_{ij}$$
-
-Ladder operators for the harmonic oscillator:
-
-$$[\\hat{a},\\, \\hat{a}^\\dagger] = 1, \\qquad \\hat{H} = \\hbar\\omega\\!\\left(\\hat{a}^\\dagger\\hat{a} + \\frac{1}{2}\\right)$$
-
----
-
-*Edit anything above to try your own equations!*
-`;
-
-  // Initial render (after KaTeX loads)
-  // KaTeX is deferred, so renderMathInElement may not be available yet.
-  // Poll briefly:
-  function waitAndRender(attempts = 0) {
-    if (typeof renderMathInElement === 'function' && typeof marked !== 'undefined') {
-      render();
-    } else if (attempts < 50) {
-      setTimeout(() => waitAndRender(attempts + 1), 100);
-    }
-  }
-  waitAndRender();
+  render();
 });
 </script>
 </body>
