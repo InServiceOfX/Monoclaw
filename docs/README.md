@@ -22,6 +22,11 @@ docs/
 │   ├── harness-engineering-research.md
 │   ├── harness-implementation-guide.md
 │   └── harness-for-this-repo.md
+├── frontend-design-skills/          # Web-UI design skills for every harness
+│   ├── README.md                    # Links analysis, per-harness install, TL;DR for agents
+│   ├── EVAL.md                      # whichai.dev-style skill eval loop
+│   ├── install.sh                   # claude / hermes / openclaw / codex / grok
+│   └── skills/                      # Vendored: Anthropic frontend-design, Leonxlnx Taste Skill
 └── ... (other existing docs)
 ```
 
@@ -51,6 +56,21 @@ python3 ../scripts/youtube-transcript/search_index.py "AI agent loops"
 - `archive_transcript.py` — Fetch + save + index
 - `search_index.py` — Query by keyword, channel, tag, recency
 - `common.py` — Shared utilities (sanitization, index I/O, tagging)
+
+---
+
+### Frontend Design Skills
+**Purpose**: Make AI-generated web UI not look AI-generated. Vendored open-source design skills (Anthropic `frontend-design`, Leonxlnx Taste Skill) with pinned commits, one installer for all five local harnesses, and an eval loop for measuring whether a skill helps.
+
+```bash
+docs/frontend-design-skills/install.sh            # install curated set everywhere
+docs/frontend-design-skills/install.sh --dry-run
+```
+
+**Key Files**:
+- `README.md` — TL;DR for agents (which skill when), source-link analysis, per-harness paths
+- `EVAL.md` — brief × model × skill × vote matrix; ties into self-improving-agents
+- `skills/UPSTREAM.md` — pinned commits and licenses
 
 ---
 
