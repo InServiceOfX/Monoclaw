@@ -6,6 +6,12 @@ Two-model PDF→LaTeX OCR (Marker + Nougat) with a reconciliation + conflict-
 resolution pipeline, for math/physics papers that have no `.tex` source. Runs
 local open weights on an NVIDIA GPU.
 
+**Whole scanned/engineering textbooks whose mathematics and tables must be checked
+against the page → use `bookreview/` and follow `bookreview/README.md`** (two-engine
+page-local reconcile, local-VLM triage, direct source inspection recorded with image
+hashes, assemble + publish). That runbook is self-contained; the paths below are the
+lighter, older ones (equation-tag reconciliation, page-accurate Marker only).
+
 ## Setup
 
 ```bash

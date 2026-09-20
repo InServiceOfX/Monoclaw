@@ -1,0 +1,14 @@
+{
+  "approved_for_bounded_model_review": true,
+  "review_protocol": "blind-math-source-transcription-v4-balanced-grammar; guarded-full-page-tables-v3-footnotes",
+  "model_signature": "822b1f849299842b242a25174b893e0c76025eefb4ceeed883a9f3a3b1e46830",
+  "reason": "Current model/protocol passed all three challenging mathematical bodies and exact full-page Table 6.2 rows/footnotes against direct source transcriptions.",
+  "scope": "Bounded source-transcription calibration only; not a proof of whole-book accuracy.",
+  "evidence": "calibration-qwythos-q6/assessment.json",
+  "limitations": [
+    "Bounded calibration does not establish whole-book accuracy.",
+    "Grouped tables require row-identity checks; earlier Q4 shifted Table 1.2 and was rejected.",
+    "Changes to row count or numeric tokens are held unresolved for direct review.",
+    "Model output labels, units and explanations require independent checks; model confidence alone is not evidence."
+  ]
+}

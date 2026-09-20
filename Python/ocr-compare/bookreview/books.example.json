@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "books": [
+    {
+      "id": "mybook",
+      "title": "Book Title",
+      "subtitle": "",
+      "edition": "Edition; Publisher, year; ISBN",
+      "authors": [
+        "Author One",
+        "Author Two"
+      ],
+      "pdf": "/absolute/path/to/Book.pdf",
+      "root": "/absolute/path/to/Data/Public/books/<Subject>/<Slug>",
+      "force_ocr": true,
+      "expected_pdf_pages": 0,
+      "source_kind": "300 dpi bilevel scan with no text layer; OCR forced   (or: born-digital; force_ocr=false)",
+      "sha256": "<sha256 of the PDF>",
+      "notation_rules": "   (optional) \"hillpeterson\" enables scripts/publish_notation.py; omit for other books"
+    }
+  ]
+}

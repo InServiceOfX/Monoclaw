@@ -52,6 +52,16 @@ samples/sample.pdf      10-pg arXiv test paper
 examples/               committed reference outputs (no GPU needed to inspect)
 ```
 
+## Reviewed textbooks (math/tables checked against the page)
+
+`bookreview/README.md` is the runbook for the full pipeline used on the propulsion and
+combustion corpora (Humble, Huzel & Huang, Sutton, Williams, Turns, Hill & Peterson):
+Marker + per-page Nougat → page-local equation alignment (`math_tokens.rs`) → bounded
+local-VLM triage → direct inspection of every unsettled display/table/fragment by the
+reviewing agent → `assemble.py`/`publish_book.py` (reading copy, EQUATIONS/TABLES/FIGURES
+catalogues, chapter files, INDEX.md, provenance). Copy `bookreview/` to a per-book work
+directory; the only configuration is `scripts/books.json`.
+
 ## Scanned books (no text layer)
 
 `run_ocr_large.sh` assumes a born-digital PDF. A **scan** — page images, no text
