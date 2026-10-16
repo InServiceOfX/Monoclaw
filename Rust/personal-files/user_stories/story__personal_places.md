@@ -14,7 +14,10 @@ from that conversation, independently of the implementation.
    appears in Recent and the last folder reopens. Repeated visits also rank it
    in Frequent. Explicit favorites remain separate and persistent.
 2. Pin a folder with the star, context menu, or folder drag into the sidebar.
-   Open it with one sidebar click; remove it without changing the source folder.
+   Open it with one sidebar click in the current tab; double-click also displays
+   it immediately. Clicking the current folder again refreshes its contents
+   without adding a visit. Other tabs keep their locations. Remove the favorite
+   without changing the source folder.
 3. Paste an absolute path, home-relative path or path relative to the displayed
    folder into the always-visible path bar and press Enter. No Go menu is needed.
    A file path selects that file in its parent directory.

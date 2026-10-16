@@ -46,3 +46,11 @@ atomically so an old running version can close normally; restart to upgrade.
 PDD tabs intake captured; incremental architecture failed due to unavailable
 model provider. Prompts/story/code maintained directly; no automatic PDD
 synchronization or generated contract success claimed.
+
+## Sidebar activation fix — 2026-10-16
+
+Connected navigation to ListBox row-activated rather than the row action.
+Explicit single-click activation; repeating a click refreshes the current
+folder without increasing visits. Corrected GTK regression fails before fix
+and passes after; Downloads fixture verifies content and active-tab isolation.
+Updated prompts/story and installed the release. Restart existing windows.

@@ -1114,6 +1114,22 @@ impl Browser {
         self.sidebar.pack_start(&heading, false, false, 0);
         let list = gtk::ListBox::new();
         list.set_selection_mode(gtk::SelectionMode::None);
+        list.set_activate_on_single_click(true);
+        {
+            let weak = Rc::downgrade(self);
+            let destinations = paths.clone();
+            list.connect_row_activated(move |_, row| {
+                if let (Some(browser), Some(path)) =
+                    (weak.upgrade(), destinations.get(row.index() as usize))
+                {
+                    if browser.current() == *path {
+                        browser.refresh();
+                    } else {
+                        browser.navigate(path, true, None, false);
+                    }
+                }
+            });
+        }
         for path in paths {
             let row = gtk::ListBoxRow::new();
             let line = gtk::Box::new(gtk::Orientation::Horizontal, 9);
@@ -1147,15 +1163,6 @@ impl Browser {
             line.pack_start(&label, true, true, 0);
             row.add(&line);
             row.set_tooltip_text(Some(&path.to_string_lossy()));
-            {
-                let weak = Rc::downgrade(self);
-                let path = path.clone();
-                row.connect_activate(move |_| {
-                    if let Some(b) = weak.upgrade() {
-                        b.navigate(&path, true, None, false);
-                    }
-                });
-            }
             {
                 let weak = Rc::downgrade(self);
                 let path = path.clone();
@@ -1503,6 +1510,65 @@ mod tests {
         row
     }
 
+    fn sidebar_story(browser: &Rc<Browser>, root: &Path, physics: &Path) {
+        let downloads = root.join("Downloads");
+        fs::create_dir(&downloads).unwrap();
+        fs::write(downloads.join("download-marker.txt"), "fixture").unwrap();
+        browser.new_tab(root.into());
+        wait(browser);
+        let active = browser.active_tab.get();
+        // Use the same section builder as Places, with a temporary Downloads fixture.
+        browser.section("TEST PLACES", vec![downloads.clone()]);
+        browser.sidebar.show_all();
+        drain();
+        let list = browser
+            .sidebar
+            .children()
+            .into_iter()
+            .filter_map(|w| w.downcast::<gtk::ListBox>().ok())
+            .last()
+            .unwrap();
+        let row = list.row_at_index(0).unwrap();
+        assert!(list.activates_on_single_click());
+        list.emit_by_name::<()>("row-activated", &[&row]);
+        wait(browser);
+        assert_eq!(browser.active_tab.get(), active);
+        assert_eq!(browser.current(), downloads);
+        assert_eq!(browser.address.text().as_str(), downloads.to_str().unwrap());
+        assert!(browser
+            .displayed
+            .borrow()
+            .contains(&downloads.join("download-marker.txt")));
+        assert_eq!(browser.tabs.borrow()[0].navigation.current, physics);
+        let count = browser.prefs.borrow().data.visits[&downloads].count;
+        // A repeated click on the current place refreshes externally changed contents.
+        fs::write(downloads.join("second-marker.txt"), "fixture").unwrap();
+        // Rebuild the temporary place after the normal sidebar refresh.
+        browser.section("TEST PLACES", vec![downloads.clone()]);
+        browser.sidebar.show_all();
+        let list = browser
+            .sidebar
+            .children()
+            .into_iter()
+            .filter_map(|w| w.downcast::<gtk::ListBox>().ok())
+            .last()
+            .unwrap();
+        let row = list.row_at_index(0).unwrap();
+        list.emit_by_name::<()>("row-activated", &[&row]);
+        list.emit_by_name::<()>("row-activated", &[&row]);
+        wait(browser);
+        assert!(browser
+            .displayed
+            .borrow()
+            .contains(&downloads.join("second-marker.txt")));
+        assert_eq!(browser.prefs.borrow().data.visits[&downloads].count, count);
+        assert_eq!(browser.tabs.borrow().len(), 2);
+        browser.close_tab(active);
+        wait(browser);
+        assert_eq!(browser.current(), physics);
+        eprintln!("PASS sidebar list mouse-activation signal: active tab, contents, repeat refresh and background tab isolation");
+    }
+
     fn tabs_story(
         app: &gtk::Application,
         browser: &Rc<Browser>,
@@ -1708,7 +1774,8 @@ mod tests {
             .filter_map(|w| w.downcast::<gtk::ListBox>().ok())
             .nth(1)
             .unwrap();
-        favorites.row_at_index(0).unwrap().emit_activate();
+        let row = favorites.row_at_index(0).unwrap();
+        favorites.emit_by_name::<()>("row-activated", &[&row]);
         wait(&browser);
         assert_eq!(browser.current(), physics);
         eprintln!("PASS favorite button and sidebar activation");
@@ -1870,6 +1937,7 @@ mod tests {
         assert_eq!(browser.prefs.borrow().data.favorites.len(), 2);
         assert!(browser.prefs.borrow().data.visits.is_empty());
         eprintln!("PASS clearing visits retains favorites");
+        sidebar_story(&browser, root, &physics);
         tabs_story(&app, &browser, root, &physics, &prefs_path);
         browser.window.close();
         drain();

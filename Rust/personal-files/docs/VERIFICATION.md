@@ -87,3 +87,14 @@ The release is installed through an atomic executable replacement so running
 older copies can finish normally. Existing windows need to close and reopen
 to load tabs. Tab folder paths, order, sort and active index persist; in-memory
 selection/navigation stacks are intentionally not restored across restarts.
+
+## Sidebar mouse activation regression — 2026-10-16
+
+The original sidebar test invoked the row action directly. A replacement using
+ListBox row-activated failed before the fix (previous folder remained visible)
+and passed afterward. The additional temporary Downloads fixture verifies
+current tab and contents, path entry, preserved background-tab location and
+repeated activation refreshing new files without inflating visits. This tests
+GTK's mouse-activation signal dispatch, not an external pointer driver.
+All 18 deterministic checks and the combined GTK story pass. See the regression
+intake record for cause and the corrected test boundary.
