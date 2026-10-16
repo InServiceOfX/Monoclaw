@@ -237,6 +237,13 @@ Deployments/Scripts/llama-cpp-server-macos/profiles/*.yml
 .DS_Store
 **/.DS_Store
 
+# Private runtime data — never commit private records.
+# Keep Data/Public available for deliberately reviewed public sources.
+/Data/Private/
+
+# LiteLLM local response cache (this path is a directory containing cache.db)
+/litellm_cache.sqlite/
+
 
 # Jetson pinmux parse output — generated data, lives in Data/Public/embedded/NVIDIAJetsonOrinNano/output/
 Embedded/JetsonOrinNano/output/
