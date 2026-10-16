@@ -24,6 +24,7 @@ retention, “viral tokens”), use the shared skill:
 - `shared/openclaw/skills/short-form-viral-content/SKILL.md`
 - Framework notes: `shared/openclaw/skills/short-form-viral-content/references/noe-murillo-pt1-framework.md`
 - Source archive: `Data/Public/Videos/TikTok/NoeMurillo_How-to-be-a-Successful-Content-Creator-pt1_7670717441508429070.md`
+- Reference accounts to study (not a second framework): `docs/shortform/REFERENCE_CREATORS.md` — first entry `@a13x_duke` (cA13X / Alex, Instagram Alexdukee)
 
 Grok also loads the same skill from `~/.grok/skills/short-form-viral-content/`
 (`/short-form-viral-content`).
