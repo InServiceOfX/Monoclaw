@@ -14,11 +14,19 @@ Open **Personal Files** from Ubuntu's application menu after installation, or:
 ```
 
 From this directory, `./launch.sh` runs the cached release build and builds it
-if missing. `./install.sh` builds and installs it for the current user. No sudo
+if missing. `./install.sh` builds and installs it for the current user. Restart an already open Personal Files window after upgrading to use the new
+version. The installer atomically replaces the executable, so running copies
+can finish normally. No sudo
 is needed for installation, and it does not replace Ubuntu's default Files app.
 
 ## Use
 
+- **Ctrl+T** or **+** opens the current folder in a new tab. Right-click a folder
+  or sidebar place for **Open in New Tab**. Each tab keeps its own folder,
+  selection, sorting and back/forward history. **Ctrl+Tab / Ctrl+Shift+Tab**
+  cycles tabs. **× / Ctrl+W** closes a tab, retaining at least one. Tab order,
+  folders, sorting and the active tab restore on restart; runtime selections
+  and back/forward history are not restored across restarts.
 - Paste a path into the always-visible bar and press **Enter**. Absolute paths,
   `~/…`, and paths relative to the current folder work. A file path opens its
   parent and selects the file. **Ctrl+L** focuses the bar.

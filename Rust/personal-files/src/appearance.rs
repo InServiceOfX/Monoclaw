@@ -92,6 +92,11 @@ pub fn stylesheet(theme: &str, image: &Path) -> String {
     .section {{ color: {muted}; font-size: 10px; font-weight: bold; letter-spacing: 1px; padding: 10px 12px 4px; }}
     .hint {{ color: {muted}; font-size: 11px; }}
     #toolbar {{ padding: 10px 14px; background: {base}; }}
+    #tabs {{ background: {base}; }}
+    #tabs > header {{ background: {sidebar}; border-bottom: 1px solid alpha({muted},0.2); }}
+    #tabs tab {{ padding: 4px 12px; color: {muted}; }}
+    #tabs tab:checked {{ background: {base}; color: {ink}; box-shadow: inset 0 -2px #3879df; }}
+    #tabs tab button {{ padding: 0; min-width: 18px; min-height: 18px; border: 0; background: transparent; }}
     entry {{ background: {panel}; color: {ink}; border: 1px solid alpha({muted},0.28); border-radius: 7px; min-height: 29px; padding: 3px 10px; }}
     entry selection {{ background: #3879df; color: white; }}
     button {{ background: {panel}; color: {ink}; border: 1px solid alpha({muted},0.22); border-radius: 6px; box-shadow: none; text-shadow: none; padding: 5px 9px; }}

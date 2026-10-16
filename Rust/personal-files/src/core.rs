@@ -168,6 +168,15 @@ pub struct Visit {
     pub last: f64,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SavedTab {
+    pub path: PathBuf,
+    #[serde(default)]
+    pub sort: Sort,
+    #[serde(default)]
+    pub descending: bool,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Saved {
     pub favorites: Vec<PathBuf>,
@@ -177,6 +186,8 @@ pub struct Saved {
     pub image: PathBuf,
     pub sort: Sort,
     pub descending: bool,
+    pub tabs: Vec<SavedTab>,
+    pub active_tab: usize,
 }
 impl Default for Saved {
     fn default() -> Self {
@@ -188,6 +199,8 @@ impl Default for Saved {
             image: PathBuf::new(),
             sort: Sort::Name,
             descending: false,
+            tabs: vec![],
+            active_tab: 0,
         }
     }
 }
@@ -232,6 +245,8 @@ impl Preferences {
                             }
                         }
                         data.favorites = unique;
+                        data.tabs.retain(|tab| tab.path.is_absolute());
+                        data.active_tab = data.active_tab.min(data.tabs.len().saturating_sub(1));
                         if !["silver", "midnight", "aurora", "auto"].contains(&data.theme.as_str())
                         {
                             data.theme = "silver".into()

@@ -29,3 +29,20 @@
 
 2026-10-15 — First usable Rust iteration on `feat/personal-files`. See README
 for launch/install and docs/VERIFICATION.md for evidence and limits.
+
+## Tabs update — 2026-10-16
+
+Branch: feat/personal-files-tabs. Approved tab story implemented in Rust.
+Visible scrollable tab strip, plus/Ctrl+T, folder/sidebar context opening,
+independent selection/sorting/history, close/cycle controls and restart
+restoration. Missing folders and old preferences handled without losing
+favorites. One worker and one active folder monitor remain in use.
+
+Validation: 18 Rust acceptance tests plus the real GTK desktop story with
+original browsing cases and four additional tab scenario groups. See
+docs/VERIFICATION.md for final results. Installer replaces the executable
+atomically so an old running version can close normally; restart to upgrade.
+
+PDD tabs intake captured; incremental architecture failed due to unavailable
+model provider. Prompts/story/code maintained directly; no automatic PDD
+synchronization or generated contract success claimed.

@@ -1,7 +1,7 @@
 //! Native GTK UI. Directory scans run on a bounded, single background worker.
 use crate::{
     appearance,
-    core::{self, Entry, Preferences, Sort},
+    core::{self, Entry, Preferences, SavedTab, Sort},
 };
 use gtk::{gdk, gdk_pixbuf, gio, glib, pango, prelude::*};
 use std::{
@@ -26,6 +26,7 @@ struct Scan {
     request: Request,
     result: std::io::Result<Vec<Entry>>,
 }
+#[derive(Clone)]
 struct Navigation {
     current: PathBuf,
     history: Vec<PathBuf>,
@@ -35,9 +36,27 @@ struct Navigation {
     items: Vec<Entry>,
 }
 
+#[derive(Clone)]
+struct TabSnapshot {
+    navigation: Navigation,
+    selection: Vec<PathBuf>,
+    sort: Sort,
+    descending: bool,
+    pending: Option<Request>,
+    page: gtk::Box,
+    label: gtk::Label,
+    close: gtk::Button,
+}
+
 pub struct Browser {
     pub window: gtk::ApplicationWindow,
     header: gtk::HeaderBar,
+    notebook: gtk::Notebook,
+    tabs: RefCell<Vec<TabSnapshot>>,
+    active_tab: Cell<usize>,
+    tab_mutation: Cell<bool>,
+    next_generation: Cell<u64>,
+    pending: RefCell<Option<Request>>,
     address: gtk::Entry,
     tree: gtk::TreeView,
     store: gtk::ListStore,
@@ -93,6 +112,8 @@ impl Browser {
         header.pack_start(&up);
         let skin = gtk::MenuButton::builder().label("Appearance").build();
         header.pack_end(&skin);
+        let new_tab = icon_button("list-add-symbolic", "New tab · Ctrl+T");
+        header.pack_end(&new_tab);
         let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
         window.add(&root);
         let toolbar = gtk::Box::new(gtk::Orientation::Horizontal, 8);
@@ -113,6 +134,11 @@ impl Browser {
             toolbar.pack_start(button, false, false, 0);
         }
         root.pack_start(&toolbar, false, false, 0);
+        let notebook = gtk::Notebook::new();
+        notebook.set_scrollable(true);
+        notebook.set_show_border(false);
+        notebook.set_widget_name("tabs");
+        root.pack_start(&notebook, false, false, 0);
         let pane = gtk::Paned::new(gtk::Orientation::Horizontal);
         pane.set_position(235);
         root.pack_start(&pane, true, true, 0);
@@ -215,10 +241,35 @@ impl Browser {
                 }
             }
         });
-        let start = start.unwrap_or_else(|| prefs.data.last_path.clone());
+        let restore_active = if start.is_some() {
+            0
+        } else {
+            prefs.data.active_tab
+        };
+        let restore = if let Some(path) = start {
+            vec![SavedTab {
+                path,
+                sort: prefs.data.sort,
+                descending: prefs.data.descending,
+            }]
+        } else if !prefs.data.tabs.is_empty() {
+            prefs.data.tabs.clone()
+        } else {
+            vec![SavedTab {
+                path: prefs.data.last_path.clone(),
+                sort: prefs.data.sort,
+                descending: prefs.data.descending,
+            }]
+        };
         let browser = Rc::new(Self {
             window,
             header,
+            notebook,
+            tabs: RefCell::new(vec![]),
+            active_tab: Cell::new(0),
+            tab_mutation: Cell::new(true),
+            next_generation: Cell::new(0),
+            pending: RefCell::new(None),
             address,
             tree,
             store,
@@ -255,6 +306,24 @@ impl Browser {
                     }
                 });
             }};
+        }
+        {
+            let weak = Rc::downgrade(&browser);
+            new_tab.connect_clicked(move |_| {
+                if let Some(b) = weak.upgrade() {
+                    b.new_tab(b.current());
+                }
+            });
+        }
+        {
+            let weak = Rc::downgrade(&browser);
+            browser.notebook.connect_switch_page(move |_, _, index| {
+                if let Some(b) = weak.upgrade() {
+                    if !b.tab_mutation.get() {
+                        b.switch_tab(index as usize);
+                    }
+                }
+            });
         }
         connect_button!(browser.pin, toggle_favorite);
         connect_button!(refresh, refresh);
@@ -436,18 +505,264 @@ impl Browser {
             }
             glib::ControlFlow::Continue
         });
-        browser.navigate(&start, true, None, true);
+        for tab in restore {
+            browser.append_tab(tab.path, tab.sort, tab.descending);
+        }
+        browser.tab_mutation.set(false);
+        let restore_active = restore_active.min(browser.tabs.borrow().len() - 1);
+        browser.tab_mutation.set(true);
+        browser
+            .notebook
+            .set_current_page(Some(restore_active as u32));
+        browser.tab_mutation.set(false);
+        browser.switch_tab(restore_active);
+        browser.notebook.show_all();
         browser
     }
 
     pub fn current(&self) -> PathBuf {
         self.nav.borrow().current.clone()
     }
+
+    fn append_tab(self: &Rc<Self>, path: PathBuf, sort: Sort, descending: bool) {
+        let page = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let title = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+        title.set_size_request(180, -1);
+        let label = gtk::Label::new(Some(
+            &path
+                .file_name()
+                .unwrap_or(path.as_os_str())
+                .to_string_lossy(),
+        ));
+        label.set_ellipsize(pango::EllipsizeMode::Middle);
+        label.set_max_width_chars(24);
+        let close = icon_button("window-close-symbolic", "Close tab · Ctrl+W");
+        close.set_relief(gtk::ReliefStyle::None);
+        title.pack_start(&label, true, true, 0);
+        title.pack_end(&close, false, false, 0);
+        let weak = Rc::downgrade(self);
+        let weak_page = page.downgrade();
+        close.connect_clicked(move |_| {
+            if let (Some(browser), Some(page)) = (weak.upgrade(), weak_page.upgrade()) {
+                if let Some(index) = browser.notebook.page_num(&page) {
+                    browser.close_tab(index as usize);
+                }
+            }
+        });
+        let previous = self.tab_mutation.replace(true);
+        self.tabs.borrow_mut().push(TabSnapshot {
+            navigation: Navigation {
+                current: path.clone(),
+                history: vec![],
+                index: 0,
+                generation: 0,
+                loading: false,
+                items: vec![],
+            },
+            selection: vec![],
+            sort,
+            descending,
+            pending: Some(Request {
+                generation: 0,
+                target: path,
+                select: None,
+                record: true,
+                history_index: None,
+                fallback: true,
+            }),
+            page: page.clone(),
+            label,
+            close,
+        });
+        self.notebook.append_page(&page, Some(&title));
+        page.show_all();
+        title.show_all();
+        self.tab_mutation.set(previous);
+        self.update_tab_labels();
+    }
+
+    fn capture_tab(&self) {
+        if self.nav.borrow().history.is_empty() && self.pending.borrow().is_none() {
+            return;
+        }
+        let (sort, descending) = {
+            let p = self.prefs.borrow();
+            (p.data.sort, p.data.descending)
+        };
+        let selection = self.selected();
+        if let Some(tab) = self.tabs.borrow_mut().get_mut(self.active_tab.get()) {
+            tab.navigation = self.nav.borrow().clone();
+            tab.selection = selection;
+            tab.sort = sort;
+            tab.descending = descending;
+            tab.pending = self.pending.borrow().clone();
+        }
+    }
+
+    fn persist_session(&self) {
+        let tabs = self.tabs.borrow();
+        if tabs.is_empty() {
+            return;
+        }
+        let mut prefs = self.prefs.borrow_mut();
+        prefs.data.tabs = tabs
+            .iter()
+            .map(|tab| SavedTab {
+                // Keep the successful folder when new path input has not been validated.
+                path: tab.navigation.current.clone(),
+                sort: tab.sort,
+                descending: tab.descending,
+            })
+            .collect();
+        prefs.data.active_tab = self.active_tab.get();
+        prefs.data.last_path = self.current();
+    }
+
+    fn update_tab_labels(&self) {
+        let tabs = self.tabs.borrow();
+        for (index, tab) in tabs.iter().enumerate() {
+            let path = if index == self.active_tab.get() && !self.nav.borrow().history.is_empty() {
+                self.current()
+            } else {
+                tab.navigation.current.clone()
+            };
+            tab.label.set_text(
+                &path
+                    .file_name()
+                    .unwrap_or(path.as_os_str())
+                    .to_string_lossy(),
+            );
+            tab.page.set_tooltip_text(Some(&path.to_string_lossy()));
+            tab.label.set_tooltip_text(Some(&path.to_string_lossy()));
+            tab.close.set_sensitive(tabs.len() > 1);
+        }
+    }
+
+    fn switch_tab(self: &Rc<Self>, index: usize) {
+        if index >= self.tabs.borrow().len() {
+            return;
+        }
+        self.capture_tab();
+        let incoming = self.tabs.borrow()[index].clone();
+        self.tree.selection().unselect_all();
+        self.active_tab.set(index);
+        *self.nav.borrow_mut() = incoming.navigation;
+        // Never reuse a generation from another tab: old worker results may still arrive.
+        self.next_generation.set(self.next_generation.get() + 1);
+        self.nav.borrow_mut().generation = self.next_generation.get();
+        self.nav.borrow_mut().loading = false;
+        *self.pending.borrow_mut() = None;
+        {
+            let mut p = self.prefs.borrow_mut();
+            p.data.sort = incoming.sort;
+            p.data.descending = incoming.descending;
+        }
+        self.store.clear();
+        self.populate(None);
+        for (i, path) in self.displayed.borrow().iter().enumerate() {
+            if incoming.selection.contains(path) {
+                self.tree
+                    .selection()
+                    .select_path(&gtk::TreePath::from_indicesv(&[i as i32]));
+            }
+        }
+        self.address.set_text(&self.current().to_string_lossy());
+        self.header.set_subtitle(Some(
+            &self
+                .current()
+                .file_name()
+                .unwrap_or(self.current().as_os_str())
+                .to_string_lossy(),
+        ));
+        {
+            let n = self.nav.borrow();
+            self.back.set_sensitive(n.index > 0);
+            self.forward.set_sensitive(n.index + 1 < n.history.len());
+        }
+        self.rebuild_sidebar();
+        self.apply_appearance();
+        self.update_tab_labels();
+        if let Some(monitor) = self.monitor.borrow_mut().take() {
+            monitor.cancel();
+        }
+        self.changed.set(None);
+        if let Some(request) = incoming.pending {
+            self.navigate(
+                request.select.as_ref().unwrap_or(&request.target),
+                request.record,
+                request.history_index,
+                request.fallback,
+            );
+        } else {
+            self.refresh();
+        }
+        self.save();
+    }
+
+    fn new_tab(self: &Rc<Self>, path: PathBuf) {
+        let (sort, descending) = {
+            let p = self.prefs.borrow();
+            (p.data.sort, p.data.descending)
+        };
+        self.append_tab(path, sort, descending);
+        let index = self.tabs.borrow().len() - 1;
+        self.notebook.set_current_page(Some(index as u32));
+    }
+
+    fn close_tab(self: &Rc<Self>, index: usize) {
+        let len = self.tabs.borrow().len();
+        if len <= 1 || index >= len {
+            return;
+        }
+        if index == self.active_tab.get() {
+            let next = if index + 1 < len {
+                index + 1
+            } else {
+                index - 1
+            };
+            self.switch_tab(next);
+        }
+        self.capture_tab();
+        self.tab_mutation.set(true);
+        self.tabs.borrow_mut().remove(index);
+        self.notebook.remove_page(Some(index as u32));
+        if self.active_tab.get() > index {
+            self.active_tab.set(self.active_tab.get() - 1);
+        }
+        self.notebook
+            .set_current_page(Some(self.active_tab.get() as u32));
+        self.tab_mutation.set(false);
+        self.update_tab_labels();
+        self.save();
+    }
+
+    fn tab_shortcut(self: &Rc<Self>, key: gdk::keys::Key, modifiers: gdk::ModifierType) -> bool {
+        if !modifiers.contains(gdk::ModifierType::CONTROL_MASK) {
+            return false;
+        }
+        let lower = key.to_lower();
+        if lower == gdk::keys::constants::t {
+            self.new_tab(self.current());
+        } else if lower == gdk::keys::constants::w {
+            self.close_tab(self.active_tab.get());
+        } else if key == gdk::keys::constants::Tab || key == gdk::keys::constants::ISO_Left_Tab {
+            let len = self.tabs.borrow().len();
+            let reverse = modifiers.contains(gdk::ModifierType::SHIFT_MASK)
+                || key == gdk::keys::constants::ISO_Left_Tab;
+            let index = (self.active_tab.get() + if reverse { len - 1 } else { 1 }) % len;
+            self.notebook.set_current_page(Some(index as u32));
+        } else {
+            return false;
+        }
+        true
+    }
     fn message(&self, text: &str) {
         self.status.set_text(text);
         self.status.set_tooltip_text(Some(text));
     }
     fn save(&self) {
+        self.capture_tab();
+        self.persist_session();
         let result = self.prefs.borrow_mut().save();
         if let Err(e) = result {
             self.message(&format!("Could not save preferences: {e}"));
@@ -475,7 +790,8 @@ impl Browser {
             (path.to_path_buf(), None)
         };
         let mut nav = self.nav.borrow_mut();
-        nav.generation += 1;
+        self.next_generation.set(self.next_generation.get() + 1);
+        nav.generation = self.next_generation.get();
         nav.loading = true;
         let request = Request {
             generation: nav.generation,
@@ -487,6 +803,7 @@ impl Browser {
         };
         drop(nav);
         self.message(&format!("Opening {} …", target.display()));
+        *self.pending.borrow_mut() = Some(request.clone());
         if self.sender.send(request).is_err() {
             self.nav.borrow_mut().loading = false;
             self.message("The folder worker stopped. Please reopen Personal Files.");
@@ -497,6 +814,7 @@ impl Browser {
             return;
         }
         self.nav.borrow_mut().loading = false;
+        self.pending.borrow_mut().take();
         let request = scan.request;
         match scan.result {
             Err(e) => {
@@ -513,7 +831,8 @@ impl Browser {
                     nav.items = items;
                     if let Some(index) = request.history_index {
                         nav.index = index;
-                    } else if request.record && nav.history.get(nav.index) != Some(&request.target)
+                    } else if nav.history.is_empty()
+                        || (request.record && nav.history.get(nav.index) != Some(&request.target))
                     {
                         let next = if nav.history.is_empty() {
                             0
@@ -548,6 +867,7 @@ impl Browser {
                     self.forward
                         .set_sensitive(nav.index + 1 < nav.history.len());
                 }
+                self.update_tab_labels();
                 self.watch();
                 let warning = self.prefs.borrow_mut().warning.take();
                 if let Some(warning) = warning {
@@ -883,6 +1203,17 @@ impl Browser {
         }
         if paths.iter().any(|p| p.is_dir()) {
             let weak = Rc::downgrade(self);
+            let folders: Vec<_> = paths.iter().filter(|p| p.is_dir()).cloned().collect();
+            Self::menu_item(&menu, "Open in New Tab", move || {
+                if let Some(b) = weak.upgrade() {
+                    for path in &folders {
+                        b.new_tab(path.clone());
+                    }
+                }
+            });
+        }
+        if paths.iter().any(|p| p.is_dir()) {
+            let weak = Rc::downgrade(self);
             let paths = paths.clone();
             Self::menu_item(&menu, "Add to Favorites", move || {
                 if let Some(b) = weak.upgrade() {
@@ -1031,7 +1362,7 @@ impl Browser {
             gtk::ButtonsType::Close,
             "Personal Files · Keyboard Shortcuts",
         );
-        dialog.set_secondary_text(Some("Ctrl+L     Focus path bar\nCtrl+C     Copy full path(s)\nCtrl+Shift+C     Copy shell-quoted path(s)\nCtrl+D     Toggle favorite folder\nCtrl+R / F5     Refresh\nAlt+Left / Right     Back / forward\nAlt+Up     Parent folder\nEnter     Open selected item\n\nDrop folders into the sidebar to favorite them.\nClick Name, Modified, or Size again to reverse sorting.\nHidden files are always visible."));
+        dialog.set_secondary_text(Some("Ctrl+T     New tab in current folder\nCtrl+W     Close tab (keep one open)\nCtrl+Tab / Ctrl+Shift+Tab     Next / previous tab\nCtrl+L     Focus path bar\nCtrl+C     Copy full path(s)\nCtrl+Shift+C     Copy shell-quoted path(s)\nCtrl+D     Toggle favorite folder\nCtrl+R / F5     Refresh\nAlt+Left / Right     Back / forward\nAlt+Up     Parent folder\nEnter     Open selected item\n\nDrop folders into the sidebar to favorite them.\nClick Name, Modified, or Size again to reverse sorting.\nHidden files are always visible."));
         dialog.run();
         dialog.close();
     }
@@ -1040,6 +1371,9 @@ impl Browser {
         let shift = event.state().contains(gdk::ModifierType::SHIFT_MASK);
         let alt = event.state().contains(gdk::ModifierType::MOD1_MASK);
         let key = event.keyval().to_lower();
+        if self.tab_shortcut(event.keyval(), event.state()) {
+            return glib::Propagation::Stop;
+        }
         if ctrl && key == gdk::keys::constants::l {
             self.address.grab_focus();
             self.address.select_region(0, -1);
@@ -1130,6 +1464,23 @@ mod tests {
             context.iteration(false);
         }
     }
+    fn screenshot(browser: &Browser, path: &Path) {
+        drain();
+        thread::sleep(Duration::from_millis(100));
+        drain();
+        // Render into our own raster surface: do not mutate/capture a live X11 surface.
+        let width = browser.window.allocated_width();
+        let height = browser.window.allocated_height();
+        let surface =
+            gtk::cairo::ImageSurface::create(gtk::cairo::Format::ARgb32, width, height).unwrap();
+        let context = gtk::cairo::Context::new(&surface).unwrap();
+        browser.window.draw(&context);
+        surface.flush();
+        gdk::pixbuf_get_from_surface(&surface, 0, 0, width, height)
+            .unwrap()
+            .savev(path, "png", &[])
+            .unwrap();
+    }
     fn wait(browser: &Browser) {
         let deadline = Instant::now() + Duration::from_secs(5);
         while browser.nav.borrow().loading && Instant::now() < deadline {
@@ -1150,6 +1501,163 @@ mod tests {
         let row = gtk::TreePath::from_indicesv(&[index as i32]);
         browser.tree.selection().select_path(&row);
         row
+    }
+
+    fn tabs_story(
+        app: &gtk::Application,
+        browser: &Rc<Browser>,
+        root: &Path,
+        physics: &Path,
+        prefs_path: &Path,
+    ) {
+        let ctrl = gdk::ModifierType::CONTROL_MASK;
+        let shift = gdk::ModifierType::SHIFT_MASK;
+        browser.columns[0].1.clicked();
+        if browser.prefs.borrow().data.descending {
+            browser.columns[0].1.clicked();
+        }
+        select(browser, ".hidden");
+        browser.address.grab_focus();
+        assert!(browser.tab_shortcut(gdk::keys::constants::t, ctrl));
+        wait(browser);
+        assert_eq!(browser.tabs.borrow().len(), 2);
+        assert_eq!(browser.current(), physics);
+        assert_eq!(browser.active_tab.get(), 1);
+        browser.navigate(&physics.join("Topics"), true, None, false);
+        wait(browser);
+        browser.columns[2].1.clicked();
+        assert_eq!(browser.prefs.borrow().data.sort, Sort::Size);
+        let visits = browser.prefs.borrow().data.visits.clone();
+        assert!(browser.tab_shortcut(gdk::keys::constants::ISO_Left_Tab, ctrl | shift));
+        wait(browser);
+        assert_eq!(browser.current(), physics);
+        assert_eq!(browser.selected(), vec![physics.join(".hidden")]);
+        assert_eq!(browser.prefs.borrow().data.sort, Sort::Name);
+        assert!(!browser.prefs.borrow().data.descending);
+        assert!(browser.tab_shortcut(gdk::keys::constants::Tab, ctrl));
+        wait(browser);
+        assert_eq!(browser.current(), physics.join("Topics"));
+        assert_eq!(browser.prefs.borrow().data.sort, Sort::Size);
+        assert_eq!(browser.prefs.borrow().data.visits.len(), visits.len());
+        for (path, visit) in visits {
+            assert_eq!(browser.prefs.borrow().data.visits[&path].count, visit.count);
+        }
+        browser.go_history(-1);
+        wait(browser);
+        assert_eq!(browser.current(), physics);
+        browser.go_history(1);
+        wait(browser);
+        assert_eq!(browser.current(), physics.join("Topics"));
+        eprintln!(
+            "PASS tabs: Ctrl+T, cycling, selection, sort, independent history and no extra visits"
+        );
+
+        let menu = browser.path_menu(vec![root.into()]);
+        menu.children()
+            .into_iter()
+            .filter_map(|w| w.downcast::<gtk::MenuItem>().ok())
+            .find(|i| i.label().as_deref() == Some("Open in New Tab"))
+            .unwrap()
+            .emit_activate();
+        menu.detach();
+        wait(browser);
+        assert_eq!(browser.tabs.borrow().len(), 3);
+        assert_eq!(browser.current(), root);
+        // Closing a background tab must not navigate or reset the foreground tab.
+        let close = browser.tabs.borrow()[1].close.clone();
+        close.emit_clicked();
+        wait(browser);
+        assert_eq!(browser.tabs.borrow().len(), 2);
+        assert_eq!(browser.current(), root);
+        browser.tab_shortcut(gdk::keys::constants::w, ctrl);
+        wait(browser);
+        assert_eq!(browser.tabs.borrow().len(), 1);
+        assert_eq!(browser.current(), physics);
+        browser.tab_shortcut(gdk::keys::constants::w, ctrl);
+        assert_eq!(browser.tabs.borrow().len(), 1);
+        eprintln!(
+            "PASS tabs: folder context action, closing background/active tab, last tab retained"
+        );
+
+        browser.navigate(&root.join("invalid-pending-folder"), true, None, false);
+        browser.save();
+        assert_eq!(browser.prefs.borrow().data.tabs[0].path, physics);
+        wait(browser);
+        assert_eq!(browser.current(), physics);
+
+        // A pending scan from another tab must never overwrite this one's view.
+        let plus = browser
+            .header
+            .children()
+            .into_iter()
+            .filter_map(|w| w.downcast::<gtk::Button>().ok())
+            .find(|b| b.tooltip_text().as_deref() == Some("New tab · Ctrl+T"))
+            .unwrap();
+        plus.emit_clicked();
+        wait(browser);
+        assert_eq!(browser.current(), physics);
+        browser.navigate(root, true, None, false);
+        wait(browser);
+        browser.columns[2].1.clicked();
+        browser.notebook.set_current_page(Some(0));
+        wait(browser);
+        assert_eq!(browser.current(), physics);
+        browser.notebook.set_current_page(Some(1));
+        wait(browser);
+        assert_eq!(browser.current(), root);
+        assert_eq!(browser.notebook.current_page(), Some(1));
+        browser.save();
+        let saved = Preferences::load(prefs_path.into());
+        assert_eq!(
+            saved
+                .data
+                .tabs
+                .iter()
+                .map(|t| t.path.clone())
+                .collect::<Vec<_>>(),
+            vec![physics.to_path_buf(), root.to_path_buf()]
+        );
+        assert_eq!(saved.data.active_tab, 1);
+        if let Some(path) = std::env::var_os("PERSONAL_FILES_TABS_SCREENSHOT") {
+            screenshot(browser, &PathBuf::from(path));
+        }
+        browser.window.close();
+        drain();
+        let restored = Browser::new(app, None, Preferences::load(prefs_path.into()));
+        wait(&restored);
+        assert_eq!(restored.tabs.borrow().len(), 2);
+        assert_eq!(restored.active_tab.get(), 1);
+        assert_eq!(restored.notebook.current_page(), Some(1));
+        assert_eq!(restored.current(), root);
+        assert_eq!(restored.prefs.borrow().data.sort, Sort::Size);
+        restored.notebook.set_current_page(Some(0));
+        wait(&restored);
+        assert_eq!(restored.current(), physics);
+        assert_eq!(restored.prefs.borrow().data.sort, Sort::Name);
+        eprintln!(
+            "PASS tabs: rapid switching rejects stale scans; ordered tabs and active tab restore"
+        );
+        restored.new_tab(root.join("missing-folder"));
+        wait(&restored);
+        assert_eq!(restored.current(), core::home());
+        restored.notebook.set_current_page(Some(0));
+        wait(&restored);
+        assert_eq!(restored.current(), physics);
+        restored.window.close();
+        drain();
+        let mut missing = Preferences::load(prefs_path.into());
+        missing.data.tabs[1].path = root.join("gone-after-restart");
+        missing.data.active_tab = 1;
+        missing.save().unwrap();
+        let again = Browser::new(app, None, Preferences::load(prefs_path.into()));
+        wait(&again);
+        assert_eq!(again.current(), core::home());
+        again.notebook.set_current_page(Some(0));
+        wait(&again);
+        assert_eq!(again.current(), physics);
+        again.window.close();
+        drain();
+        eprintln!("PASS tabs: missing restored folder falls back without changing another tab");
     }
 
     #[test]
@@ -1346,7 +1854,7 @@ mod tests {
         browser.window.close();
         drain();
         drop(browser);
-        let browser = Browser::new(&app, None, Preferences::load(prefs_path));
+        let browser = Browser::new(&app, None, Preferences::load(prefs_path.clone()));
         wait(&browser);
         assert_eq!(browser.current(), physics);
         assert!(browser.prefs.borrow().data.favorites.contains(&physics));
@@ -1354,14 +1862,7 @@ mod tests {
         eprintln!("PASS fresh-window restart persistence");
         browser.set_theme("silver");
         if let Some(path) = std::env::var_os("PERSONAL_FILES_SCREENSHOT") {
-            drain();
-            thread::sleep(Duration::from_millis(100));
-            drain();
-            if let Some(window) = browser.window.window() {
-                let (w, h) = (window.width(), window.height());
-                let pixbuf = window.pixbuf(0, 0, w, h).unwrap();
-                pixbuf.savev(PathBuf::from(path), "png", &[]).unwrap();
-            }
+            screenshot(&browser, &PathBuf::from(path));
         }
         browser.prefs.borrow_mut().data.visits.clear();
         browser.rebuild_sidebar();
@@ -1369,6 +1870,7 @@ mod tests {
         assert_eq!(browser.prefs.borrow().data.favorites.len(), 2);
         assert!(browser.prefs.borrow().data.visits.is_empty());
         eprintln!("PASS clearing visits retains favorites");
+        tabs_story(&app, &browser, root, &physics, &prefs_path);
         browser.window.close();
         drain();
     }

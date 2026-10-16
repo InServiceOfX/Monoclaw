@@ -60,3 +60,30 @@ No machine-generated story contract, provider-backed semantic story detection,
 or automated PDD sync was completed. Those layers are not counted as passing.
 The temporary Python reference passed its 26 checks before the port; Rust's
 own evidence above, rather than Python's results, establishes Rust parity.
+
+## Tabs update — 2026-10-16
+
+Approved review and immutable PDD intake are retained in docs/intents/. The
+tabs apply attempt recorded intent but failed incremental architecture with
+`No models available after initial filtering`; the receipt is preserved in the
+local user cache. No automatic apply/sync or generated contract pass is claimed.
+The agent maintained the tab prompts, story and Rust implementation directly.
+
+Final validation: formatting, Clippy with warnings denied, Bash syntax and
+Desktop Entry validation passed. All **18 deterministic Rust tests passed**,
+including three new session/legacy-preference tests. The explicit GTK desktop
+story passed its original 15 groups plus four tab groups: keyboard/independent
+state and visits; context/plus/close controls and last-tab protection; rapid
+switching and ordered/active session restoration; missing restored folders.
+Pending invalid input is checked not to replace a saved successful folder.
+These fixture tests do not modify actual user preferences.
+
+A live X11 screenshot attempt hit a Cairo assertion. The optional test
+screenshot renderer was changed to an owned offscreen raster surface; the
+combined GTK story then passed with that renderer as well. This is test
+harness behavior, not a screenshot feature of the installed app.
+
+The release is installed through an atomic executable replacement so running
+older copies can finish normally. Existing windows need to close and reopen
+to load tabs. Tab folder paths, order, sort and active index persist; in-memory
+selection/navigation stacks are intentionally not restored across restarts.

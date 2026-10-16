@@ -1,7 +1,7 @@
 # Personal Files — agent instructions
 
 Native Rust/GTK 3 Ubuntu desktop application. Work on feature branches; never
-commit to master/main. The current branch is `feat/personal-files`.
+commit to master/main. Tabs work uses `feat/personal-files-tabs`.
 
 Read `docs/PRODUCT_INTENT.md`, `user_stories/story__personal_places.md`, the
 affected `.prompt` source, and `PROGRESS.md` before changing behavior. The repo's
@@ -34,3 +34,10 @@ already accepted first-version meaning.
 Update `PROGRESS.md` and verification evidence after material work. The human
 owns product meaning; the agent owns paths, prompt wiring, implementation and
 verification mechanics.
+
+Tab state is independent per tab; favorites/visits are shared. Keep worker
+generations globally monotonic when switching tabs to reject stale results.
+Switching/refresh must not increment visits. Persist ordered paths, sort and
+active index; keep old preferences compatible. Installer upgrades use atomic
+rename to permit replacement while the old executable runs. GUI screenshot
+helpers render offscreen rather than capturing/mutating live X11 surfaces.

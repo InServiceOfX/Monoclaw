@@ -27,7 +27,7 @@
   },
   {
     "reason": "Native Ubuntu GTK browser and real desktop acceptance",
-    "description": "Native Ubuntu GTK browser and real desktop acceptance",
+    "description": "Native Ubuntu GTK browser with independent tabs and real desktop acceptance",
     "dependencies": [
       "core_rust.prompt",
       "appearance_rust.prompt"

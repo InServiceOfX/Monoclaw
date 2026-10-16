@@ -7,7 +7,11 @@ data_root=${XDG_DATA_HOME:-$HOME/.local/share}
 app_root=$HOME/.local/lib/personal-files
 binary=${CARGO_TARGET_DIR:-$cache_root/target}/release/personal-files
 mkdir -p -- "$app_root" "$HOME/.local/bin" "$data_root/applications" "$data_root/icons/hicolor/scalable/apps"
-install -m 755 -- "$binary" "$app_root/personal-files"
+temporary_binary=$(mktemp "$app_root/.personal-files.XXXXXX")
+trap 'rm -f -- "$temporary_binary"' EXIT
+install -m 755 -- "$binary" "$temporary_binary"
+mv -f -- "$temporary_binary" "$app_root/personal-files"
+trap - EXIT
 install -m 644 -- "$project_root/assets/personal-files.svg" "$data_root/icons/hicolor/scalable/apps/io.monoclaw.PersonalFiles.svg"
 if [[ -e "$HOME/.local/bin/personal-files" && ! -L "$HOME/.local/bin/personal-files" ]]; then
   printf '%s\n' 'Existing ~/.local/bin/personal-files was preserved; launch from the applications menu.' >&2

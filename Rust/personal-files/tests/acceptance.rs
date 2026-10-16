@@ -282,3 +282,62 @@ fn failed_save_does_not_clobber_existing_preferences() {
     assert!(result.is_err());
     assert_eq!(fs::read(file).unwrap(), before);
 }
+
+#[test]
+fn legacy_preferences_load_without_tabs() {
+    let temp = TempDir::new().unwrap();
+    let path = temp.path().join("preferences.json");
+    fs::write(
+        &path,
+        r#"{"favorites":["/tmp"],"last_path":"/tmp","sort":"size","descending":true}"#,
+    )
+    .unwrap();
+    let prefs = Preferences::load(path);
+    assert!(prefs.warning.is_none());
+    assert!(prefs.data.tabs.is_empty());
+    assert_eq!(prefs.data.favorites, vec![PathBuf::from("/tmp")]);
+    assert_eq!(prefs.data.sort, Sort::Size);
+    assert!(prefs.data.descending);
+}
+
+#[test]
+fn tab_order_active_index_and_per_tab_sort_survive_restart() {
+    use personal_files::core::SavedTab;
+    let temp = TempDir::new().unwrap();
+    let path = temp.path().join("preferences.json");
+    let mut prefs = Preferences::load(path.clone());
+    prefs.data.tabs = vec![
+        SavedTab {
+            path: temp.path().join("first"),
+            sort: Sort::Name,
+            descending: false,
+        },
+        SavedTab {
+            path: temp.path().join("second"),
+            sort: Sort::Size,
+            descending: true,
+        },
+    ];
+    prefs.data.active_tab = 1;
+    prefs.save().unwrap();
+    let restored = Preferences::load(path);
+    assert_eq!(restored.data.tabs.len(), 2);
+    assert_eq!(restored.data.tabs[0].path, temp.path().join("first"));
+    assert_eq!(restored.data.tabs[1].path, temp.path().join("second"));
+    assert_eq!(restored.data.tabs[1].sort, Sort::Size);
+    assert!(restored.data.tabs[1].descending);
+    assert_eq!(restored.data.active_tab, 1);
+}
+
+#[test]
+fn invalid_tab_paths_and_active_index_do_not_discard_favorites() {
+    let temp = TempDir::new().unwrap();
+    let path = temp.path().join("preferences.json");
+    fs::write(&path,r#"{"favorites":["/tmp"],"tabs":[{"path":"relative"},{"path":"/unmounted/folder"}],"active_tab":999}"#).unwrap();
+    let prefs = Preferences::load(path);
+    assert!(prefs.warning.is_none());
+    assert_eq!(prefs.data.tabs.len(), 1);
+    assert_eq!(prefs.data.tabs[0].path, Path::new("/unmounted/folder"));
+    assert_eq!(prefs.data.active_tab, 0);
+    assert_eq!(prefs.data.favorites, vec![PathBuf::from("/tmp")]);
+}
